@@ -23,6 +23,7 @@ import {
   LayoutGrid,
   Banknote,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   getCategories,
   getDishes,
@@ -67,6 +68,14 @@ export function CheckoutModal({
   const [categories, setCategories] = useState<any[]>([]);
   const [availableItems, setAvailableItems] = useState<any[]>([]);
   const [extraFreeItems, setExtraFreeItems] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
+  const [qrData, setQrData] = useState<any>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState<string | undefined>(
+    undefined,
+  );
+  const [paymentMode, setPaymentMode] = useState<"SINGLE" | "SPLIT">("SINGLE");
+  const [cashAmount, setCashAmount] = useState<string>("");
+  const [qrAmount, setQrAmount] = useState<string>("");
 
   // New Customer Form
   const [newCustomerName, setNewCustomerName] = useState("");
@@ -76,8 +85,34 @@ export function CheckoutModal({
     if (isOpen) {
       fetchCheckoutDetails();
       fetchCustomers();
+      fetchStaff();
+      fetchQrData();
     }
   }, [isOpen, table.id]);
+
+  const fetchQrData = async () => {
+    try {
+      const res = await fetch("/api/qr-payment");
+      const data = await res.json();
+      if (data.success) {
+        setQrData(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch QR data:", err);
+    }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      const res = await fetch("/api/staff");
+      const data = await res.json();
+      if (data.success) {
+        setStaff(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch staff:", err);
+    }
+  };
 
   const fetchCheckoutDetails = async () => {
     try {
@@ -147,14 +182,28 @@ export function CheckoutModal({
     setStep(3);
   };
 
-  const handleFinalize = async (method: "CASH" | "QR" | "CREDIT") => {
+  const handleFinalize = async (method: "CASH" | "QR" | "CREDIT" | "SPLIT") => {
     try {
       setLoading(true);
       const summary = calculateSummary();
+
+      let paymentsPayload = undefined;
+      let finalMethod = method as any;
+
+      if (method === "SPLIT") {
+        paymentsPayload = [
+          { method: "CASH", amount: parseFloat(cashAmount) || 0 },
+          { method: "QR", amount: parseFloat(qrAmount) || 0 },
+        ];
+        // For legacy support in backend if needed
+        finalMethod = "CASH";
+      }
+
       await processCheckout({
         tableId: table.id,
         sessionId: checkoutData.sessionId,
-        paymentMethod: method,
+        paymentMethod: finalMethod,
+        payments: paymentsPayload,
         amount: summary.grandTotal,
         customerId: selectedCustomerId,
         subtotal: summary.subtotal,
@@ -163,11 +212,13 @@ export function CheckoutModal({
         discount: summary.totalDiscount,
         complimentaryItems,
         extraFreeItems,
-      });
+        staffId: selectedStaffId,
+      } as any);
       onSuccess();
       onClose();
     } catch (err) {
       console.error(err);
+      toast.error(err instanceof Error ? err.message : "Checkout failed");
     } finally {
       setLoading(false);
     }
@@ -382,61 +433,79 @@ export function CheckoutModal({
               </div>
             </div>
 
-            {/* Customer info */}
-            <div className="bg-zinc-50 p-5 rounded-3xl border border-zinc-100 shrink-0">
-              <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">
-                Customer Info
-              </h3>
-              {!isAddingCustomer ? (
-                <div className="space-y-4">
-                  <CustomDropdown
-                    label="Select Customer"
-                    options={customers.map((c) => ({
-                      id: c.id,
-                      name: `${c.fullName} (${c.phone || "No"})`,
-                    }))}
-                    value={selectedCustomerId}
-                    onChange={setSelectedCustomerId}
-                    placeholder="Search customer..."
-                  />
-                  <button
-                    onClick={() => setIsAddingCustomer(true)}
-                    className="flex items-center gap-2 text-[10px] font-bold text-emerald-600 uppercase tracking-widest hover:text-emerald-700 ml-1"
-                  >
-                    <UserPlus size={14} /> Add New
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3 bg-white p-3 rounded-xl border border-zinc-200">
-                  <input
-                    placeholder="Full Name"
-                    className="w-full bg-zinc-50 border-none rounded-lg p-2.5 text-xs focus:ring-1 ring-emerald-500"
-                    value={newCustomerName}
-                    onChange={(e) => setNewCustomerName(e.target.value)}
-                  />
-                  <input
-                    placeholder="Phone"
-                    className="w-full bg-zinc-50 border-none rounded-lg p-2.5 text-xs focus:ring-1 ring-emerald-500"
-                    value={newCustomerPhone}
-                    onChange={(e) => setNewCustomerPhone(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleCreateCustomer}
-                      className="flex-1 bg-zinc-900 text-white text-[10px] uppercase h-8"
+            {/* Staff & Customer info */}
+            <div className="bg-zinc-50 p-5 rounded-3xl border border-zinc-100 shrink-0 space-y-6">
+              <div>
+                <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">
+                  Handle By (Staff)
+                </h3>
+                <CustomDropdown
+                  label="Select Staff"
+                  options={staff.map((s) => ({
+                    id: s.id,
+                    name: s.name,
+                  }))}
+                  value={selectedStaffId}
+                  onChange={setSelectedStaffId}
+                  placeholder="Select staff..."
+                />
+              </div>
+
+              <div>
+                <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">
+                  Customer Info
+                </h3>
+                {!isAddingCustomer ? (
+                  <div className="space-y-4">
+                    <CustomDropdown
+                      label="Select Customer"
+                      options={customers.map((c) => ({
+                        id: c.id,
+                        name: `${c.fullName} (${c.phone || "No"})`,
+                      }))}
+                      value={selectedCustomerId}
+                      onChange={setSelectedCustomerId}
+                      placeholder="Search customer..."
+                    />
+                    <button
+                      onClick={() => setIsAddingCustomer(true)}
+                      className="flex items-center gap-2 text-[10px] font-bold text-emerald-600 uppercase tracking-widest hover:text-emerald-700 ml-1"
                     >
-                      Save
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => setIsAddingCustomer(false)}
-                      className="flex-1 text-[10px] uppercase h-8"
-                    >
-                      Cancel
-                    </Button>
+                      <UserPlus size={14} /> Add New
+                    </button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="space-y-3 bg-white p-3 rounded-xl border border-zinc-200">
+                    <input
+                      placeholder="Full Name"
+                      className="w-full bg-zinc-50 border-none rounded-lg p-2.5 text-xs focus:ring-1 ring-emerald-500"
+                      value={newCustomerName}
+                      onChange={(e) => setNewCustomerName(e.target.value)}
+                    />
+                    <input
+                      placeholder="Phone"
+                      className="w-full bg-zinc-50 border-none rounded-lg p-2.5 text-xs focus:ring-1 ring-emerald-500"
+                      value={newCustomerPhone}
+                      onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleCreateCustomer}
+                        className="flex-1 bg-zinc-900 text-white text-[10px] uppercase h-8"
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => setIsAddingCustomer(false)}
+                        className="flex-1 text-[10px] uppercase h-8"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -452,70 +521,217 @@ export function CheckoutModal({
             </div>
 
             <div className="flex flex-col gap-4">
-              <button
-                disabled={loading}
-                onClick={() => handleFinalize("CASH")}
-                className="flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all group shadow-sm active:scale-95 text-left"
-              >
-                <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                  <Banknote
-                    size={26}
-                    className="text-zinc-400 group-hover:text-emerald-600"
-                  />
-                </div>
-                <div>
-                  <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
-                    Cash
-                  </span>
-                  <span className="text-[10px] text-zinc-400">
-                    Receive physical currency
-                  </span>
-                </div>
-              </button>
+              <div className="flex bg-white p-1 rounded-2xl border-2 border-zinc-100 mb-2">
+                <button
+                  onClick={() => setPaymentMode("SINGLE")}
+                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${paymentMode === "SINGLE" ? "bg-zinc-900 text-white shadow-lg" : "text-zinc-400 hover:text-zinc-600"}`}
+                >
+                  Single Payment
+                </button>
+                <button
+                  onClick={() => {
+                    setPaymentMode("SPLIT");
+                    const total = calculateSummary().grandTotal;
+                    setCashAmount((total / 2).toFixed(2));
+                    setQrAmount((total / 2).toFixed(2));
+                  }}
+                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${paymentMode === "SPLIT" ? "bg-emerald-500 text-white shadow-lg" : "text-zinc-400 hover:text-zinc-600"}`}
+                >
+                  Split (Cash+QR)
+                </button>
+              </div>
 
-              <button
-                disabled={loading}
-                onClick={() => handleFinalize("QR")}
-                className="flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all group shadow-sm active:scale-95 text-left"
-              >
-                <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                  <QrCode
-                    size={26}
-                    className="text-zinc-400 group-hover:text-emerald-600"
-                  />
-                </div>
-                <div>
-                  <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
-                    Scan QR
-                  </span>
-                  <span className="text-[10px] text-zinc-400">
-                    Digital wallet payment
-                  </span>
-                </div>
-              </button>
+              {paymentMode === "SINGLE" ? (
+                <>
+                  <button
+                    disabled={loading}
+                    onClick={() => handleFinalize("CASH")}
+                    className="flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all group shadow-sm active:scale-95 text-left"
+                  >
+                    <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                      <Banknote
+                        size={26}
+                        className="text-zinc-400 group-hover:text-emerald-600"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
+                        Cash
+                      </span>
+                      <span className="text-[10px] text-zinc-400">
+                        Receive physical currency
+                      </span>
+                    </div>
+                  </button>
 
-              <button
-                disabled={loading || !selectedCustomerId}
-                onClick={() => handleFinalize("CREDIT")}
-                className={`flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl transition-all group shadow-sm text-left active:scale-95 ${!selectedCustomerId ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500 hover:bg-emerald-50"}`}
-              >
-                <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                  <CreditCard
-                    size={26}
-                    className="text-zinc-400 group-hover:text-emerald-600"
-                  />
+                  <div className="space-y-3">
+                    <button
+                      disabled={loading}
+                      onClick={() => handleFinalize("QR")}
+                      className="w-full flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all group shadow-sm active:scale-95 text-left"
+                    >
+                      <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                        <QrCode
+                          size={26}
+                          className="text-zinc-400 group-hover:text-emerald-600"
+                        />
+                      </div>
+                      <div>
+                        <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
+                          Scan QR
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          Digital wallet payment
+                        </span>
+                      </div>
+                    </button>
+                    {qrData?.image?.[0] && (
+                      <div className="bg-zinc-50 p-4 rounded-3xl border border-dashed border-zinc-200 flex flex-col items-center gap-3">
+                        <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                          Scan to Pay
+                        </p>
+                        <img
+                          src={qrData.image[0]}
+                          alt="Store QR"
+                          className="w-40 h-40 object-contain rounded-xl shadow-sm bg-white p-2"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    disabled={loading || !selectedCustomerId}
+                    onClick={() => handleFinalize("CREDIT")}
+                    className={`flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl transition-all group shadow-sm text-left active:scale-95 ${!selectedCustomerId ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500 hover:bg-emerald-50"}`}
+                  >
+                    <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                      <CreditCard
+                        size={26}
+                        className="text-zinc-400 group-hover:text-emerald-600"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
+                        Store Credit
+                      </span>
+                      <span className="text-[10px] text-zinc-400">
+                        {!selectedCustomerId
+                          ? "Requires customer"
+                          : "Add to ledger"}
+                      </span>
+                    </div>
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+                    <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-1">
+                      Split Payment Guide
+                    </p>
+                    <p className="text-[10px] text-emerald-600 leading-relaxed font-medium">
+                      Enter the amount received in Cash and the amount paid via
+                      QR. The total must equal the grand total of{" "}
+                      {settings.currency}{" "}
+                      {calculateSummary().grandTotal.toLocaleString()}.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white p-4 rounded-3xl border-2 border-emerald-100 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Banknote size={16} className="text-emerald-600" />
+                        <span className="text-[9px] font-black uppercase text-zinc-400">
+                          Cash Amount
+                        </span>
+                      </div>
+                      <input
+                        type="number"
+                        className="w-full bg-transparent border-none text-xl font-black text-zinc-900 outline-none p-0"
+                        value={cashAmount}
+                        onChange={(e) => setCashAmount(e.target.value)}
+                      />
+                    </div>
+                    <div className="bg-white p-4 rounded-3xl border-2 border-emerald-100 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <QrCode size={16} className="text-emerald-600" />
+                        <span className="text-[9px] font-black uppercase text-zinc-400">
+                          QR Amount
+                        </span>
+                      </div>
+                      <input
+                        type="number"
+                        className="w-full bg-transparent border-none text-xl font-black text-zinc-900 outline-none p-0"
+                        value={qrAmount}
+                        onChange={(e) => setQrAmount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {qrData?.image?.[0] && (
+                    <div className="bg-zinc-50 p-4 rounded-3xl border border-dashed border-zinc-200 flex flex-col items-center gap-3">
+                      <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                        Scan QR below for the QR part
+                      </p>
+                      <img
+                        src={qrData.image[0]}
+                        alt="Store QR"
+                        className="w-32 h-32 object-contain rounded-xl shadow-sm bg-white p-2"
+                      />
+                    </div>
+                  )}
+
+                  <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex justify-between items-center">
+                    <div>
+                      <span className="text-[9px] font-black uppercase text-emerald-600 block">
+                        Total Entered
+                      </span>
+                      <span className="text-lg font-black text-emerald-700">
+                        {settings.currency}{" "}
+                        {(
+                          (parseFloat(cashAmount) || 0) +
+                          (parseFloat(qrAmount) || 0)
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                    {Math.abs(
+                      (parseFloat(cashAmount) || 0) +
+                        (parseFloat(qrAmount) || 0) -
+                        calculateSummary().grandTotal,
+                    ) < 0.01 ? (
+                      <CheckCircle2 size={24} className="text-emerald-500" />
+                    ) : (
+                      <div className="text-right">
+                        <span className="text-[9px] font-black uppercase text-rose-500 block">
+                          Remaining
+                        </span>
+                        <span className="text-sm font-black text-rose-600">
+                          {settings.currency}{" "}
+                          {(
+                            calculateSummary().grandTotal -
+                            ((parseFloat(cashAmount) || 0) +
+                              (parseFloat(qrAmount) || 0))
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    disabled={
+                      loading ||
+                      Math.abs(
+                        (parseFloat(cashAmount) || 0) +
+                          (parseFloat(qrAmount) || 0) -
+                          calculateSummary().grandTotal,
+                      ) >= 0.01
+                    }
+                    onClick={() => handleFinalize("SPLIT")}
+                    className="w-full h-16 bg-zinc-900 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs shadow-xl active:scale-95 disabled:opacity-30"
+                  >
+                    Complete split payment
+                  </Button>
                 </div>
-                <div>
-                  <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
-                    Store Credit
-                  </span>
-                  <span className="text-[10px] text-zinc-400">
-                    {!selectedCustomerId
-                      ? "Requires customer"
-                      : "Add to ledger"}
-                  </span>
-                </div>
-              </button>
+              )}
             </div>
           </div>
 

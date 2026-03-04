@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
       tableId,
       sessionId,
       paymentMethod,
+      payments, // Array of { method: string, amount: number }
       amount,
       customerId,
       subtotal,
@@ -29,12 +30,13 @@ export async function POST(req: NextRequest) {
       discount,
       complimentaryItems,
       extraFreeItems,
+      staffId,
     } = body;
 
     // --- 1. VALIDATION ---
-    if (!paymentMethod) {
+    if (!paymentMethod && (!payments || payments.length === 0)) {
       return NextResponse.json(
-        { success: false, message: "Missing payment method" },
+        { success: false, message: "Missing payment method or payments" },
         { status: 400 },
       );
     }
@@ -56,8 +58,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // DINE_IN must have a session. TAKE_AWAY/DIRECT might not if we implement direct order creation,
-    // but current flow seems to expect a session even for takeaway.
+    // DINE_IN must have a session.
     if (!session || !session.isActive) {
       return NextResponse.json(
         {
@@ -93,33 +94,26 @@ export async function POST(req: NextRequest) {
     if (paymentMethod === "ESEWA") {
       const transactionUuid = `${Date.now()}-${uuidv4()}`;
 
-      const existing = await prisma.payment.findUnique({
-        where: { sessionId: activeSessionId },
+      const existing = await prisma.payment.findFirst({
+        where: { sessionId: activeSessionId, status: "PAID" },
       });
 
-      if (existing?.status === "PAID") {
+      if (existing) {
         return NextResponse.json(
           { success: false, message: "This session is already paid." },
           { status: 400 },
         );
       }
 
-      const payment = await prisma.payment.upsert({
-        where: { sessionId: activeSessionId },
-        update: {
-          method: paymentMethod,
-          amount: parseFloat(amount),
-          status: "PENDING",
-          transactionUuid,
-          storeId: effectiveStoreId as string,
-        },
-        create: {
+      const payment = await prisma.payment.create({
+        data: {
           sessionId: activeSessionId,
-          method: paymentMethod,
+          method: "ESEWA",
           amount: parseFloat(amount),
           status: "PENDING",
           transactionUuid,
           storeId: effectiveStoreId as string,
+          staffId: staffId || null,
         },
       });
 
@@ -137,10 +131,16 @@ export async function POST(req: NextRequest) {
     }
 
     // === OPTION B: INSTANT PAYMENT ===
-    if (
-      ["CASH", "QR", "CARD", "CREDIT", "BANK_TRANSFER"].includes(paymentMethod)
-    ) {
-      if (paymentMethod === "CREDIT" && !customerId) {
+    // If payments array is provided, or a single instant method
+    const isInstant =
+      (payments && payments.length > 0) ||
+      ["CASH", "QR", "CARD", "CREDIT", "BANK_TRANSFER"].includes(paymentMethod);
+
+    if (isInstant) {
+      const hasCredit =
+        payments?.some((p: any) => p.method === "CREDIT") ||
+        paymentMethod === "CREDIT";
+      if (hasCredit && !customerId) {
         return NextResponse.json(
           {
             success: false,
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const result = await finalizeSessionTransaction({
+      await finalizeSessionTransaction({
         sessionId: activeSessionId,
         tableId: tableId || session.tableId || null,
         amount,
@@ -159,16 +159,17 @@ export async function POST(req: NextRequest) {
         serviceCharge,
         discount,
         customerId,
-        paymentMethod,
+        paymentMethod: paymentMethod || payments?.[0]?.method || "CASH",
+        payments,
         complimentaryItems,
         extraFreeItems,
         storeId: effectiveStoreId,
+        staffId,
       });
 
       return NextResponse.json({
         success: true,
-        message:
-          paymentMethod === "CREDIT" ? "Saved as Credit" : "Payment completed",
+        message: hasCredit ? "Saved as Credit" : "Payment completed",
       });
     }
 

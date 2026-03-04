@@ -30,6 +30,7 @@ export default function CustomersPage() {
     dob: "",
     loyaltyId: "",
     openingBalance: 0,
+    loyaltyDiscount: 0,
   });
 
   const fetchData = async () => {
@@ -104,6 +105,7 @@ export default function CustomersPage() {
         dob: "",
         loyaltyId: "",
         openingBalance: 0,
+        loyaltyDiscount: 0,
       });
       fetchData();
     } else {
@@ -165,7 +167,9 @@ export default function CustomersPage() {
               <tr
                 key={customer.id}
                 className="hover:bg-red-50/50 transition-colors cursor-pointer group"
-                onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
+                onClick={() =>
+                  router.push(`/dashboard/customers/${customer.id}`)
+                }
               >
                 <td className="px-6 py-4 font-medium text-gray-500">
                   {index + 1}
@@ -285,12 +289,29 @@ export default function CustomersPage() {
             <input
               type="number"
               placeholder="0.00"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all font-bold"
               value={formData.openingBalance}
               onChange={(e) =>
                 setFormData({
                   ...formData,
                   openingBalance: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Loyalty Discount (%)
+            </label>
+            <input
+              type="number"
+              placeholder="0"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all font-bold"
+              value={formData.loyaltyDiscount}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  loyaltyDiscount: parseFloat(e.target.value) || 0,
                 })
               }
             />

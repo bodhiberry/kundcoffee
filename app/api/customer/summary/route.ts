@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
         phone: c.phone,
         dob: c.dob,
         loyaltyId: c.loyaltyId,
+        loyaltyDiscount: c.loyaltyDiscount,
         dueAmount,
       };
     });

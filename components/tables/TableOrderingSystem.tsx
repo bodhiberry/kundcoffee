@@ -34,7 +34,12 @@ interface CartItem extends Partial<OrderItem> {
 interface TableOrderingSystemProps {
   table?: Table;
   onClose: () => void;
-  onConfirm: (cart: CartItem[], guests: number, kotRemarks: string) => void;
+  onConfirm: (
+    cart: CartItem[],
+    guests: number,
+    kotRemarks: string,
+    staffId: string,
+  ) => void;
   isAddingToExisting?: boolean;
   existingItems?: OrderItem[];
 }
@@ -51,6 +56,7 @@ export function TableOrderingSystem({
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [subMenus, setSubMenus] = useState<SubMenu[]>([]);
   const [availableAddOns, setAvailableAddOns] = useState<AddOn[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("ALL");
@@ -59,22 +65,26 @@ export function TableOrderingSystem({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [guests, setGuests] = useState(1);
   const [kotRemarks, setKotRemarks] = useState("");
+  const [selectedStaffId, setSelectedStaffId] = useState("");
   const [includeTax, setIncludeTax] = useState(
     settings.includeTaxByDefault === "true",
   );
 
   useEffect(() => {
     const fetchData = async () => {
-      const [cData, dData, smData, aData] = await Promise.all([
+      const [cData, dData, smData, aData, staffRes] = await Promise.all([
         getCategories(),
         getDishes(),
         getSubMenus(),
         getAddOns(),
+        fetch("/api/staff"),
       ]);
+      const staffData = await staffRes.json();
       setCategories(cData);
       setDishes(dData);
       setSubMenus(smData);
       setAvailableAddOns(aData);
+      if (staffData.success) setStaff(staffData.data);
     };
     fetchData();
   }, []);
@@ -304,60 +314,62 @@ export function TableOrderingSystem({
         </div>
 
         <div className="flex-1 overflow-y-auto bg-white p-4 custom-scrollbar">
-  {/* Increased grid columns to make items smaller */}
-  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-    {filteredDishes.map((dish) => (
-      <div
-        key={dish.id}
-        onClick={() => addToCartDirectly(dish)}
-        className="group bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-md hover:border-zinc-900 transition-all cursor-pointer aspect-square flex flex-col p-2 overflow-hidden"
-      >
-        {/* 1. Image (Small & Square) */}
-        <div className="relative flex-2 rounded-lg bg-zinc-50 overflow-hidden mb-1.5">
-          {dish.image?.[0] ? (
-            <img
-              src={dish.image[0]}
-              alt={dish.name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-zinc-200">
-              <LayoutGrid size={50} />
+          {/* Increased grid columns to make items smaller */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            {filteredDishes.map((dish) => (
+              <div
+                key={dish.id}
+                onClick={() => addToCartDirectly(dish)}
+                className="group bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-md hover:border-zinc-900 transition-all cursor-pointer aspect-square flex flex-col p-2 overflow-hidden"
+              >
+                {/* 1. Image (Small & Square) */}
+                <div className="relative flex-2 rounded-lg bg-zinc-50 overflow-hidden mb-1.5">
+                  {dish.image?.[0] ? (
+                    <img
+                      src={dish.image[0]}
+                      alt={dish.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-zinc-200">
+                      <LayoutGrid size={50} />
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Content Stack */}
+                <div className="flex flex-col gap-0.5">
+                  {/* Name - Truncated to 1 line */}
+                  <h4 className="text-[10px] font-bold text-zinc-900 uppercase truncate leading-tight">
+                    {dish.name}
+                  </h4>
+
+                  {/* Price */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-zinc-900">
+                      ₹{dish.price?.listedPrice ?? 0}
+                    </span>
+                  </div>
+
+                  {/* 3. Small Add Button */}
+                  <button className="w-full mt-1 bg-zinc-900 text-white text-[8px] font-bold uppercase py-1.5 rounded-md flex items-center justify-center gap-1 hover:bg-black transition-colors">
+                    <Plus size={10} strokeWidth={4} />
+                    Add
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredDishes.length === 0 && (
+            <div className="h-full flex flex-col items-center justify-center py-20 opacity-20">
+              <Search size={32} className="text-zinc-400 mb-2" />
+              <p className="text-[9px] font-bold uppercase tracking-widest">
+                No items
+              </p>
             </div>
           )}
         </div>
-
-        {/* 2. Content Stack */}
-        <div className="flex flex-col gap-0.5">
-          {/* Name - Truncated to 1 line */}
-          <h4 className="text-[10px] font-bold text-zinc-900 uppercase truncate leading-tight">
-            {dish.name}
-          </h4>
-          
-          {/* Price */}
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-zinc-900">
-              ₹{dish.price?.listedPrice ?? 0}
-            </span>
-          </div>
-
-          {/* 3. Small Add Button */}
-          <button className="w-full mt-1 bg-zinc-900 text-white text-[8px] font-bold uppercase py-1.5 rounded-md flex items-center justify-center gap-1 hover:bg-black transition-colors">
-            <Plus size={10} strokeWidth={4} />
-            Add
-          </button>
-        </div>
-      </div>
-    ))}
-  </div>
-
-  {filteredDishes.length === 0 && (
-    <div className="h-full flex flex-col items-center justify-center py-20 opacity-20">
-      <Search size={32} className="text-zinc-400 mb-2" />
-      <p className="text-[9px] font-bold uppercase tracking-widest">No items</p>
-    </div>
-  )}
-</div>
 
         {/* Right Column: Cart Summary */}
         <div className="w-[400px] bg-zinc-50/50 flex flex-col border-l border-zinc-100 shadow-sm z-10">
@@ -500,21 +512,28 @@ export function TableOrderingSystem({
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-1">
-                  KOT Note
+                  Server / Staff
                 </label>
                 <div className="relative">
-                  <MessageSquare
+                  <Users
                     size={14}
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
                   />
-                  <input
-                    placeholder="General..."
-                    className="w-full pl-10 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-zinc-900 transition-all font-bold text-zinc-900"
-                    value={kotRemarks}
-                    onChange={(e) => setKotRemarks(e.target.value)}
-                  />
+                  <select
+                    className="w-full pl-10 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-zinc-900 transition-all font-bold text-zinc-900 appearance-none"
+                    value={selectedStaffId}
+                    onChange={(e) => setSelectedStaffId(e.target.value)}
+                  >
+                    <option value="">Select Staff</option>
+                    {staff.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -538,12 +557,16 @@ export function TableOrderingSystem({
                 <Button
                   variant="secondary"
                   className="h-14 border border-zinc-200 text-zinc-500 rounded-2xl hover:bg-zinc-50 transition-colors"
-                  onClick={() => onConfirm(cart, guests, kotRemarks)}
+                  onClick={() =>
+                    onConfirm(cart, guests, kotRemarks, selectedStaffId)
+                  }
                 >
                   <Printer size={18} />
                 </Button>
                 <Button
-                  onClick={() => onConfirm(cart, guests, kotRemarks)}
+                  onClick={() =>
+                    onConfirm(cart, guests, kotRemarks, selectedStaffId)
+                  }
                   disabled={cart.length === 0}
                   className={`h-14 text-white font-black text-[10px] uppercase tracking-widest border-none rounded-2xl shadow-xl transition-all active:scale-95 bg-zinc-900 hover:bg-zinc-800 shadow-zinc-900/10 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >

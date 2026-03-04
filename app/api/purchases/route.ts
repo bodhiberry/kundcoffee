@@ -168,6 +168,7 @@ export async function POST(req: NextRequest) {
       paymentMode,
       remark,
       attachment,
+      staffId,
     } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -194,6 +195,7 @@ export async function POST(req: NextRequest) {
           paymentMode: paymentMode || null,
           remark,
           attachment,
+          staffId,
           storeId,
           items: {
             create: items.map((item: any) => ({

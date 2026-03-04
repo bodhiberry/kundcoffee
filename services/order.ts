@@ -60,31 +60,31 @@ export const createOrder = async (orderData: any): Promise<boolean> => {
 export const updateOrderItems = async (
   orderId: string,
   items: any[],
+  staffId?: string,
 ): Promise<boolean> => {
   const res = await fetch(`/api/order/${orderId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items }),
+    body: JSON.stringify({ items, staffId }),
   });
   const data = await res.json();
   return data.success;
 };
 
-
-
-
-export const deleteOrderItem = async (orderItemId: string): Promise<ApiResponse> => {
+export const deleteOrderItem = async (
+  orderItemId: string,
+): Promise<ApiResponse> => {
   try {
     const res = await fetch(`/api/order/item/${orderItemId}`, {
       method: "DELETE",
     });
-    
+
     const result = await res.json();
 
     return {
       success: result.success,
       message: result.message,
-      data: result.data, 
+      data: result.data,
     };
   } catch (error) {
     console.error(error);
@@ -97,9 +97,11 @@ export const deleteOrderItem = async (orderItemId: string): Promise<ApiResponse>
 
 export const getOrderHistory = async (page = 1, limit = 20, search = "") => {
   try {
-    const res = await fetch(`/api/order/history?page=${page}&limit=${limit}&search=${search}`);
+    const res = await fetch(
+      `/api/order/history?page=${page}&limit=${limit}&search=${search}`,
+    );
     const data = await res.json();
-    return data; 
+    return data;
   } catch (error) {
     console.error("History Fetch Error:", error);
     return { success: false, data: [] };

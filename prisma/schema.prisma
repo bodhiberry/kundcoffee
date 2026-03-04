@@ -1,85 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Space {
-  id          String  @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  sortOrder   Int     @default(0)
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  tables    Table[]
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  sortOrder   Int      @default(0)
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id])
+  tables      Table[]
 
   @@index([storeId])
 }
 
 model TableSession {
-  id      String @id @default(uuid())
-  tableId String
-  table   Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)
-
-  storeId String?
-  store   Store?  @relation(fields: [storeId], references: [id])
-
-  startedAt DateTime  @default(now())
-  endedAt   DateTime?
-
-  total         Float @default(0)
-  discount      Float @default(0)
-  serviceCharge Float @default(0)
-  tax           Float @default(0)
-  grandTotal    Float @default(0)
-
-  isActive Boolean  @default(true)
-  payment  Payment?
-  orders   Order[]
+  id            String    @id @default(uuid())
+  tableId       String
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+  total         Float     @default(0)
+  serviceCharge Float     @default(0)
+  tax           Float     @default(0)
+  grandTotal    Float     @default(0)
+  isActive      Boolean   @default(true)
+  discount      Float     @default(0)
+  storeId       String?
+  orders        Order[]
+  payments      Payment[]
+  store         Store?    @relation(fields: [storeId], references: [id])
+  table         Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
   @@index([tableId])
   @@index([storeId])
 }
 
 model TableType {
-  id   String @id @default(uuid())
-  name String
-
+  id      String  @id @default(uuid())
+  name    String
   storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  tables Table[]
+  tables  Table[]
+  store   Store   @relation(fields: [storeId], references: [id])
 
   @@unique([name, storeId])
   @@index([storeId])
 }
 
 model Table {
-  id          String      @id @default(uuid())
-  name        String
-  tableTypeId String?
-  tableType   TableType?  @relation(fields: [tableTypeId], references: [id])
-  capacity    Int
-  status      TableStatus @default(ACTIVE)
-  sortOrder   Int         @default(0)
-  spaceId     String?
-  space       Space?      @relation(fields: [spaceId], references: [id])
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  qrCode       QRCode?
-  sessions     TableSession[]
-  reservations Reservation[]
+  id           String         @id @default(uuid())
+  name         String
+  capacity     Int
+  status       TableStatus    @default(ACTIVE)
+  spaceId      String?
   createdAt    DateTime       @default(now())
+  tableTypeId  String?
   isDeleted    Boolean        @default(false)
+  sortOrder    Int            @default(0)
+  storeId      String
   Order        Order[]
+  qrCode       QRCode?
+  reservations Reservation[]
+  space        Space?         @relation(fields: [spaceId], references: [id])
+  store        Store          @relation(fields: [storeId], references: [id])
+  tableType    TableType?     @relation(fields: [tableTypeId], references: [id])
+  sessions     TableSession[]
 
   @@index([spaceId])
   @@index([tableTypeId])
@@ -89,57 +79,44 @@ model Table {
 model QRCode {
   id        String   @id @default(uuid())
   tableId   String   @unique
-  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
   value     String
   assigned  Boolean  @default(false)
   createdAt DateTime @default(now())
-}
-
-enum TableStatus {
-  ACTIVE
-  OCCUPIED
-  INACTIVE
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
 }
 
 model Category {
-  id          String  @id @default(uuid())
+  id          String       @id @default(uuid())
   name        String
   image       String?
   description String?
-  sortOrder   Int     @default(0)
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  dishes   Dish[]
-  combos   ComboOffer[]
-  subMenus SubMenu[]
-  addOns   AddOn[]
-
-  createdAt DateTime @default(now())
+  createdAt   DateTime     @default(now())
+  sortOrder   Int          @default(0)
+  storeId     String
+  addOns      AddOn[]
+  store       Store        @relation(fields: [storeId], references: [id])
+  combos      ComboOffer[]
+  dishes      Dish[]
+  subMenus    SubMenu[]
 
   @@unique([name, storeId])
   @@index([storeId])
 }
 
 model SubMenu {
-  id        String  @id @default(uuid())
-  name      String
-  image     String?
-  isActive  Boolean @default(true)
-  sortOrder Int     @default(0)
-
+  id         String           @id @default(uuid())
+  name       String
+  image      String?
+  isActive   Boolean          @default(true)
+  createdAt  DateTime         @default(now())
   categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  dishes  Dish[]
-  combos  ComboOffer[]
-  menuSet MenuSetSubMenu[]
-
-  createdAt DateTime @default(now())
+  sortOrder  Int              @default(0)
+  storeId    String
+  combos     ComboOffer[]
+  dishes     Dish[]
+  menuSet    MenuSetSubMenu[]
+  category   Category?        @relation(fields: [categoryId], references: [id])
+  store      Store            @relation(fields: [storeId], references: [id])
 
   @@unique([name, storeId])
   @@index([categoryId])
@@ -147,20 +124,18 @@ model SubMenu {
 }
 
 model Price {
-  id            String @id @default(uuid())
+  id            String      @id @default(uuid())
   actualPrice   Float
-  discountPrice Float? @default(0)
+  discountPrice Float?      @default(0)
   listedPrice   Float
   cogs          Float
   grossProfit   Float
-
-  dishId  String? @unique
-  addOnId String? @unique
-  comboId String? @unique
-
-  dish  Dish?       @relation(fields: [dishId], references: [id])
-  addOn AddOn?      @relation(fields: [addOnId], references: [id])
-  combo ComboOffer? @relation(fields: [comboId], references: [id])
+  dishId        String?     @unique
+  addOnId       String?     @unique
+  comboId       String?     @unique
+  addOn         AddOn?      @relation(fields: [addOnId], references: [id])
+  combo         ComboOffer? @relation(fields: [comboId], references: [id])
+  dish          Dish?       @relation(fields: [dishId], references: [id])
 
   @@index([dishId])
   @@index([addOnId])
@@ -168,22 +143,19 @@ model Price {
 }
 
 model Stock {
-  id       String         @id @default(uuid())
-  name     String
-  unitId   String?
-  unit     MeasuringUnit? @relation(fields: [unitId], references: [id])
-  quantity Float
-  amount   Float
-
-  groupId String?
-  group   StockGroup? @relation(fields: [groupId], references: [id])
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  consumptions        StockConsumption[]
+  id                  String               @id @default(uuid())
+  name                String
+  quantity            Float
+  amount              Float
+  storeId             String
+  groupId             String?
+  unitId              String?
   purchaseItems       PurchaseItem[]
   purchaseReturnItems PurchaseReturnItem[]
+  group               StockGroup?          @relation(fields: [groupId], references: [id])
+  store               Store                @relation(fields: [storeId], references: [id])
+  unit                MeasuringUnit?       @relation(fields: [unitId], references: [id])
+  consumptions        StockConsumption[]
 
   @@unique([name, storeId])
   @@index([storeId])
@@ -192,34 +164,29 @@ model Stock {
 }
 
 model StockGroup {
-  id          String  @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  stocks    Stock[]
-  createdAt DateTime @default(now())
+  storeId     String
+  createdAt   DateTime @default(now())
+  stocks      Stock[]
+  store       Store    @relation(fields: [storeId], references: [id])
 
   @@unique([name, storeId])
   @@index([storeId])
 }
 
 model StockConsumption {
-  id      String @id @default(uuid())
-  stockId String
-  stock   Stock  @relation(fields: [stockId], references: [id])
-
+  id       String      @id @default(uuid())
+  stockId  String
   quantity Float
-
-  dishId  String?
-  addOnId String?
-  comboId String?
-
-  dish  Dish?       @relation(fields: [dishId], references: [id])
-  addOn AddOn?      @relation(fields: [addOnId], references: [id])
-  combo ComboOffer? @relation(fields: [comboId], references: [id])
+  dishId   String?
+  addOnId  String?
+  comboId  String?
+  addOn    AddOn?      @relation(fields: [addOnId], references: [id])
+  combo    ComboOffer? @relation(fields: [comboId], references: [id])
+  dish     Dish?       @relation(fields: [dishId], references: [id])
+  stock    Stock       @relation(fields: [stockId], references: [id])
 
   @@index([stockId])
   @@index([dishId])
@@ -228,36 +195,599 @@ model StockConsumption {
 }
 
 model Dish {
-  id              String   @id @default(uuid())
+  id              String             @id @default(uuid())
   name            String
   hscode          String?
-  image           String[]
   preparationTime Int
   description     String?
-  sortOrder       Int      @default(0)
-
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  subMenuId String?
-  subMenu   SubMenu? @relation(fields: [subMenuId], references: [id])
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  type        DishType
-  kotType     KOTType
-  isAvailable Boolean            @default(true)
-  orderItems  OrderItem[]
-  price       Price?
-  stocks      StockConsumption[]
-  addOns      DishAddOn[]
-  comboItems  ComboItem[]
-  createdAt   DateTime           @default(now())
+  categoryId      String
+  subMenuId       String?
+  type            DishType
+  kotType         KOTType
+  isAvailable     Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  image           String[]
+  sortOrder       Int                @default(0)
+  storeId         String
+  comboItems      ComboItem[]
+  category        Category           @relation(fields: [categoryId], references: [id])
+  store           Store              @relation(fields: [storeId], references: [id])
+  subMenu         SubMenu?           @relation(fields: [subMenuId], references: [id])
+  addOns          DishAddOn[]
+  orderItems      OrderItem[]
+  price           Price?
+  stocks          StockConsumption[]
 
   @@index([categoryId])
   @@index([subMenuId])
   @@index([storeId])
+}
+
+model MeasuringUnit {
+  id          String   @id @default(uuid())
+  name        String
+  shortName   String
+  description String?
+  storeId     String
+  createdAt   DateTime @default(now())
+  store       Store    @relation(fields: [storeId], references: [id])
+  stocks      Stock[]
+
+  @@unique([name, storeId])
+  @@unique([shortName, storeId])
+  @@index([storeId])
+}
+
+model AddOn {
+  id              String             @id @default(uuid())
+  name            String
+  image           String?
+  description     String?
+  type            AddOnType
+  isAvailable     Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  categoryId      String?
+  sortOrder       Int                @default(0)
+  storeId         String
+  category        Category?          @relation(fields: [categoryId], references: [id])
+  store           Store              @relation(fields: [storeId], references: [id])
+  usedIn          DishAddOn[]
+  orderItemAddOns OrderItemAddOn[]
+  price           Price?
+  stocks          StockConsumption[]
+
+  @@index([categoryId])
+  @@index([storeId])
+}
+
+model DishAddOn {
+  id      String @id @default(uuid())
+  dishId  String
+  addOnId String
+  addOn   AddOn  @relation(fields: [addOnId], references: [id])
+  dish    Dish   @relation(fields: [dishId], references: [id])
+
+  @@index([dishId])
+  @@index([addOnId])
+}
+
+model MenuSet {
+  id        String           @id @default(uuid())
+  name      String
+  service   String
+  isActive  Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  sortOrder Int              @default(0)
+  storeId   String
+  store     Store            @relation(fields: [storeId], references: [id])
+  subMenus  MenuSetSubMenu[]
+
+  @@index([storeId])
+}
+
+model MenuSetSubMenu {
+  id        String  @id @default(uuid())
+  menuSetId String
+  subMenuId String
+  menuSet   MenuSet @relation(fields: [menuSetId], references: [id])
+  subMenu   SubMenu @relation(fields: [subMenuId], references: [id])
+
+  @@index([menuSetId])
+  @@index([subMenuId])
+}
+
+model ComboOffer {
+  id              String             @id @default(uuid())
+  name            String
+  hscode          String?
+  preparationTime Int
+  description     String?
+  categoryId      String
+  subMenuId       String?
+  kotType         KOTType
+  isAvailable     Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  image           String[]
+  sortOrder       Int                @default(0)
+  storeId         String
+  items           ComboItem[]
+  category        Category           @relation(fields: [categoryId], references: [id])
+  store           Store              @relation(fields: [storeId], references: [id])
+  subMenu         SubMenu?           @relation(fields: [subMenuId], references: [id])
+  orderItems      OrderItem[]
+  price           Price?
+  stocks          StockConsumption[]
+
+  @@index([categoryId])
+  @@index([subMenuId])
+  @@index([storeId])
+}
+
+model ComboItem {
+  id        String     @id @default(uuid())
+  comboId   String
+  dishId    String
+  quantity  Int
+  unitPrice Float
+  combo     ComboOffer @relation(fields: [comboId], references: [id])
+  dish      Dish       @relation(fields: [dishId], references: [id])
+
+  @@index([comboId])
+  @@index([dishId])
+}
+
+model Order {
+  id         String        @id @default(uuid())
+  tableId    String?
+  type       OrderType
+  total      Float
+  status     OrderStatus   @default(PENDING)
+  createdAt  DateTime      @default(now())
+  customerId String?
+  isDeleted  Boolean       @default(false)
+  paymentId  String?
+  sessionId  String?
+  staffId    String?
+  storeId    String?
+  customer   Customer?     @relation(fields: [customerId], references: [id])
+  payment    Payment?      @relation(fields: [paymentId], references: [id])
+  session    TableSession? @relation(fields: [sessionId], references: [id])
+  staff      Staff?        @relation(fields: [staffId], references: [id])
+  store      Store?        @relation(fields: [storeId], references: [id])
+  table      Table?        @relation(fields: [tableId], references: [id])
+  items      OrderItem[]
+
+  @@index([tableId])
+  @@index([sessionId])
+  @@index([customerId])
+  @@index([paymentId])
+}
+
+model OrderItem {
+  id                    String           @id @default(uuid())
+  orderId               String
+  dishId                String?
+  comboId               String?
+  quantity              Int
+  unitPrice             Float
+  totalPrice            Float
+  remarks               String?
+  status                OrderStatus      @default(PENDING)
+  complimentaryQuantity Int              @default(0)
+  combo                 ComboOffer?      @relation(fields: [comboId], references: [id])
+  dish                  Dish?            @relation(fields: [dishId], references: [id])
+  order                 Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  selectedAddOns        OrderItemAddOn[]
+
+  @@index([orderId])
+  @@index([dishId])
+  @@index([comboId])
+}
+
+model OrderItemAddOn {
+  id          String    @id @default(uuid())
+  orderItemId String
+  addOnId     String
+  quantity    Int       @default(1)
+  unitPrice   Float
+  addOn       AddOn     @relation(fields: [addOnId], references: [id])
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([orderItemId])
+  @@index([addOnId])
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  method          PaymentMethod
+  amount          Float
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  sessionId       String?
+  esewaRefId      String?
+  transactionUuid String?       @unique
+  isDeleted       Boolean       @default(false)
+  storeId         String
+  staffId         String?
+  orders          Order[]
+  session         TableSession? @relation(fields: [sessionId], references: [id])
+  staff           Staff?        @relation(fields: [staffId], references: [id])
+  store           Store         @relation(fields: [storeId], references: [id])
+
+  @@index([sessionId])
+  @@index([storeId])
+  @@index([staffId])
+}
+
+model Customer {
+  id              String           @id @default(uuid())
+  fullName        String
+  phone           String?          @unique
+  email           String?
+  openingBalance  Float            @default(0)
+  creditLimit     Float?           @default(0)
+  creditTermDays  Int?             @default(0)
+  loyaltyPoints   Int              @default(0)
+  loyaltyDiscount Float            @default(0)
+  legalName       String?
+  taxNumber       String?
+  address         String?
+  notes           String?
+  createdAt       DateTime         @default(now())
+  dob             DateTime?
+  loyaltyId       String?          @unique
+  storeId         String?
+  store           Store?           @relation(fields: [storeId], references: [id])
+  CustomerLedger  CustomerLedger[]
+  orders          Order[]
+  reservation     Reservation[]
+  salesReturns    SalesReturn[]
+}
+
+model CustomerLedger {
+  id             String     @id @default(uuid())
+  customerId     String
+  txnNo          String     @unique
+  type           LedgerType
+  amount         Float
+  closingBalance Float
+  referenceId    String?
+  remarks        String?
+  createdAt      DateTime   @default(now())
+  storeId        String?
+  customer       Customer   @relation(fields: [customerId], references: [id])
+  store          Store?     @relation(fields: [storeId], references: [id])
+
+  @@index([customerId])
+  @@index([storeId])
+}
+
+model Reservation {
+  id           String            @id @default(uuid())
+  name         String
+  phone        String
+  customerId   String?
+  images       String?
+  remark       String?
+  tableId      String
+  guests       Int
+  createdAt    DateTime          @default(now())
+  status       ReservationStatus @default(PENDING)
+  customer     Customer?         @relation(fields: [customerId], references: [id])
+  table        Table             @relation(fields: [tableId], references: [id])
+  dateSelected ReservationTime[]
+
+  @@index([customerId])
+  @@index([tableId])
+}
+
+model ReservationTime {
+  id            String      @id @default(uuid())
+  reservationId String
+  date          DateTime
+  startTime     DateTime
+  endTime       DateTime
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+
+  @@index([reservationId])
+}
+
+model SalesReturn {
+  id              String              @id @default(uuid())
+  referenceNumber String              @unique
+  customerId      String?
+  txnDate         DateTime            @default(now())
+  billReference   String
+  salesStaff      String?
+  taxableAmount   Float
+  totalAmount     Float
+  roundOff        Float               @default(0)
+  discount        Float               @default(0)
+  attachment      String?
+  remark          String?
+  paymentStatus   ReturnPaymentStatus @default(UNPAID)
+  paymentMode     PaymentMethod?
+  createdAt       DateTime            @default(now())
+  isDeleted       Boolean             @default(false)
+  staffId         String?
+  storeId         String
+  customer        Customer?           @relation(fields: [customerId], references: [id])
+  staff           Staff?              @relation(fields: [staffId], references: [id])
+  store           Store               @relation(fields: [storeId], references: [id])
+  items           SalesReturnItem[]
+
+  @@index([customerId])
+  @@index([storeId])
+}
+
+model SalesReturnItem {
+  id            String      @id @default(uuid())
+  salesReturnId String
+  dishName      String
+  quantity      Int
+  rate          Float
+  amount        Float
+  salesReturn   SalesReturn @relation(fields: [salesReturnId], references: [id], onDelete: Cascade)
+
+  @@index([salesReturnId])
+}
+
+model Staff {
+  id              String           @id @default(uuid())
+  name            String
+  role            String           @default("Staff")
+  phone           String?
+  email           String?
+  isActive        Boolean          @default(true)
+  image           String?
+  createdAt       DateTime         @default(now())
+  storeId         String
+  roleId          String?
+  orders          Order[]
+  payments        Payment[]
+  purchases       Purchase[]
+  purchaseReturns PurchaseReturn[]
+  salesReturns    SalesReturn[]
+  roleRef         StaffRole?       @relation(fields: [roleId], references: [id])
+  store           Store            @relation(fields: [storeId], references: [id])
+
+  @@index([storeId])
+  @@index([roleId])
+}
+
+model StaffRole {
+  id      String  @id @default(uuid())
+  name    String
+  storeId String
+  staff   Staff[]
+  store   Store   @relation(fields: [storeId], references: [id])
+
+  @@unique([name, storeId])
+  @@index([storeId])
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  title       String
+  amount      Float
+  category    String?
+  date        DateTime @default(now())
+  description String?
+  createdAt   DateTime @default(now())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id])
+
+  @@index([storeId])
+}
+
+model Supplier {
+  id                 String           @id @default(uuid())
+  fullName           String
+  phone              String?          @unique
+  email              String?
+  legalName          String?
+  taxNumber          String?
+  address            String?
+  openingBalance     Float            @default(0)
+  openingBalanceType BalanceType      @default(CREDIT)
+  storeId            String
+  createdAt          DateTime         @default(now())
+  purchases          Purchase[]
+  purchaseReturns    PurchaseReturn[]
+  store              Store            @relation(fields: [storeId], references: [id])
+  ledgers            SupplierLedger[]
+
+  @@index([storeId])
+}
+
+model SupplierLedger {
+  id             String             @id @default(uuid())
+  supplierId     String
+  storeId        String
+  txnNo          String             @unique
+  type           SupplierLedgerType
+  amount         Float
+  closingBalance Float
+  referenceId    String?
+  remarks        String?
+  createdAt      DateTime           @default(now())
+  store          Store              @relation(fields: [storeId], references: [id])
+  supplier       Supplier           @relation(fields: [supplierId], references: [id])
+
+  @@index([supplierId])
+  @@index([storeId])
+}
+
+model Purchase {
+  id              String         @id @default(uuid())
+  createdAt       DateTime       @default(now())
+  storeId         String
+  attachment      String?
+  discount        Float          @default(0)
+  isDeleted       Boolean        @default(false)
+  paymentMode     PaymentMethod?
+  paymentStatus   PaymentStatus  @default(PENDING)
+  referenceNumber String         @unique
+  remark          String?
+  roundOff        Float          @default(0)
+  supplierId      String
+  taxableAmount   Float
+  totalAmount     Float
+  txnDate         DateTime       @default(now())
+  staffId         String?
+  staff           Staff?         @relation(fields: [staffId], references: [id])
+  store           Store          @relation(fields: [storeId], references: [id])
+  supplier        Supplier       @relation(fields: [supplierId], references: [id])
+  items           PurchaseItem[]
+
+  @@index([supplierId])
+  @@index([storeId])
+  @@index([staffId])
+}
+
+model PurchaseItem {
+  id         String   @id @default(uuid())
+  purchaseId String
+  itemName   String
+  quantity   Float
+  rate       Float
+  amount     Float
+  stockId    String?
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  stock      Stock?   @relation(fields: [stockId], references: [id])
+
+  @@index([purchaseId])
+  @@index([stockId])
+}
+
+model PurchaseReturn {
+  id                String               @id @default(uuid())
+  referenceNumber   String               @unique
+  supplierId        String
+  txnDate           DateTime             @default(now())
+  purchaseReference String?
+  taxableAmount     Float
+  totalAmount       Float
+  discount          Float                @default(0)
+  roundOff          Float                @default(0)
+  paymentStatus     ReturnPaymentStatus  @default(UNPAID)
+  paymentMode       PaymentMethod?
+  remark            String?
+  attachment        String?
+  storeId           String
+  createdAt         DateTime             @default(now())
+  isDeleted         Boolean              @default(false)
+  staffId           String?
+  staff             Staff?               @relation(fields: [staffId], references: [id])
+  store             Store                @relation(fields: [storeId], references: [id])
+  supplier          Supplier             @relation(fields: [supplierId], references: [id])
+  items             PurchaseReturnItem[]
+
+  @@index([supplierId])
+  @@index([storeId])
+  @@index([staffId])
+}
+
+model PurchaseReturnItem {
+  id               String         @id @default(uuid())
+  purchaseReturnId String
+  itemName         String
+  quantity         Float
+  rate             Float
+  amount           Float
+  stockId          String?
+  purchaseReturn   PurchaseReturn @relation(fields: [purchaseReturnId], references: [id], onDelete: Cascade)
+  stock            Stock?         @relation(fields: [stockId], references: [id])
+
+  @@index([purchaseReturnId])
+  @@index([stockId])
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Store {
+  id              String           @id @default(cuid())
+  name            String
+  ownerId         String           @unique
+  addOns          AddOn[]
+  categories      Category[]
+  combos          ComboOffer[]
+  customers       Customer[]
+  ledgers         CustomerLedger[]
+  dishes          Dish[]
+  expenses        Expense[]
+  measuringUnits  MeasuringUnit[]
+  menus           Menu[]
+  menuSets        MenuSet[]
+  orders          Order[]
+  payments        Payment[]
+  purchases       Purchase[]
+  purchaseReturns PurchaseReturn[]
+  qrPayment       QrPayment[]
+  salesReturns    SalesReturn[]
+  spaces          Space[]
+  staff           Staff[]
+  staffRoles      StaffRole[]
+  stocks          Stock[]
+  stockGroups     StockGroup[]
+  subMenus        SubMenu[]
+  suppliers       Supplier[]
+  supplierLedgers SupplierLedger[]
+  tables          Table[]
+  tableSessions   TableSession[]
+  tableTypes      TableType[]
+  users           User[]
+}
+
+model QrPayment {
+  id      String   @id @default(cuid())
+  image   String[]
+  storeId String
+  store   Store    @relation(fields: [storeId], references: [id])
+}
+
+model User {
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String    @unique
+  password                String
+  role                    Role      @default(CASHIER)
+  storeId                 String?
+  emailVerified           DateTime?
+  isSetupComplete         Boolean   @default(false)
+  trialEndsAt             DateTime?
+  verificationCode        String?
+  verificationCodeExpires DateTime?
+  sessions                Session[]
+  store                   Store?    @relation(fields: [storeId], references: [id])
+}
+
+model Menu {
+  id        String   @id @default(cuid())
+  name      String
+  storeId   String
+  createdAt DateTime @default(now())
+  store     Store    @relation(fields: [storeId], references: [id])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TableStatus {
+  ACTIVE
+  OCCUPIED
+  INACTIVE
 }
 
 enum DishType {
@@ -272,207 +802,9 @@ enum KOTType {
   BAR
 }
 
-model MeasuringUnit {
-  id          String  @id @default(uuid())
-  name        String
-  shortName   String
-  description String?
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  stocks    Stock[]
-  createdAt DateTime @default(now())
-
-  @@unique([name, storeId])
-  @@unique([shortName, storeId])
-  @@index([storeId])
-}
-
-model AddOn {
-  id          String    @id @default(uuid())
-  name        String
-  image       String?
-  description String?
-  type        AddOnType
-  isAvailable Boolean   @default(true)
-  sortOrder   Int       @default(0)
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  orderItemAddOns OrderItemAddOn[]
-  price           Price?
-  stocks          StockConsumption[]
-  usedIn          DishAddOn[]
-
-  createdAt DateTime @default(now())
-
-  @@index([categoryId])
-  @@index([storeId])
-}
-
 enum AddOnType {
   EXTRA
   ADDON
-}
-
-model DishAddOn {
-  id      String @id @default(uuid())
-  dishId  String
-  addOnId String
-
-  dish  Dish  @relation(fields: [dishId], references: [id])
-  addOn AddOn @relation(fields: [addOnId], references: [id])
-
-  @@index([dishId])
-  @@index([addOnId])
-}
-
-model MenuSet {
-  id        String  @id @default(uuid())
-  name      String
-  service   String
-  isActive  Boolean @default(true)
-  sortOrder Int     @default(0)
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  subMenus MenuSetSubMenu[]
-
-  createdAt DateTime @default(now())
-
-  @@index([storeId])
-}
-
-model MenuSetSubMenu {
-  id        String @id @default(uuid())
-  menuSetId String
-  subMenuId String
-
-  menuSet MenuSet @relation(fields: [menuSetId], references: [id])
-  subMenu SubMenu @relation(fields: [subMenuId], references: [id])
-
-  @@index([menuSetId])
-  @@index([subMenuId])
-}
-
-model ComboOffer {
-  id              String   @id @default(uuid())
-  name            String
-  image           String[]
-  hscode          String?
-  preparationTime Int
-  description     String?
-
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  subMenuId String?
-  subMenu   SubMenu? @relation(fields: [subMenuId], references: [id])
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  sortOrder   Int                @default(0)
-  kotType     KOTType
-  isAvailable Boolean            @default(true)
-  orderItems  OrderItem[]
-  price       Price?
-  items       ComboItem[]
-  stocks      StockConsumption[]
-
-  createdAt DateTime @default(now())
-
-  @@index([categoryId])
-  @@index([subMenuId])
-  @@index([storeId])
-}
-
-model ComboItem {
-  id      String @id @default(uuid())
-  comboId String
-  dishId  String
-
-  quantity  Int
-  unitPrice Float
-
-  combo ComboOffer @relation(fields: [comboId], references: [id])
-  dish  Dish       @relation(fields: [dishId], references: [id])
-
-  @@index([comboId])
-  @@index([dishId])
-}
-
-model Order {
-  id        String        @id @default(uuid())
-  tableId   String?
-  type      OrderType
-  table     Table?        @relation(fields: [tableId], references: [id])
-  storeId   String?
-  store     Store?        @relation(fields: [storeId], references: [id])
-  sessionId String?
-  session   TableSession? @relation(fields: [sessionId], references: [id])
-
-  customerId String?
-  customer   Customer?   @relation(fields: [customerId], references: [id])
-  items      OrderItem[]
-  total      Float
-
-  paymentId String?
-  payment   Payment? @relation(fields: [paymentId], references: [id])
-
-  staffId String?
-  staff   Staff?  @relation(fields: [staffId], references: [id])
-
-  status    OrderStatus @default(PENDING)
-  createdAt DateTime    @default(now())
-  isDeleted Boolean     @default(false)
-
-  @@index([tableId])
-  @@index([sessionId])
-  @@index([customerId])
-  @@index([paymentId])
-}
-
-model OrderItem {
-  id      String  @id @default(uuid())
-  orderId String
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  dishId  String?
-  dish    Dish?   @relation(fields: [dishId], references: [id])
-
-  comboId               String?
-  combo                 ComboOffer?      @relation(fields: [comboId], references: [id])
-  quantity              Int
-  unitPrice             Float
-  totalPrice            Float
-  complimentaryQuantity Int              @default(0)
-  selectedAddOns        OrderItemAddOn[]
-  status                OrderStatus      @default(PENDING)
-  remarks               String?
-
-  @@index([orderId])
-  @@index([dishId])
-  @@index([comboId])
-}
-
-model OrderItemAddOn {
-  id          String    @id @default(uuid())
-  orderItemId String
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-
-  addOnId String
-  addOn   AddOn  @relation(fields: [addOnId], references: [id])
-
-  quantity  Int   @default(1)
-  unitPrice Float
-
-  @@index([orderItemId])
-  @@index([addOnId])
 }
 
 enum OrderStatus {
@@ -484,38 +816,13 @@ enum OrderStatus {
   CANCELLED
 }
 
-model Payment {
-  id String @id @default(uuid())
-
-  orders Order[]
-
-  sessionId String?       @unique
-  session   TableSession? @relation(fields: [sessionId], references: [id])
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  method PaymentMethod
-  amount Float
-  status PaymentStatus @default(PENDING)
-
-  transactionUuid String? @unique
-  esewaRefId      String?
-
-  createdAt DateTime @default(now())
-  isDeleted Boolean  @default(false)
-
-  @@index([sessionId])
-  @@index([storeId])
-}
-
 enum PaymentMethod {
   CASH
   ESEWA
   QR
-  CARD
   BANK_TRANSFER
   CREDIT
+  CARD
 }
 
 enum PaymentStatus {
@@ -534,57 +841,6 @@ enum OrderType {
   TAKE_AWAY
 }
 
-model Customer {
-  id              String    @id @default(uuid())
-  dob             DateTime?
-  fullName        String
-  phone           String?   @unique
-  email           String?
-  loyaltyId       String?   @unique
-  openingBalance  Float     @default(0)
-  creditLimit     Float?    @default(0)
-  creditTermDays  Int?      @default(0)
-  storeId         String?
-  store           Store?    @relation(fields: [storeId], references: [id])
-  loyaltyPoints   Int       @default(0)
-  loyaltyDiscount Float     @default(0) // %
-
-  legalName String?
-  taxNumber String?
-
-  address     String?
-  reservation Reservation[]
-  notes       String?
-
-  orders Order[]
-
-  createdAt      DateTime         @default(now())
-  CustomerLedger CustomerLedger[]
-  salesReturns   SalesReturn[]
-}
-
-model CustomerLedger {
-  id         String   @id @default(uuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
-
-  storeId String?
-  store   Store?  @relation(fields: [storeId], references: [id])
-
-  txnNo          String     @unique
-  type           LedgerType
-  amount         Float
-  closingBalance Float
-
-  referenceId String? // orderId, paymentId, returnId
-  remarks     String?
-
-  createdAt DateTime @default(now())
-
-  @@index([customerId])
-  @@index([storeId])
-}
-
 enum LedgerType {
   SALE
   PAYMENT_IN
@@ -594,89 +850,11 @@ enum LedgerType {
   OPENING_BALANCE
 }
 
-model Reservation {
-  id    String @id @default(uuid())
-  name  String
-  phone String
-
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id])
-
-  images       String?
-  remark       String?
-  dateSelected ReservationTime[]
-  tableId      String
-  table        Table             @relation(fields: [tableId], references: [id])
-
-  guests    Int
-  status    ReservationStatus @default(PENDING)
-  createdAt DateTime          @default(now())
-
-  @@index([customerId])
-  @@index([tableId])
-}
-
-model ReservationTime {
-  id            String      @id @default(uuid())
-  reservationId String
-  reservation   Reservation @relation(fields: [reservationId], references: [id])
-  date          DateTime
-  startTime     DateTime
-  endTime       DateTime
-
-  @@index([reservationId])
-}
-
 enum ReservationStatus {
   PENDING
   CONFIRMED
   CANCELLED
   COMPLETED
-}
-
-model SalesReturn {
-  id              String            @id @default(uuid())
-  referenceNumber String            @unique
-  customerId      String?
-  customer        Customer?         @relation(fields: [customerId], references: [id])
-  txnDate         DateTime          @default(now())
-  billReference   String
-  salesStaff      String?
-  staffId         String? // Link to actual Staff ID if available
-  staff           Staff?            @relation(fields: [staffId], references: [id])
-  items           SalesReturnItem[]
-
-  taxableAmount Float
-  totalAmount   Float
-  roundOff      Float @default(0)
-  discount      Float @default(0)
-
-  attachment String?
-  remark     String?
-
-  paymentStatus ReturnPaymentStatus @default(UNPAID)
-  paymentMode   PaymentMethod?
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  createdAt DateTime @default(now())
-  isDeleted Boolean  @default(false)
-
-  @@index([customerId])
-  @@index([storeId])
-}
-
-model SalesReturnItem {
-  id            String      @id @default(uuid())
-  salesReturnId String
-  salesReturn   SalesReturn @relation(fields: [salesReturnId], references: [id], onDelete: Cascade)
-  dishName      String
-  quantity      Int
-  rate          Float
-  amount        Float
-
-  @@index([salesReturnId])
 }
 
 enum ReturnPaymentStatus {
@@ -685,84 +863,9 @@ enum ReturnPaymentStatus {
   CREDIT
 }
 
-model Staff {
-  id       String  @id @default(uuid())
-  name     String
-  role     String  @default("Staff") // e.g. "Waiter", "Manager", "Chef"
-  phone    String?
-  email    String?
-  isActive Boolean @default(true)
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  orders       Order[]
-  image        String?
-  salesReturns SalesReturn[]
-  createdAt    DateTime      @default(now())
-
-  @@index([storeId])
-}
-
-model Expense {
-  id          String   @id @default(uuid())
-  title       String
-  amount      Float
-  category    String? // e.g. "Rent", "Utilities", "Salary"
-  date        DateTime @default(now())
-  description String?
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([storeId])
-}
-
-model Supplier {
-  id                 String      @id @default(uuid())
-  fullName           String
-  phone              String?     @unique
-  email              String?
-  legalName          String?
-  taxNumber          String?
-  address            String?
-  openingBalance     Float       @default(0)
-  openingBalanceType BalanceType @default(CREDIT)
-  storeId            String
-  store              Store       @relation(fields: [storeId], references: [id])
-
-  purchases       Purchase[]
-  purchaseReturns PurchaseReturn[]
-  ledgers         SupplierLedger[]
-  createdAt       DateTime         @default(now())
-
-  @@index([storeId])
-}
-
 enum BalanceType {
   DEBIT
   CREDIT
-}
-
-model SupplierLedger {
-  id         String   @id @default(uuid())
-  supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id])
-  storeId    String
-  store      Store    @relation(fields: [storeId], references: [id])
-
-  txnNo          String             @unique
-  type           SupplierLedgerType
-  amount         Float
-  closingBalance Float
-  referenceId    String? // purchaseId, paymentId, returnId
-  remarks        String?
-  createdAt      DateTime           @default(now())
-
-  @@index([supplierId])
-  @@index([storeId])
 }
 
 enum SupplierLedgerType {
@@ -773,186 +876,8 @@ enum SupplierLedgerType {
   OPENING_BALANCE
 }
 
-model Purchase {
-  id              String         @id @default(uuid())
-  referenceNumber String         @unique
-  supplierId      String
-  supplier        Supplier       @relation(fields: [supplierId], references: [id])
-  txnDate         DateTime       @default(now())
-  items           PurchaseItem[]
-
-  taxableAmount Float
-  totalAmount   Float
-  discount      Float @default(0)
-  roundOff      Float @default(0)
-
-  paymentStatus PaymentStatus  @default(PENDING)
-  paymentMode   PaymentMethod?
-
-  remark     String?
-  attachment String?
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  createdAt DateTime @default(now())
-  isDeleted Boolean  @default(false)
-
-  @@index([supplierId])
-  @@index([storeId])
-}
-
-model PurchaseItem {
-  id         String   @id @default(uuid())
-  purchaseId String
-  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  itemName   String
-  quantity   Float
-  rate       Float
-  amount     Float
-
-  stockId String?
-  stock   Stock?  @relation(fields: [stockId], references: [id])
-
-  @@index([purchaseId])
-  @@index([stockId])
-}
-
-model PurchaseReturn {
-  id                String               @id @default(uuid())
-  referenceNumber   String               @unique
-  supplierId        String
-  supplier          Supplier             @relation(fields: [supplierId], references: [id])
-  txnDate           DateTime             @default(now())
-  purchaseReference String?
-  items             PurchaseReturnItem[]
-
-  taxableAmount Float
-  totalAmount   Float
-  discount      Float @default(0)
-  roundOff      Float @default(0)
-
-  paymentStatus ReturnPaymentStatus @default(UNPAID)
-  paymentMode   PaymentMethod?
-
-  remark     String?
-  attachment String?
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  createdAt DateTime @default(now())
-  isDeleted Boolean  @default(false)
-
-  @@index([supplierId])
-  @@index([storeId])
-}
-
-model PurchaseReturnItem {
-  id               String         @id @default(uuid())
-  purchaseReturnId String
-  purchaseReturn   PurchaseReturn @relation(fields: [purchaseReturnId], references: [id], onDelete: Cascade)
-  itemName         String
-  quantity         Float
-  rate             Float
-  amount           Float
-
-  stockId String?
-  stock   Stock?  @relation(fields: [stockId], references: [id])
-
-  @@index([purchaseReturnId])
-  @@index([stockId])
-}
-
-model SystemSetting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     String
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-}
-
-model Store {
-  id        String     @id @default(cuid())
-  name      String
-  ownerId   String     @unique
-  users     User[]
-  menus     Menu[]
-  orders    Order[]
-  customers Customer[]
-
-  // Multi-tenancy relations
-  spaces          Space[]
-  tables          Table[]
-  tableTypes      TableType[]
-  categories      Category[]
-  subMenus        SubMenu[]
-  dishes          Dish[]
-  addOns          AddOn[]
-  combos          ComboOffer[]
-  menuSets        MenuSet[]
-  stocks          Stock[]
-  payments        Payment[]
-  staff           Staff[]
-  tableSessions   TableSession[]
-  ledgers         CustomerLedger[]
-  expenses        Expense[]
-  purchases       Purchase[]
-  salesReturns    SalesReturn[]
-  suppliers       Supplier[]
-  supplierLedgers SupplierLedger[]
-  measuringUnits  MeasuringUnit[]
-  purchaseReturns PurchaseReturn[]
-  qrPayment       QrPaymet[]
-  stockGroups     StockGroup[]
-}
-
-model QrPaymet {
-  id      String   @id @default(cuid())
-  image   String[]
-  storeId String
-  store   Store    @relation(fields: [storeId], references: [id])
-}
-
-model User {
-  id       String  @id @default(cuid())
-  name     String?
-  email    String  @unique
-  password String
-  role     Role    @default(CASHIER)
-
-  // Auth & Verification
-  verificationCode        String?
-  verificationCodeExpires DateTime?
-  emailVerified           DateTime?
-  isSetupComplete         Boolean   @default(false)
-
-  // Trial Management
-  trialEndsAt DateTime?
-
-  storeId  String?
-  store    Store?    @relation(fields: [storeId], references: [id])
-  sessions Session[]
-}
-
 enum Role {
   ADMIN
   MANAGER
   CASHIER
-}
-
-model Menu {
-  id        String   @id @default(cuid())
-  name      String
-  storeId   String
-  store     Store    @relation(fields: [storeId], references: [id])
-  createdAt DateTime @default(now())
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

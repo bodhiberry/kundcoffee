@@ -12,6 +12,7 @@ import {
   Check,
   Receipt,
   Info,
+  Users,
 } from "lucide-react";
 import { CustomDropdown } from "../ui/CustomDropdown";
 import { addCustomer, getCustomerSummary } from "@/services/customer";
@@ -43,6 +44,8 @@ export function CheckoutModal({
     settings.includeTaxByDefault === "true",
   );
   const [includeServiceCharge, setIncludeServiceCharge] = useState(false);
+  const [staff, setStaff] = useState<any[]>([]);
+  const [selectedStaffId, setSelectedStaffId] = useState("");
 
   // Settlement States
   const [paymentReceived, setPaymentReceived] = useState(false);
@@ -61,11 +64,16 @@ export function CheckoutModal({
   const [formData, setFormData] = useState({ fullName: "", phone: "" });
 
   useEffect(() => {
-    const fetchCust = async () => {
-      const res = await getCustomerSummary();
-      if (res.success) setCustomers(res.data);
+    const fetchData = async () => {
+      const [custRes, staffRes] = await Promise.all([
+        getCustomerSummary(),
+        fetch("/api/staff"),
+      ]);
+      if (custRes.success) setCustomers(custRes.data);
+      const staffData = await staffRes.json();
+      if (staffData.success) setStaff(staffData.data);
     };
-    if (isOpen) fetchCust();
+    if (isOpen) fetchData();
   }, [isOpen]);
 
   useEffect(() => {
@@ -95,13 +103,18 @@ export function CheckoutModal({
   }, [calculatedSubtotal, selectedCustomer]);
 
   const totalDiscount = useMemo(() => {
-    return Math.min(manualDiscountAmount + loyaltyDiscountAmount, calculatedSubtotal);
+    return Math.min(
+      manualDiscountAmount + loyaltyDiscountAmount,
+      calculatedSubtotal,
+    );
   }, [manualDiscountAmount, loyaltyDiscountAmount, calculatedSubtotal]);
 
   const subtotalAfterDiscount = calculatedSubtotal - totalDiscount;
 
   const taxAmount = includeTax ? subtotalAfterDiscount * 0.13 : 0;
-  const serviceChargeAmount = includeServiceCharge ? subtotalAfterDiscount * 0.1 : 0;
+  const serviceChargeAmount = includeServiceCharge
+    ? subtotalAfterDiscount * 0.1
+    : 0;
   const grandTotal = subtotalAfterDiscount + taxAmount + serviceChargeAmount;
 
   const canSettle = useMemo(() => {
@@ -109,7 +122,13 @@ export function CheckoutModal({
     if (paymentMethod === "QR") return paymentReceived;
     if (paymentMethod === "CREDIT") return !!selectedCustomer;
     return false;
-  }, [paymentMethod, tenderAmount, grandTotal, paymentReceived, selectedCustomer]);
+  }, [
+    paymentMethod,
+    tenderAmount,
+    grandTotal,
+    paymentReceived,
+    selectedCustomer,
+  ]);
 
   const handleProcessCheckout = async () => {
     if (!canSettle) return;
@@ -129,6 +148,7 @@ export function CheckoutModal({
           serviceCharge: serviceChargeAmount,
           discount: totalDiscount,
           complimentaryItems,
+          staffId: selectedStaffId,
         }),
       });
       const data = await res.json();
@@ -164,8 +184,12 @@ export function CheckoutModal({
           <div className="w-16 h-16 bg-black text-white rounded-full flex items-center justify-center mb-6">
             <Check size={32} />
           </div>
-          <h3 className="text-xl font-black uppercase tracking-widest">Transaction Settled</h3>
-          <p className="text-[10px] text-zinc-400 font-bold uppercase mt-2">Inventory Updated & Invoice Saved</p>
+          <h3 className="text-xl font-black uppercase tracking-widest">
+            Transaction Settled
+          </h3>
+          <p className="text-[10px] text-zinc-400 font-bold uppercase mt-2">
+            Inventory Updated & Invoice Saved
+          </p>
         </div>
       </Modal>
     );
@@ -174,7 +198,6 @@ export function CheckoutModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Settle Bill" size="6xl">
       <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         {/* --- LEFT COLUMN: PROFESSIONAL STANDARDIZED BILL --- */}
         <div className="flex flex-col h-[760px] border border-black rounded-sm overflow-hidden bg-white">
           <div className="p-3 border-b border-black flex justify-between items-center bg-zinc-50">
@@ -189,8 +212,12 @@ export function CheckoutModal({
           >
             {/* Store Header */}
             <div className="text-center mb-4 space-y-1">
-              <h2 className="text-sm font-black uppercase leading-none">{settings.name || "KUND COFFEE"}</h2>
-              <p className="uppercase">{settings.address || "Kathmandu, Nepal"}</p>
+              <h2 className="text-sm font-black uppercase leading-none">
+                {settings.name || "KUND COFFEE"}
+              </h2>
+              <p className="uppercase">
+                {settings.address || "Kathmandu, Nepal"}
+              </p>
               <p>Phone: {settings.phone || "+977 XXXXXXXXXX"}</p>
               <p className="font-bold">PAN/VAT: 123456789</p>
             </div>
@@ -203,7 +230,13 @@ export function CheckoutModal({
               </div>
               <div className="flex justify-between">
                 <span>Table: {order.table?.name || "N/A"}</span>
-                <span>Time: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <span>
+                  Time:{" "}
+                  {new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
               {selectedCustomer && (
                 <div className="flex justify-between font-bold border-t border-black border-dotted mt-1 pt-1">
@@ -228,11 +261,17 @@ export function CheckoutModal({
                     <tr key={item.id}>
                       <td className="py-2 pr-2">
                         {item.dish?.name || item.combo?.name}
-                        {compQty > 0 && <span className="block text-[8px] italic font-bold">(FREE: {compQty})</span>}
+                        {compQty > 0 && (
+                          <span className="block text-[8px] italic font-bold">
+                            (FREE: {compQty})
+                          </span>
+                        )}
                       </td>
                       <td className="py-2 text-center">{item.quantity}</td>
                       <td className="py-2 text-right">
-                        {((item.quantity - compQty) * item.unitPrice).toFixed(2)}
+                        {((item.quantity - compQty) * item.unitPrice).toFixed(
+                          2,
+                        )}
                       </td>
                     </tr>
                   );
@@ -242,15 +281,23 @@ export function CheckoutModal({
 
             {/* Final Calculations */}
             <div className="border-t border-black pt-2 space-y-1">
-              <div className="flex justify-between"><span>Subtotal</span><span>{calculatedSubtotal.toFixed(2)}</span></div>
-              
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>{calculatedSubtotal.toFixed(2)}</span>
+              </div>
+
               {manualDiscountAmount > 0 && (
-                <div className="flex justify-between"><span>Manual Discount</span><span>-{manualDiscountAmount.toFixed(2)}</span></div>
+                <div className="flex justify-between">
+                  <span>Manual Discount</span>
+                  <span>-{manualDiscountAmount.toFixed(2)}</span>
+                </div>
               )}
-              
+
               {loyaltyDiscountAmount > 0 && (
                 <div className="flex justify-between font-bold">
-                  <span>Loyalty Reward ({selectedCustomer?.loyaltyDiscount}%)</span>
+                  <span>
+                    Loyalty Reward ({selectedCustomer?.loyaltyDiscount}%)
+                  </span>
                   <span>-{loyaltyDiscountAmount.toFixed(2)}</span>
                 </div>
               )}
@@ -258,15 +305,23 @@ export function CheckoutModal({
               <div className="border-t border-black border-dotted my-1"></div>
 
               {includeTax && (
-                <div className="flex justify-between"><span>VAT (13%)</span><span>{taxAmount.toFixed(2)}</span></div>
+                <div className="flex justify-between">
+                  <span>VAT (13%)</span>
+                  <span>{taxAmount.toFixed(2)}</span>
+                </div>
               )}
               {includeServiceCharge && (
-                <div className="flex justify-between"><span>Service Charge (10%)</span><span>{serviceChargeAmount.toFixed(2)}</span></div>
+                <div className="flex justify-between">
+                  <span>Service Charge (10%)</span>
+                  <span>{serviceChargeAmount.toFixed(2)}</span>
+                </div>
               )}
 
               <div className="mt-2 pt-2 border-t-2 border-black flex justify-between items-center font-black text-base uppercase tracking-tighter">
                 <span>Grand Total</span>
-                <span>{settings.currency} {grandTotal.toFixed(2)}</span>
+                <span>
+                  {settings.currency} {grandTotal.toFixed(2)}
+                </span>
               </div>
             </div>
 
@@ -284,7 +339,9 @@ export function CheckoutModal({
                   key={m}
                   onClick={() => setPaymentMethod(m as any)}
                   className={`flex-1 py-1.5 text-[9px] font-black transition-colors ${
-                    paymentMethod === m ? "bg-black text-white" : "hover:bg-zinc-200"
+                    paymentMethod === m
+                      ? "bg-black text-white"
+                      : "hover:bg-zinc-200"
                   }`}
                 >
                   {m}
@@ -296,18 +353,24 @@ export function CheckoutModal({
               {paymentMethod === "CASH" && (
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className="text-[9px] font-black uppercase">Tendered</label>
+                    <label className="text-[9px] font-black uppercase">
+                      Tendered
+                    </label>
                     <input
                       type="number"
                       value={tenderAmount || ""}
-                      onChange={(e) => setTenderAmount(Number(e.target.value) || 0)}
+                      onChange={(e) =>
+                        setTenderAmount(Number(e.target.value) || 0)
+                      }
                       className="w-1/2 border-b border-black text-right text-base font-black outline-none"
                       placeholder="0.00"
                     />
                   </div>
                   <div className="flex justify-between text-[10px] font-black bg-zinc-100 p-2">
                     <span>Return Change</span>
-                    <span className="text-base">{Math.max(0, tenderAmount - grandTotal).toFixed(2)}</span>
+                    <span className="text-base">
+                      {Math.max(0, tenderAmount - grandTotal).toFixed(2)}
+                    </span>
                   </div>
                 </div>
               )}
@@ -315,24 +378,36 @@ export function CheckoutModal({
               {paymentMethod === "QR" && (
                 <div className="flex flex-col items-center gap-2">
                   <div className="border border-black p-1 bg-white">
-                    <img src="/merchant-qr.jpg" alt="QR" className="w-16 h-16" />
+                    <img
+                      src="/merchant-qr.jpg"
+                      alt="QR"
+                      className="w-16 h-16"
+                    />
                   </div>
                   <button
                     onClick={() => setPaymentReceived(!paymentReceived)}
                     className={`w-full py-2 text-[8px] font-black uppercase border border-black transition-all ${
-                        paymentReceived ? "bg-black text-white" : "bg-white hover:bg-zinc-100"
+                      paymentReceived
+                        ? "bg-black text-white"
+                        : "bg-white hover:bg-zinc-100"
                     }`}
                   >
-                    {paymentReceived ? "Payment Confirmed ✓" : "Confirm Payment Received"}
+                    {paymentReceived
+                      ? "Payment Confirmed ✓"
+                      : "Confirm Payment Received"}
                   </button>
                 </div>
               )}
 
               {paymentMethod === "CREDIT" && (
                 <div className="text-center">
-                  <p className="text-[10px] font-black uppercase">Store Credit</p>
+                  <p className="text-[10px] font-black uppercase">
+                    Store Credit
+                  </p>
                   <p className="text-[9px] mt-1 border-t border-zinc-200 pt-1">
-                    {selectedCustomer ? `Post to account: ${selectedCustomer.fullName}` : "Error: Select Customer First"}
+                    {selectedCustomer
+                      ? `Post to account: ${selectedCustomer.fullName}`
+                      : "Error: Select Customer First"}
                   </p>
                 </div>
               )}
@@ -343,10 +418,16 @@ export function CheckoutModal({
                 disabled={!canSettle || isProcessing}
                 onClick={handleProcessCheckout}
                 className={`h-10 rounded-none text-[10px] font-black uppercase tracking-widest border-2 ${
-                  canSettle ? "bg-black text-white border-black" : "bg-white text-zinc-300 border-zinc-200"
+                  canSettle
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-zinc-300 border-zinc-200"
                 }`}
               >
-                {isProcessing ? <Loader2 className="animate-spin" size={14} /> : "Complete Settlement"}
+                {isProcessing ? (
+                  <Loader2 className="animate-spin" size={14} />
+                ) : (
+                  "Complete Settlement"
+                )}
               </Button>
               <Button
                 onClick={() => window.print()}
@@ -367,8 +448,18 @@ export function CheckoutModal({
                 <Info size={12} /> Discount Settings
               </h4>
               <div className="flex border border-black p-0.5">
-                <button onClick={() => setDiscountType("PERCENT")} className={`flex-1 py-2 text-[9px] font-black transition-colors ${discountType === "PERCENT" ? "bg-black text-white" : ""}`}>%</button>
-                <button onClick={() => setDiscountType("AMOUNT")} className={`flex-1 py-2 text-[9px] font-black transition-colors ${discountType === "AMOUNT" ? "bg-black text-white" : ""}`}>AMT</button>
+                <button
+                  onClick={() => setDiscountType("PERCENT")}
+                  className={`flex-1 py-2 text-[9px] font-black transition-colors ${discountType === "PERCENT" ? "bg-black text-white" : ""}`}
+                >
+                  %
+                </button>
+                <button
+                  onClick={() => setDiscountType("AMOUNT")}
+                  className={`flex-1 py-2 text-[9px] font-black transition-colors ${discountType === "AMOUNT" ? "bg-black text-white" : ""}`}
+                >
+                  AMT
+                </button>
               </div>
               <input
                 type="number"
@@ -380,23 +471,36 @@ export function CheckoutModal({
             </div>
 
             <div className="space-y-2">
-              <button onClick={() => setIncludeTax(!includeTax)} className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeTax ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}>
+              <button
+                onClick={() => setIncludeTax(!includeTax)}
+                className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeTax ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
+              >
                 Add VAT (13%) {includeTax && <Check size={14} />}
               </button>
-              <button onClick={() => setIncludeServiceCharge(!includeServiceCharge)} className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeServiceCharge ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}>
-                Add Service Chg (10%) {includeServiceCharge && <Check size={14} />}
+              <button
+                onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
+                className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeServiceCharge ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
+              >
+                Add Service Chg (10%){" "}
+                {includeServiceCharge && <Check size={14} />}
               </button>
             </div>
           </div>
 
           <div className="p-6 border border-black bg-white space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-2">Link Customer</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-2">
+              Link Customer
+            </h4>
             {!selectedCustomer ? (
               <CustomDropdown
                 label="Search Profiles"
-                options={customers.map(c => ({ id: c.id, name: c.fullName }))}
+                options={customers.map((c) => ({ id: c.id, name: c.fullName }))}
                 value={undefined}
-                onChange={(val) => setSelectedCustomer(customers.find(c => c.id === val) ?? null)}
+                onChange={(val) =>
+                  setSelectedCustomer(
+                    customers.find((c) => c.id === val) ?? null,
+                  )
+                }
                 placeholder="Search..."
                 onAddNew={() => setIsAddModalOpen(true)}
               />
@@ -405,19 +509,54 @@ export function CheckoutModal({
                 <div className="flex items-center gap-3">
                   <User size={16} />
                   <div>
-                    <span className="text-[10px] font-black uppercase block leading-none">{selectedCustomer.fullName}</span>
-                    <span className="text-[8px] font-bold text-zinc-500 uppercase">Loyalty Tier: {selectedCustomer.loyaltyDiscount}%</span>
+                    <span className="text-[10px] font-black uppercase block leading-none">
+                      {selectedCustomer.fullName}
+                    </span>
+                    <span className="text-[8px] font-bold text-zinc-500 uppercase">
+                      Loyalty Tier: {selectedCustomer.loyaltyDiscount}%
+                    </span>
                   </div>
                 </div>
-                <button onClick={() => setSelectedCustomer(null)} className="text-zinc-500 hover:text-black transition-colors"><X size={16} /></button>
+                <button
+                  onClick={() => setSelectedCustomer(null)}
+                  className="text-zinc-500 hover:text-black transition-colors"
+                >
+                  <X size={16} />
+                </button>
               </div>
             )}
+          </div>
+
+          <div className="p-6 border border-black bg-white space-y-4">
+            <h4 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-2">
+              Link Staff / Server
+            </h4>
+            <div className="relative">
+              <Users
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                size={14}
+              />
+              <select
+                className="w-full pl-9 pr-4 py-3 bg-white border border-black text-sm font-bold outline-none focus:ring-1 focus:ring-black appearance-none"
+                value={selectedStaffId}
+                onChange={(e) => setSelectedStaffId(e.target.value)}
+              >
+                <option value="">Select Staff</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
         {/* --- RIGHT COLUMN: ORDER ITEMS & COMPLIMENTARY --- */}
         <div className="bg-white border border-black p-6 flex flex-col h-[760px]">
-          <h3 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-3 mb-6 shrink-0">Line Items</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-3 mb-6 shrink-0">
+            Line Items
+          </h3>
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <table className="w-full">
               <tbody className="divide-y divide-zinc-200">
@@ -426,24 +565,40 @@ export function CheckoutModal({
                   return (
                     <tr key={item.id}>
                       <td className="py-4 pr-2">
-                        <p className="text-[11px] font-black uppercase leading-tight">{item.dish?.name || item.combo?.name}</p>
+                        <p className="text-[11px] font-black uppercase leading-tight">
+                          {item.dish?.name || item.combo?.name}
+                        </p>
                         <div className="flex items-center gap-4 mt-2">
-                          <span className="text-[9px] font-bold uppercase">Qty: {item.quantity}</span>
+                          <span className="text-[9px] font-bold uppercase">
+                            Qty: {item.quantity}
+                          </span>
                           <div className="flex items-center border border-black px-2 py-0.5">
-                            <span className="text-[8px] font-black uppercase mr-2 text-zinc-500">Free</span>
+                            <span className="text-[8px] font-black uppercase mr-2 text-zinc-500">
+                              Free
+                            </span>
                             <input
                               type="number"
                               min="0"
                               max={item.quantity}
                               value={compQty}
-                              onChange={(e) => setComplimentaryItems({...complimentaryItems, [item.id]: Math.min(item.quantity, parseInt(e.target.value) || 0)})}
+                              onChange={(e) =>
+                                setComplimentaryItems({
+                                  ...complimentaryItems,
+                                  [item.id]: Math.min(
+                                    item.quantity,
+                                    parseInt(e.target.value) || 0,
+                                  ),
+                                })
+                              }
                               className="w-8 bg-transparent text-center text-[10px] font-black outline-none"
                             />
                           </div>
                         </div>
                       </td>
                       <td className="py-4 text-right align-top">
-                        <p className={`text-[11px] font-black ${compQty >= item.quantity ? "line-through text-zinc-300" : ""}`}>
+                        <p
+                          className={`text-[11px] font-black ${compQty >= item.quantity ? "line-through text-zinc-300" : ""}`}
+                        >
                           {(item.quantity * item.unitPrice).toFixed(2)}
                         </p>
                       </td>
@@ -457,25 +612,56 @@ export function CheckoutModal({
       </div>
 
       {/* Customer Quick Add Modal */}
-      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="New Customer" size="lg">
-         <div className="p-8 space-y-4">
-            <input type="text" placeholder="Full Name" className="w-full border border-black px-4 py-3 rounded-none text-sm font-bold outline-none" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} />
-            <input type="text" placeholder="Phone" className="w-full border border-black px-4 py-3 rounded-none text-sm font-bold outline-none" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
-            <Button onClick={handleCreateCustomer} className="w-full h-12 bg-black text-white font-black uppercase tracking-widest text-[10px] rounded-none">Create & Link Profile</Button>
-         </div>
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="New Customer"
+        size="lg"
+      >
+        <div className="p-8 space-y-4">
+          <input
+            type="text"
+            placeholder="Full Name"
+            className="w-full border border-black px-4 py-3 rounded-none text-sm font-bold outline-none"
+            value={formData.fullName}
+            onChange={(e) =>
+              setFormData({ ...formData, fullName: e.target.value })
+            }
+          />
+          <input
+            type="text"
+            placeholder="Phone"
+            className="w-full border border-black px-4 py-3 rounded-none text-sm font-bold outline-none"
+            value={formData.phone}
+            onChange={(e) =>
+              setFormData({ ...formData, phone: e.target.value })
+            }
+          />
+          <Button
+            onClick={handleCreateCustomer}
+            className="w-full h-12 bg-black text-white font-black uppercase tracking-widest text-[10px] rounded-none"
+          >
+            Create & Link Profile
+          </Button>
+        </div>
       </Modal>
 
       <style jsx global>{`
         @media print {
-          body * { visibility: hidden; }
-          #printable-bill, #printable-bill * { visibility: visible; }
-          #printable-bill { 
-            position: fixed; 
-            left: 0; 
-            top: 0; 
-            width: 100%; 
-            border: none !important; 
-            padding: 10mm; 
+          body * {
+            visibility: hidden;
+          }
+          #printable-bill,
+          #printable-bill * {
+            visibility: visible;
+          }
+          #printable-bill {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none !important;
+            padding: 10mm;
           }
         }
       `}</style>

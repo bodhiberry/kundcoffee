@@ -5,7 +5,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Supplier, Stock } from "@/lib/types";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, User, Upload } from "lucide-react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 interface ReturnModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export default function ReturnModal({
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
+  const [imageFile, setImageFile] = useState<File | string | null>(null);
 
   const [formData, setFormData] = useState({
     supplierId: "",
@@ -34,6 +37,8 @@ export default function ReturnModal({
     paymentStatus: "UNPAID" as "UNPAID" | "PAID",
     paymentMode: "CASH" as any,
     remark: "",
+    staffId: "",
+    attachment: "",
   });
 
   useEffect(() => {
@@ -51,21 +56,27 @@ export default function ReturnModal({
         paymentStatus: "UNPAID",
         paymentMode: "CASH",
         remark: "",
+        staffId: "",
+        attachment: "",
       });
+      setImageFile(null);
     }
   }, [isOpen]);
 
   const fetchData = async () => {
     try {
-      const [suppRes, stockRes] = await Promise.all([
+      const [suppRes, stockRes, staffRes] = await Promise.all([
         fetch("/api/suppliers"),
         fetch("/api/stocks"),
+        fetch("/api/staff"),
       ]);
       const suppData = await suppRes.json();
       const stockData = await stockRes.json();
+      const staffData = await staffRes.json();
 
       if (suppData.success) setSuppliers(suppData.data.suppliers);
       if (stockData.success) setStocks(stockData.data);
+      if (staffData.success) setStaff(staffData.data);
     } catch (error) {
       toast.error("Failed to load data");
     }
@@ -129,10 +140,26 @@ export default function ReturnModal({
 
     setLoading(true);
     try {
+      let attachmentUrl = formData.attachment;
+
+      if (imageFile instanceof File) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", imageFile);
+        uploadFormData.append("folder", "returns");
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.url) {
+          attachmentUrl = uploadData.url;
+        }
+      }
+
       const res = await fetch("/api/purchases/returns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, attachment: attachmentUrl }),
       });
       const data = await res.json();
       if (data.success) {
@@ -185,7 +212,7 @@ export default function ReturnModal({
           </div>
           <div className="space-y-1.5 font-sans">
             <label className="text-[10px] font-black text-rose-400 uppercase tracking-widest ml-1">
-              Return Date
+              Return Date *
             </label>
             <input
               type="date"
@@ -194,7 +221,32 @@ export default function ReturnModal({
               onChange={(e) =>
                 setFormData({ ...formData, txnDate: e.target.value })
               }
+              required
             />
+          </div>
+          <div className="space-y-1.5 font-sans">
+            <label className="text-[10px] font-black text-rose-400 uppercase tracking-widest ml-1">
+              Authorizing Staff
+            </label>
+            <div className="relative group">
+              <select
+                className="w-full h-11 pl-4 pr-10 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all appearance-none font-semibold text-zinc-900 shadow-sm group-hover:border-zinc-300"
+                value={formData.staffId}
+                onChange={(e) =>
+                  setFormData({ ...formData, staffId: e.target.value })
+                }
+              >
+                <option value="">Select Staff</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.role || "Staff"})
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                <User className="h-4 w-4" />
+              </div>
+            </div>
           </div>
           <div className="md:col-span-2 space-y-1.5 font-sans">
             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
@@ -209,6 +261,14 @@ export default function ReturnModal({
               }
             />
           </div>
+        </div>
+
+        <div className="bg-rose-50/10 p-6 rounded-2xl border border-rose-100">
+          <ImageUpload
+            label="Return Bill / Credit Note Scan"
+            value={typeof imageFile === "string" ? imageFile : undefined}
+            onChange={setImageFile}
+          />
         </div>
 
         <div className="space-y-4 font-sans">
@@ -447,7 +507,6 @@ export default function ReturnModal({
                       })
                     }
                   >
-                    <option value="CASH">Liquid Cash</option>
                     <option value="BANK_TRANSFER">Bank Settlement</option>
                   </select>
                 </div>

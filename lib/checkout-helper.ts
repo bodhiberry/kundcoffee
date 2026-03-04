@@ -11,11 +11,13 @@ export async function finalizeSessionTransaction(data: {
   discount: number;
   customerId?: string;
   paymentMethod: string;
+  payments?: { method: string; amount: number }[];
   complimentaryItems?: Record<string, number> | null;
   extraFreeItems?:
     | { dishId?: string; name: string; unitPrice: number; quantity: number }[]
     | null;
   storeId?: string;
+  staffId?: string;
 }) {
   const {
     sessionId,
@@ -27,7 +29,9 @@ export async function finalizeSessionTransaction(data: {
     discount,
     customerId,
     paymentMethod,
+    payments,
     storeId,
+    staffId,
   } = data;
 
   const complimentaryItems = data.complimentaryItems || {};
@@ -59,43 +63,36 @@ export async function finalizeSessionTransaction(data: {
       }
     }
 
-    // 1. Update or Create Payment inside the transaction
-    let payment;
-    const paymentStatus = (
-      paymentMethod === "CREDIT" ? "CREDIT" : "PAID"
-    ) as any;
-
-    const existingPayment = sessionId
-      ? await tx.payment.findUnique({
-          where: { sessionId: sessionId },
-        })
-      : null;
-
-    if (existingPayment) {
-      payment = await tx.payment.update({
-        where: { id: existingPayment.id },
-        data: {
-          method: paymentMethod as any,
-          amount,
-          status: paymentStatus,
-          transactionUuid: null,
-          esewaRefId: null,
-          storeId: finalStoreId,
-        },
-      });
-    } else {
-      payment = await tx.payment.create({
-        data: {
-          amount,
-          method: paymentMethod as any,
-          status: paymentStatus,
-          sessionId: sessionId || null,
-          storeId: finalStoreId,
-        },
+    // 1. Handle Payments
+    // Delete existing payments for this session to avoid duplicates/confusion if re-run
+    if (sessionId) {
+      await tx.payment.deleteMany({
+        where: { sessionId: sessionId },
       });
     }
 
-    const finalPaymentId = payment.id;
+    const paymentRecords = [];
+    const splitPayments =
+      payments && payments.length > 0
+        ? payments
+        : [{ method: paymentMethod, amount }];
+
+    for (const p of splitPayments) {
+      const paymentStatus = (p.method === "CREDIT" ? "CREDIT" : "PAID") as any;
+      const createdPayment = await tx.payment.create({
+        data: {
+          amount: p.amount,
+          method: p.method as any,
+          status: paymentStatus,
+          sessionId: sessionId || null,
+          storeId: finalStoreId,
+          staffId: staffId || null,
+        },
+      });
+      paymentRecords.push(createdPayment);
+    }
+
+    const finalPaymentId = paymentRecords[0]?.id || null;
 
     // 2. Update all orders in this session to COMPLETED
     const orders = await tx.order.findMany({
@@ -114,6 +111,7 @@ export async function finalizeSessionTransaction(data: {
         data: {
           status: "COMPLETED",
           customerId: customerId || null,
+          staffId: staffId || order.staffId,
           paymentId: finalPaymentId,
         },
       });
@@ -169,6 +167,7 @@ export async function finalizeSessionTransaction(data: {
         data: {
           status: "COMPLETED",
           customerId: customerId || null,
+          staffId: staffId || null,
           paymentId: finalPaymentId,
           sessionId: sessionId || null,
         },

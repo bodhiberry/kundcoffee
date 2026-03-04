@@ -393,7 +393,12 @@ export default function OrdersPage() {
     }
   };
 
-  const handleCreateOrder = async (cart: any[]) => {
+  const handleCreateOrder = async (
+    cart: any[],
+    guests: number,
+    kotRemarks: string,
+    staffId: string,
+  ) => {
     if (!activeTable) return;
     const orderData = {
       tableId: activeTable.id === "DIRECT" ? null : activeTable.id,
@@ -408,6 +413,9 @@ export default function OrdersPage() {
         addOnIds: (i.addons || []).map((a: any) => a.id),
         remarks: i.remarks,
       })),
+      guests,
+      kotRemarks,
+      staffId,
     };
     const success = await createOrder(orderData);
     if (success) {
@@ -424,7 +432,12 @@ export default function OrdersPage() {
     }
   };
 
-  const handleAddItemsToOrder = async (cart: any[]) => {
+  const handleAddItemsToOrder = async (
+    cart: any[],
+    guests: number,
+    kotRemarks: string,
+    staffId: string,
+  ) => {
     if (!existingOrderForAdding) return;
     const items = cart.map((i) => ({
       dishId: i.dishId,
@@ -438,7 +451,11 @@ export default function OrdersPage() {
       })),
       action: "add",
     }));
-    const success = await updateOrderItems(existingOrderForAdding.id, items);
+    const success = await updateOrderItems(
+      existingOrderForAdding.id,
+      items,
+      staffId,
+    );
     if (success) {
       setExistingOrderForAdding(null);
       fetchData();
@@ -492,15 +509,19 @@ export default function OrdersPage() {
     return kots;
   };
 
-  const handleKOTStatusUpdate = async (itemIds: string[], status: OrderStatus, order: Order) => {
+  const handleKOTStatusUpdate = async (
+    itemIds: string[],
+    status: OrderStatus,
+    order: Order,
+  ) => {
     try {
       // 1. Update all selected items in parallel
-      await Promise.all(itemIds.map(id => updateOrderItemStatus(id, status)));
-      
+      await Promise.all(itemIds.map((id) => updateOrderItemStatus(id, status)));
+
       // 2. Refresh data
-      await fetchData(); 
-      
-      // 3. Optional: Add logic here to check if the whole order 
+      await fetchData();
+
+      // 3. Optional: Add logic here to check if the whole order
       // is now finished to update the main Table status.
       toast.success(`Updated to ${status}`);
     } catch (error) {
@@ -683,20 +704,22 @@ export default function OrdersPage() {
                   .filter((k) => k.type === "KITCHEN")
                   .map((kot, i) => (
                     <KOTCard
-        key={kot.order.id + kot.type} // Better key than just 'i'
-        order={kot.order}
-        items={kot.items}
-        type={kot.type}
-        onUpdateStatus={(ids, status) => 
-          handleKOTStatusUpdate(ids, status, kot.order)
-        }
-        onMove={(order) => {
-          // Open your transfer modal here
-          setPendingTable(order.table || null); 
-          setShowTableSelector(true);
-          toast.info(`Select target table for Order #${order.id.slice(-4)}`);
-        }}
-      />
+                      key={kot.order.id + kot.type} // Better key than just 'i'
+                      order={kot.order}
+                      items={kot.items}
+                      type={kot.type}
+                      onUpdateStatus={(ids, status) =>
+                        handleKOTStatusUpdate(ids, status, kot.order)
+                      }
+                      onMove={(order) => {
+                        // Open your transfer modal here
+                        setPendingTable(order.table || null);
+                        setShowTableSelector(true);
+                        toast.info(
+                          `Select target table for Order #${order.id.slice(-4)}`,
+                        );
+                      }}
+                    />
                   ))}
               </div>
             </div>
@@ -710,20 +733,22 @@ export default function OrdersPage() {
                   .filter((k) => k.type === "BAR")
                   .map((kot, i) => (
                     <KOTCard
-        key={kot.order.id + kot.type} // Better key than just 'i'
-        order={kot.order}
-        items={kot.items}
-        type={kot.type}
-        onUpdateStatus={(ids, status) => 
-          handleKOTStatusUpdate(ids, status, kot.order)
-        }
-        onMove={(order) => {
-          // Open your transfer modal here
-          setPendingTable(order.table || null); 
-          setShowTableSelector(true);
-          toast.info(`Select target table for Order #${order.id.slice(-4)}`);
-        }}
-      />
+                      key={kot.order.id + kot.type} // Better key than just 'i'
+                      order={kot.order}
+                      items={kot.items}
+                      type={kot.type}
+                      onUpdateStatus={(ids, status) =>
+                        handleKOTStatusUpdate(ids, status, kot.order)
+                      }
+                      onMove={(order) => {
+                        // Open your transfer modal here
+                        setPendingTable(order.table || null);
+                        setShowTableSelector(true);
+                        toast.info(
+                          `Select target table for Order #${order.id.slice(-4)}`,
+                        );
+                      }}
+                    />
                   ))}
               </div>
             </div>

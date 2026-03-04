@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, role, phone, email } = body;
+    const { name, role, roleId, phone, email, isActive, image } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -30,8 +30,11 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         role: role || "Staff",
+        roleId: roleId || null,
         phone,
         email,
+        isActive: isActive !== undefined ? isActive : true,
+        image,
         storeId,
       },
     });
@@ -66,6 +69,9 @@ export async function GET(req: NextRequest) {
 
     const staff = await prisma.staff.findMany({
       where: { storeId },
+      include: {
+        roleRef: true,
+      },
       orderBy: { createdAt: "desc" },
     });
 

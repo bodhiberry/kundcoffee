@@ -43,7 +43,9 @@ export default function Sidebar() {
           ? "customer"
           : pathname.includes("suppliers") || pathname.includes("purchases")
             ? "procurement"
-            : null,
+            : pathname.includes("staff")
+              ? "staffs"
+              : null,
   );
 
   const isActive = (path: string) => pathname === path;
@@ -160,11 +162,7 @@ export default function Sidebar() {
             Main
           </label>
           <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-          <NavItem
-            href="/dashboard/orders"
-            icon={Package}
-            label="Order Console"
-          />
+          <NavItem href="/dashboard/orders" icon={Package} label="Orders" />
         </section>
 
         {/* Management Section */}
@@ -242,17 +240,11 @@ export default function Sidebar() {
             />
           </AccordionItem>
 
-          <AccordionItem id="staffs" label="ERM" icon={Users}>
-            <NavItem
-              href="/dashboard/staff/add-staff"
-              icon={Users}
-              label="Add Staff"
-              isChild
-            />
+          <AccordionItem id="staffs" label="Team" icon={Users}>
             <NavItem
               href="/dashboard/staff"
               icon={Users}
-              label="Staffs"
+              label="Staff Directory"
               isChild
             />
           </AccordionItem>
@@ -352,7 +344,7 @@ export default function Sidebar() {
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest text-zinc-500 hover:text-red-600 hover:bg-red-50/50 transition-colors group"
         >
           <LogOut size={16} className="opacity-70 group-hover:opacity-100" />
-          End Session
+          Logout
         </button>
       </div>
 
