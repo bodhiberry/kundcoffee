@@ -411,53 +411,40 @@ export default function TablesPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
-        {/* Sort Controls */}
-        <div className="p-4 border-b border-zinc-100 flex items-center gap-4 bg-white">
-          <span className="text-xs font-medium text-zinc-500">Sort by:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="text-sm border border-zinc-200 rounded-lg px-3 py-1.5 bg-white focus:border-zinc-900 outline-none"
-          >
-            <option value="name">Name</option>
-            <option value="type">Type</option>
-            <option value="space">Space</option>
-            <option value="capacity">Capacity</option>
-            <option value="status">Status</option>
-          </select>
-          <select
-            value={sortDir}
-            onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
-            className="text-sm border border-zinc-200 rounded-lg px-3 py-1.5 bg-white focus:border-zinc-900 outline-none"
-          >
-            <option value="asc">A → Z</option>
-            <option value="desc">Z → A</option>
-          </select>
+        <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+          <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-tight">
+            Floor Map & Table Register
+          </h3>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-zinc-400 font-medium">
+              {filteredTables.length} tables configured
+            </span>
+          </div>
         </div>
 
         <table className="w-full text-left text-sm text-zinc-600">
           <thead className="bg-zinc-50 border-b border-zinc-200">
             <tr>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest w-24">
+              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest w-24">
                 Row #
               </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
                 Name
               </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
                 Type
               </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
                 Space
               </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
                 Cap.
               </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
                 Status
               </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest text-right">
-                Edit
+              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest text-right">
+                Actions
               </th>
             </tr>
           </thead>
@@ -466,7 +453,7 @@ export default function TablesPage() {
               <tr
                 key={table.id}
                 onClick={() => openEdit(table)}
-                className="hover:bg-zinc-50 transition-colors cursor-pointer group"
+                className="hover:bg-zinc-50 transition-colors cursor-pointer group border-b border-zinc-100 last:border-0"
               >
                 <td
                   className="px-6 py-4"
@@ -484,30 +471,34 @@ export default function TablesPage() {
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
-                    <span className="text-zinc-500 font-mono text-sm hover:text-zinc-900 cursor-text">
-                      {(table as any).sortOrder ?? 0}
+                    <span className="font-mono text-xs font-black text-zinc-400 group-hover:text-zinc-900 transition-colors">
+                      {((table as any).sortOrder ?? 0)
+                        .toString()
+                        .padStart(2, "0")}
                     </span>
                   )}
                 </td>
-                <td className="px-6 py-4 font-medium text-zinc-900">
+                <td className="px-6 py-4 font-black text-zinc-900">
                   {table.name}
                 </td>
-                <td className="px-6 py-4 font-bold text-zinc-600 uppercase text-[10px]">
-                  {table.tableType?.name || "-"}
+                <td className="px-6 py-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                    {table.tableType?.name || "Standard"}
+                  </span>
                 </td>
-                <td className="px-6 py-4 text-zinc-600 font-medium">
+                <td className="px-6 py-4 text-zinc-600 font-bold text-xs uppercase">
                   {table.space?.name || "-"}
                 </td>
-                <td className="px-6 py-4 text-zinc-900 font-bold">
+                <td className="px-6 py-4 text-zinc-900 font-mono font-black">
                   {table.capacity}
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
                       table.status === "ACTIVE"
-                        ? "bg-zinc-50 text-zinc-600 border-zinc-100"
+                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                         : table.status === "OCCUPIED"
-                          ? "bg-red-50 text-red-600 border-red-100"
+                          ? "bg-rose-50 text-rose-600 border-rose-100"
                           : "bg-amber-50 text-amber-600 border-amber-100"
                     }`}
                   >
@@ -515,15 +506,19 @@ export default function TablesPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEdit(table);
-                    }}
-                    className="p-2 text-gray-400 hover:text-zinc-900 transition-colors"
-                  >
-                    <Pencil size={20} />
-                  </button>
+                  <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="none"
+                      size="sm"
+                      className="h-8 w-8 p-0 hover:bg-zinc-100 rounded-full transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(table);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4 text-zinc-500" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}

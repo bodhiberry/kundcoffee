@@ -80,6 +80,8 @@ export function CheckoutModal({
   // New Customer Form
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerLoyaltyDiscount, setNewCustomerLoyaltyDiscount] =
+    useState<number>(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -162,6 +164,7 @@ export function CheckoutModal({
       const res = await addCustomer({
         fullName: newCustomerName,
         phone: newCustomerPhone,
+        loyaltyDiscount: newCustomerLoyaltyDiscount,
       });
       if (res.success) {
         setCustomers([...customers, res.data]);
@@ -169,6 +172,7 @@ export function CheckoutModal({
         setIsAddingCustomer(false);
         setNewCustomerName("");
         setNewCustomerPhone("");
+        setNewCustomerLoyaltyDiscount(0);
       }
     } catch (err) {
       console.error(err);
@@ -487,12 +491,25 @@ export function CheckoutModal({
                         value={newCustomerName}
                         onChange={(e) => setNewCustomerName(e.target.value)}
                       />
-                      <Input
-                        placeholder="Phone Number"
-                        className="h-8 text-xs"
-                        value={newCustomerPhone}
-                        onChange={(e) => setNewCustomerPhone(e.target.value)}
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          placeholder="Phone No"
+                          className="h-8 text-xs"
+                          value={newCustomerPhone}
+                          onChange={(e) => setNewCustomerPhone(e.target.value)}
+                        />
+                        <Input
+                          placeholder="Loyalty %"
+                          type="number"
+                          className="h-8 text-xs"
+                          value={newCustomerLoyaltyDiscount}
+                          onChange={(e) =>
+                            setNewCustomerLoyaltyDiscount(
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
+                        />
+                      </div>
                       <div className="flex gap-2 pt-1">
                         <Button
                           onClick={handleCreateCustomer}

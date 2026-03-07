@@ -249,32 +249,14 @@ export default function CategoriesPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-4 bg-white sticky top-0 flex-wrap">
-          <input
-            placeholder="Search categories..."
-            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-red-500/20"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-500">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none"
-            >
-              <option value="name">Category Name</option>
-              <option value="description">Description</option>
-              <option value="dishes">Dishes</option>
-            </select>
-            <select
-              value={sortDir}
-              onChange={(e) => setSortDir(e.target.value as any)}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none"
-            >
-              <option value="asc">A → Z</option>
-              <option value="desc">Z → A</option>
-            </select>
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 flex-wrap">
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">
+            Menu Categories
+          </h3>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-400 font-medium">
+              {filtered.length} categories active
+            </span>
           </div>
         </div>
 
@@ -282,19 +264,19 @@ export default function CategoriesPage() {
           <table className="w-full text-left text-sm text-gray-600 whitespace-nowrap">
             <thead className="bg-slate-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 font-semibold text-gray-700 w-24">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest w-24">
                   Row #
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
                   Category Name
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
                   Description
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700 text-center">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-center">
                   Dishes
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700 text-right">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-right">
                   Actions
                 </th>
               </tr>
@@ -304,7 +286,7 @@ export default function CategoriesPage() {
                 <tr
                   key={c.id}
                   onClick={() => openEdit(c)}
-                  className="hover:bg-red-50/50 transition-colors cursor-pointer group"
+                  className="hover:bg-red-50/50 transition-colors cursor-pointer group border-b border-gray-100 last:border-0"
                 >
                   <td
                     className="px-6 py-4"
@@ -322,13 +304,13 @@ export default function CategoriesPage() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <span className="text-gray-400 font-mono hover:text-gray-900 cursor-text">
+                      <span className="font-mono text-xs font-black text-gray-400 group-hover:text-red-600 transition-colors">
                         {(c as any).sortOrder ?? 0}
                       </span>
                     )}
                   </td>
 
-                  <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-3">
+                  <td className="px-6 py-4 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
                       {c.image ? (
                         <img
@@ -337,35 +319,35 @@ export default function CategoriesPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 font-bold bg-slate-100">
+                        <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 font-black bg-slate-100 uppercase">
                           {c.name.substring(0, 2).toUpperCase()}
                         </div>
                       )}
                     </div>
-                    <span className="font-semibold">{c.name}</span>
+                    <span className="font-black text-gray-900">{c.name}</span>
                   </td>
-                  <td className="px-6 py-4 max-w-xs truncate text-gray-500">
+                  <td className="px-6 py-4 max-w-xs truncate text-gray-400 font-medium italic text-xs">
                     {c.description ? (
                       c.description?.replace(/[#*_]/g, "")
                     ) : (
-                      <span className="text-gray-300 italic">
-                        No description
-                      </span>
+                      <span>No description</span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                      {c.dishes?.length || 0}
+                    <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border bg-blue-50 text-blue-700 border-blue-100">
+                      {c.dishes?.length || 0} ITEMS
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex justify-end">
+                      <Button
+                        variant="none"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full transition-colors"
                         onClick={(e) => openEdit(c, e)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
-                        <Edit2 size={16} />
-                      </button>
+                        <Edit2 size={16} className="text-gray-500" />
+                      </Button>
                     </div>
                   </td>
                 </tr>

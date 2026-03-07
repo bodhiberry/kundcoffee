@@ -21,6 +21,7 @@ import {
 import { CustomDropdown } from "../ui/CustomDropdown";
 import { addCustomer, getCustomerSummary } from "@/services/customer";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { toast } from "sonner";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -69,7 +70,11 @@ export function CheckoutModal({
   // Customer Management
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ fullName: "", phone: "" });
+  const [formData, setFormData] = useState({
+    fullName: "",
+    phone: "",
+    loyaltyDiscount: 0,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -196,13 +201,25 @@ export function CheckoutModal({
   };
 
   const handleCreateCustomer = async () => {
-    if (!formData.fullName) return;
-    const res = await addCustomer({ ...formData, openingBalance: 0 });
-    if (res.success) {
-      setSelectedCustomer(res.data);
-      setIsAddModalOpen(false);
-      const refresh = await getCustomerSummary();
-      setCustomers(refresh.data);
+    if (!formData.fullName) {
+      toast.error("Full name is required");
+      return;
+    }
+    try {
+      const res = await addCustomer({ ...formData, openingBalance: 0 });
+      if (res.success) {
+        setSelectedCustomer(res.data);
+        setIsAddModalOpen(false);
+        setFormData({ fullName: "", phone: "", loyaltyDiscount: 0 });
+        const refresh = await getCustomerSummary();
+        setCustomers(refresh.data);
+        toast.success("Customer profile created");
+      } else {
+        toast.error(res.message || "Failed to create customer");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Connection error");
     }
   };
 
@@ -773,35 +790,59 @@ export function CheckoutModal({
         </div>
       </div>
 
-      {/* Customer Quick Add Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="New Customer"
-        size="lg"
+        title="Quick Add Customer"
+        size="md"
       >
-        <div className="p-8 space-y-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="w-full border border-black px-4 py-3 rounded-none text-sm font-bold outline-none"
-            value={formData.fullName}
-            onChange={(e) =>
-              setFormData({ ...formData, fullName: e.target.value })
-            }
-          />
-          <input
-            type="text"
-            placeholder="Phone"
-            className="w-full border border-black px-4 py-3 rounded-none text-sm font-bold outline-none"
-            value={formData.phone}
-            onChange={(e) =>
-              setFormData({ ...formData, phone: e.target.value })
-            }
-          />
+        <div className="p-6 space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="pos-label">Full Name *</label>
+              <input
+                type="text"
+                placeholder="e.g. Ramesh KC"
+                className="pos-input w-full h-11"
+                value={formData.fullName}
+                onChange={(e) =>
+                  setFormData({ ...formData, fullName: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="pos-label">Phone Number</label>
+                <input
+                  type="text"
+                  placeholder="98XXXXXXXX"
+                  className="pos-input w-full h-11"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="pos-label">Loyalty Disc. %</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  className="pos-input w-full h-11"
+                  value={formData.loyaltyDiscount}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      loyaltyDiscount: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
           <Button
             onClick={handleCreateCustomer}
-            className="w-full h-12 bg-black text-white font-black uppercase tracking-widest text-[10px] rounded-none"
+            className="w-full h-12 bg-zinc-900 text-white font-bold uppercase tracking-widest text-[11px] rounded-lg shadow-lg hover:bg-black transition-all"
           >
             Create & Link Profile
           </Button>

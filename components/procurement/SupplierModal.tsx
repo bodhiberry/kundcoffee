@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Supplier } from "@/lib/types";
 import { toast } from "sonner";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface SupplierModalProps {
   isOpen: boolean;
@@ -59,8 +61,12 @@ export default function SupplierModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!formData.fullName) {
+      toast.error("Supplier name is required");
+      return;
+    }
 
+    setLoading(true);
     try {
       const url = supplier ? `/api/suppliers/${supplier.id}` : "/api/suppliers";
       const method = supplier ? "PATCH" : "POST";
@@ -73,11 +79,13 @@ export default function SupplierModal({
 
       const data = await res.json();
       if (data.success) {
-        toast.success(supplier ? "Supplier updated" : "Supplier added");
+        toast.success(supplier ? "Supplier updated" : "Supplier added", {
+          icon: <CheckCircle2 className="text-emerald-500" size={18} />,
+        });
         onSuccess();
         onClose();
       } else {
-        toast.error(data.message || "Something went wrong");
+        toast.error(data.message || "Failed to save supplier");
       }
     } catch (error) {
       toast.error("Failed to save supplier");
@@ -90,173 +98,131 @@ export default function SupplierModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={supplier ? "Edit Supplier" : "Add Supplier"}
+      title={supplier ? "Edit Supplier" : "Add New Supplier"}
+      size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-8 text-zinc-950">
+      <form onSubmit={handleSubmit} className="space-y-8 p-4">
+        {/* Contact Identity */}
         <div className="space-y-6">
-          {/* Section: Contact Identity */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-1 w-8 bg-emerald-500 rounded-full"></div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                Contact Identity
-              </h4>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50/50 p-5 rounded-3xl border border-zinc-100">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                  Full Name *
-                </label>
-                <input
-                  required
-                  placeholder="e.g. John Doe"
-                  className="w-full h-11 px-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-                  value={formData.fullName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                  Phone Number
-                </label>
-                <input
-                  placeholder="+977-XXXXXXXXXX"
-                  className="w-full h-11 px-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                />
-              </div>
-              <div className="md:col-span-2 space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  placeholder="vendor@example.com"
-                  className="w-full h-11 px-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                />
-              </div>
+          <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+            Contact Identity
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <Input
+              label="Full Name *"
+              required
+              placeholder="e.g. John Doe"
+              value={formData.fullName}
+              onChange={(e) =>
+                setFormData({ ...formData, fullName: e.target.value })
+              }
+            />
+            <Input
+              label="Phone Number"
+              placeholder="+977-XXXXXXXXXX"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+            />
+            <div className="md:col-span-2">
+              <Input
+                label="Email Address"
+                type="email"
+                placeholder="vendor@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+              />
             </div>
           </div>
-
-          {/* Section: Business Details */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-1 w-8 bg-emerald-500 rounded-full"></div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                Business Details
-              </h4>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50/50 p-5 rounded-3xl border border-zinc-100">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                  Legal Entity Name
-                </label>
-                <input
-                  placeholder="e.g. ABC Trading Pvt. Ltd."
-                  className="w-full h-11 px-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-                  value={formData.legalName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, legalName: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                  Tax No (PAN/VAT)
-                </label>
-                <input
-                  placeholder="9-digit PAN or VAT"
-                  className="w-full h-11 px-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-                  value={formData.taxNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, taxNumber: e.target.value })
-                  }
-                />
-              </div>
-              <div className="md:col-span-2 space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                  Physical Address
-                </label>
-                <textarea
-                  placeholder="City, Street, Ward No..."
-                  className="w-full p-4 border border-zinc-200 rounded-2xl min-h-[100px] focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-medium text-zinc-900 shadow-sm"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Section: Financial Setup */}
-          {!supplier && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 px-1">
-                <div className="h-1 w-8 bg-amber-500 rounded-full"></div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                  Financial Setup
-                </h4>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-amber-50/10 p-5 rounded-3xl border border-amber-100/50">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">
-                    Opening Balance
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    className="w-full h-11 px-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-black text-zinc-900 shadow-sm"
-                    value={formData.openingBalance}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        openingBalance: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">
-                    Balance Type
-                  </label>
-                  <select
-                    className="w-full h-11 px-4 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-bold text-zinc-900 shadow-sm appearance-none"
-                    value={formData.openingBalanceType}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        openingBalanceType: e.target.value as any,
-                      })
-                    }
-                  >
-                    <option value="CREDIT">CREDIT (Payable Balance)</option>
-                    <option value="DEBIT">DEBIT (Advancce/Debit)</option>
-                  </select>
-                </div>
-                <p className="md:col-span-2 text-[10px] text-zinc-400 italic px-1">
-                  * Opening balance sets the starting point for this supplier's
-                  ledger.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Business Details */}
+        <div className="space-y-6">
+          <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+            Business Details
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <Input
+              label="Legal Entity Name"
+              placeholder="e.g. ABC Trading Pvt. Ltd."
+              value={formData.legalName}
+              onChange={(e) =>
+                setFormData({ ...formData, legalName: e.target.value })
+              }
+            />
+            <Input
+              label="Tax No (PAN/VAT)"
+              placeholder="9-digit PAN or VAT"
+              value={formData.taxNumber}
+              onChange={(e) =>
+                setFormData({ ...formData, taxNumber: e.target.value })
+              }
+            />
+            <div className="md:col-span-2 space-y-1.5">
+              <label className="pos-label">Physical Address</label>
+              <textarea
+                placeholder="City, Street, Ward No..."
+                className="pos-input w-full min-h-[80px] py-3"
+                value={formData.address}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Financial Setup */}
+        {!supplier && (
+          <div className="space-y-6">
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+              Financial Setup
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 bg-zinc-50 p-6 rounded-xl border border-zinc-100">
+              <Input
+                label="Opening Balance"
+                type="number"
+                placeholder="0.00"
+                value={formData.openingBalance}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    openingBalance: parseFloat(e.target.value) || 0,
+                  })
+                }
+              />
+              <div className="space-y-1.5">
+                <label className="pos-label">Balance Type</label>
+                <select
+                  className="pos-input w-full h-11 appearance-none bg-white"
+                  value={formData.openingBalanceType}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      openingBalanceType: e.target.value as any,
+                    })
+                  }
+                >
+                  <option value="CREDIT">CREDIT (Payable Balance)</option>
+                  <option value="DEBIT">DEBIT (Advancce/Debit)</option>
+                </select>
+              </div>
+              <p className="md:col-span-2 text-[10px] text-zinc-400 italic">
+                * Opening balance sets the starting point for this supplier's
+                ledger.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end gap-3 pt-6 border-t border-zinc-100">
           <Button
             type="button"
-            variant="ghost"
-            className="px-6 font-bold"
+            variant="secondary"
+            className="px-6"
             onClick={onClose}
           >
             Cancel
@@ -264,13 +230,15 @@ export default function SupplierModal({
           <Button
             type="submit"
             disabled={loading}
-            className="px-10 rounded-xl font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+            className="px-10 bg-zinc-900 text-white hover:bg-black shadow-sm"
           >
-            {loading
-              ? "Saving..."
-              : supplier
-                ? "Update Profile"
-                : "Create Supplier"}
+            {loading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : supplier ? (
+              "Update Profile"
+            ) : (
+              "Create Supplier"
+            )}
           </Button>
         </div>
       </form>

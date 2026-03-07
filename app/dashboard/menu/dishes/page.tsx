@@ -371,59 +371,42 @@ export default function DishesPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-4 bg-white/50 backdrop-blur-sm sticky top-0 flex-wrap">
-          <input
-            placeholder="Search dishes..."
-            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm w-full max-w-sm"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-500">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white"
-            >
-              <option value="name">Dish Name</option>
-              <option value="price">Price</option>
-              <option value="category">Category</option>
-              <option value="type">Type</option>
-              <option value="prep">Prep(m)</option>
-            </select>
-            <select
-              value={sortDir}
-              onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white"
-            >
-              <option value="asc">A → Z</option>
-              <option value="desc">Z → A</option>
-            </select>
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0 flex-wrap">
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">
+            Menu Item Register
+          </h3>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-400 font-medium">
+              {filtered.length} items found
+            </span>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600 whitespace-nowrap">
             <thead className="bg-slate-50 border-b border-gray-200">
               <tr>
-                {/* NEW ROW # COLUMN */}
-                <th className="px-6 py-4 font-semibold text-gray-700 w-24">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest w-24">
                   Row #
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
                   Dish Name
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Price</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
+                  Price
+                </th>
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
                   Category
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Type</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
+                  Type
+                </th>
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
                   Prep(m)
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
                   Status
                 </th>
-                <th className="px-6 py-4 font-semibold text-gray-700 text-right">
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-right">
                   Actions
                 </th>
               </tr>
@@ -452,13 +435,13 @@ export default function DishesPage() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <span className="text-gray-400 font-mono hover:text-gray-900 cursor-text">
+                      <span className="font-mono text-xs font-black text-gray-400 group-hover:text-red-600 transition-colors">
                         {(d as any).sortOrder ?? 0}
                       </span>
                     )}
                   </td>
 
-                  <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-3">
+                  <td className="px-6 py-4 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
                       {d.image && d.image[0] ? (
                         <img
@@ -467,22 +450,22 @@ export default function DishesPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 font-bold bg-slate-100">
+                        <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 font-black bg-slate-100 uppercase">
                           {d.name?.substring(0, 2).toUpperCase() || "??"}
                         </div>
                       )}
                     </div>
-                    <span>{d.name}</span>
+                    <span className="font-black text-gray-900">{d.name}</span>
                   </td>
-                  <td className="px-6 py-4 font-medium">
+                  <td className="px-6 py-4 font-black font-mono text-gray-900">
                     {settings.currency} {d.price?.listedPrice || 0}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 font-bold text-gray-500 uppercase text-[10px]">
                     {categories.find((c) => c.id === d.categoryId)?.name || "-"}
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
                         d.type === "VEG"
                           ? "bg-green-50 text-green-700 border-green-200"
                           : d.type === "NON_VEG"
@@ -493,10 +476,12 @@ export default function DishesPage() {
                       {d.type?.replace("_", " ") || "N/A"}
                     </span>
                   </td>
-                  <td className="px-6 py-4">{d.preparationTime}</td>
+                  <td className="px-6 py-4 font-mono font-black text-xs text-gray-400">
+                    {d.preparationTime}m
+                  </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${d.isAvailable ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-500"}`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${d.isAvailable ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-gray-100 text-gray-500 border-gray-200"}`}
                     >
                       {d.isAvailable ? "Available" : "Unavailable"}
                     </span>

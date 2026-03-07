@@ -145,20 +145,38 @@ export default function CustomersPage() {
         />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 flex-wrap">
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">
+            Customer Directory
+          </h3>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-400 font-medium">
+              {filteredCustomers.length} registered customers
+            </span>
+          </div>
+        </div>
+
         <table className="w-full text-left text-sm text-gray-600">
           <thead className="bg-slate-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-4 font-semibold text-gray-700">SN</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Name</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Email</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Phone</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">DOB</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">
+              <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest w-20">
+                SN
+              </th>
+              <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
+                Name
+              </th>
+              <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
+                Category / Info
+              </th>
+              <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
+                Contact
+              </th>
+              <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest">
                 Loyalty ID
               </th>
-              <th className="px-6 py-4 font-semibold text-gray-700 text-right">
-                Due Amount
+              <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-right">
+                Due Balance
               </th>
             </tr>
           </thead>
@@ -166,27 +184,45 @@ export default function CustomersPage() {
             {filteredCustomers.map((customer, index) => (
               <tr
                 key={customer.id}
-                className="hover:bg-red-50/50 transition-colors cursor-pointer group"
+                className="hover:bg-red-50/50 transition-colors cursor-pointer group border-b border-gray-100 last:border-0"
                 onClick={() =>
                   router.push(`/dashboard/customers/${customer.id}`)
                 }
               >
-                <td className="px-6 py-4 font-medium text-gray-500">
-                  {index + 1}
+                <td className="px-6 py-4 font-mono text-xs font-black text-gray-400 group-hover:text-red-600 transition-colors">
+                  {(index + 1).toString().padStart(3, "0")}
                 </td>
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  {customer.fullName}
-                </td>
-                <td className="px-6 py-4">{customer.email || "-"}</td>
-                <td className="px-6 py-4">{customer.phone || "-"}</td>
                 <td className="px-6 py-4">
-                  {customer.dob
-                    ? new Date(customer.dob).toLocaleDateString()
-                    : "-"}
+                  <span className="font-black text-gray-900 block truncate">
+                    {customer.fullName}
+                  </span>
+                  <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">
+                    {customer.email || "No Email"}
+                  </span>
                 </td>
-                <td className="px-6 py-4">{customer.loyaltyId || "-"}</td>
+                <td className="px-6 py-4">
+                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                    {customer.dob
+                      ? new Date(customer.dob).toLocaleDateString()
+                      : "No DOB"}
+                  </span>
+                </td>
+                <td className="px-6 py-4 font-bold text-gray-600 text-xs">
+                  {customer.phone || "-"}
+                </td>
+                <td className="px-6 py-4">
+                  <span className="font-mono text-xs font-black text-gray-400 group-hover:text-gray-900">
+                    {customer.loyaltyId || "-"}
+                  </span>
+                </td>
                 <td
-                  className={`px-6 py-4 text-right font-semibold ${customer.dueAmount > 0 ? "text-red-600" : customer.dueAmount < 0 ? "text-green-600" : "text-gray-900"}`}
+                  className={`px-6 py-4 text-right font-black font-mono transition-colors ${
+                    customer.dueAmount > 0
+                      ? "text-rose-600 bg-rose-50/30"
+                      : customer.dueAmount < 0
+                        ? "text-emerald-600 bg-emerald-50/30"
+                        : "text-gray-400"
+                  }`}
                 >
                   {settings.currency} {customer.dueAmount.toLocaleString()}
                 </td>
@@ -208,119 +244,155 @@ export default function CustomersPage() {
         onClose={() => setIsAddModalOpen(false)}
         title="Add New Customer"
       >
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
-              Full Name
-            </label>
-            <input
-              type="text"
-              placeholder="Full Name"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-              value={formData.fullName}
-              onChange={(e) =>
-                setFormData({ ...formData, fullName: e.target.value })
-              }
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                Phone
-              </label>
-              <input
-                type="text"
-                placeholder="Phone Number"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-              />
+        <div className="space-y-6 pb-4">
+          {/* Profile Section */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-zinc-100">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
+              <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+                Customer Profile
+              </h3>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                placeholder="Email Address"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. John Doe"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all"
+                  value={formData.fullName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 9841..."
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. john@example.com"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all"
+                    value={formData.dob}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dob: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Loyalty ID
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Optional"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all font-mono"
+                    value={formData.loyaltyId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, loyaltyId: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                DOB
-              </label>
-              <input
-                type="date"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                value={formData.dob}
-                onChange={(e) =>
-                  setFormData({ ...formData, dob: e.target.value })
-                }
-              />
+          </section>
+
+          {/* Account Section */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-zinc-100">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+                Financial Setup
+              </h3>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                Loyalty ID
-              </label>
-              <input
-                type="text"
-                placeholder="Optional"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                value={formData.loyaltyId}
-                onChange={(e) =>
-                  setFormData({ ...formData, loyaltyId: e.target.value })
-                }
-              />
+            <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Opening Balance
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">
+                      {settings.currency}
+                    </span>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      className="w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-4 py-3 text-sm focus:border-red-500 focus:outline-none transition-all font-mono font-black"
+                      value={formData.openingBalance}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          openingBalance: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Loyalty Discount (%)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm focus:border-red-500 focus:outline-none transition-all font-mono font-black text-right pr-8"
+                      value={formData.loyaltyDiscount}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          loyaltyDiscount: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">
+                      %
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
-              Opening Balance
-            </label>
-            <input
-              type="number"
-              placeholder="0.00"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all font-bold"
-              value={formData.openingBalance}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  openingBalance: parseFloat(e.target.value) || 0,
-                })
-              }
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
-              Loyalty Discount (%)
-            </label>
-            <input
-              type="number"
-              placeholder="0"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all font-bold"
-              value={formData.loyaltyDiscount}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  loyaltyDiscount: parseFloat(e.target.value) || 0,
-                })
-              }
-            />
-          </div>
+          </section>
+
           <Button
             onClick={handleCreateCustomer}
-            className="w-full mt-2 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
+            className="w-full h-12 bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest text-[10px]"
           >
-            Create Customer
+            Register Customer
           </Button>
         </div>
       </Modal>
