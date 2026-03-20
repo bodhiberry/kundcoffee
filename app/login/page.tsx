@@ -134,7 +134,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
-            © 2026 Kund Coffee Group • Proprietary Enterprise System
+            © © 2026 BodhiBerry • Café POS System
           </p>
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function LoginPage() {
                         ? "border-red-600 shadow-sm shadow-red-50"
                         : "border-zinc-200"
                     } rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/5 focus:border-zinc-900 placeholder:text-zinc-400`}
-                    placeholder="name@kundcoffee.com"
+                    placeholder="info@bodhiberry.com"
                   />
                 </div>
                 {errors.email && (
