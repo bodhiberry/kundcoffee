@@ -107,8 +107,8 @@ export default function LoginPage() {
               className="space-y-6"
             >
               <h3 className="text-4xl lg:text-5xl font-semibold text-white leading-tight tracking-tight">
-                Designed for the <br />
-                <span className="text-zinc-400">modern proprietor.</span>
+                Take Full Control of Your Business  <br />
+                <span className="text-zinc-400">with Confidence</span>
               </h3>
               <p className="text-zinc-400 text-lg leading-relaxed font-light">
                 Secure access to your enterprise dashboard. Manage inventory,
