@@ -107,12 +107,12 @@ export default function LoginPage() {
               className="space-y-6"
             >
               <h3 className="text-4xl lg:text-5xl font-semibold text-white leading-tight tracking-tight">
-                Take Full Control of Your Business  <br />
+                Take Full Control of Your Café  <br />
                 <span className="text-zinc-400">with Confidence</span>
               </h3>
               <p className="text-zinc-400 text-lg leading-relaxed font-light">
-                Secure access to your enterprise dashboard. Manage inventory,
-                staff, and operations with precision.
+                Secure access to your café dashboard. Manage order, 
+                staff, ingredients, and daily operations with precision.
               </p>
             </motion.div>
 
@@ -124,11 +124,11 @@ export default function LoginPage() {
             >
               <div className="flex items-center gap-3 text-sm text-zinc-300">
                 <CheckCircle2 size={18} className="text-red-700" />
-                <span>Bank-grade security protocols</span>
+                <span>Secure, bank-grade POS</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-zinc-300">
                 <CheckCircle2 size={18} className="text-red-700" />
-                <span>Real-time POS synchronization</span>
+                <span>Real-time order sync</span>
               </div>
             </motion.div>
           </div>
