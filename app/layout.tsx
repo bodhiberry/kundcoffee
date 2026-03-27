@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "KundCoffee | Premium Restaurant & Cafe POS System in Kathmandu",
+    title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
     description: "Streamline your restaurant operations with KundCoffee POS. Built for the modern culinary experience.",
     url: "https://bodhiberry.com",
     siteName: "Bodhiberry",
