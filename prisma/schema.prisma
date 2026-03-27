@@ -74,6 +74,8 @@ model Table {
   @@index([spaceId])
   @@index([tableTypeId])
   @@index([storeId])
+  @@index([status])
+  @@index([sortOrder])
 }
 
 model QRCode {
@@ -363,6 +365,8 @@ model Order {
   @@index([sessionId])
   @@index([customerId])
   @@index([paymentId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model OrderItem {
@@ -557,6 +561,8 @@ model Staff {
 
   @@index([storeId])
   @@index([roleId])
+  @@index([isActive])
+  @@index([createdAt])
 }
 
 model StaffRole {
