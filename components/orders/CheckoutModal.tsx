@@ -665,19 +665,23 @@ export function CheckoutModal({
             </div>
 
             <div className="space-y-2">
-              <button
-                onClick={() => setIncludeTax(!includeTax)}
-                className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeTax ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
-              >
-                Add VAT (13%) {includeTax && <Check size={14} />}
-              </button>
-              <button
-                onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
-                className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeServiceCharge ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
-              >
-                Add Service Chg (10%){" "}
-                {includeServiceCharge && <Check size={14} />}
-              </button>
+              {settings.includeTaxByDefault === "true" && (
+                <button
+                  onClick={() => setIncludeTax(!includeTax)}
+                  className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeTax ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
+                >
+                  Add VAT (13%) {includeTax && <Check size={14} />}
+                </button>
+              )}
+              {settings.includeServiceChargeByDefault === "true" && (
+                <button
+                  onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
+                  className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeServiceCharge ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
+                >
+                  Add Service Chg (10%){" "}
+                  {includeServiceCharge && <Check size={14} />}
+                </button>
+              )}
             </div>
           </div>
 

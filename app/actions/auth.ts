@@ -238,9 +238,18 @@ export async function setupStoreAction(email: string, data: StoreSetupInput) {
 
       // Save currency setting
       await tx.systemSetting.upsert({
-        where: { key: "currency" },
+        where: {
+          key_storeId: {
+            key: "currency",
+            storeId: store.id,
+          },
+        },
         update: { value: result.data.currency },
-        create: { key: "currency", value: result.data.currency },
+        create: {
+          key: "currency",
+          value: result.data.currency,
+          storeId: store.id,
+        },
       });
     });
 

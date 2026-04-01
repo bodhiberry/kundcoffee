@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const settings = await prisma.systemSetting.findMany();
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized: Store ID not found" },
+        { status: 401 },
+      );
+    }
+
+    const settings = await prisma.systemSetting.findMany({
+      where: { storeId },
+    });
     const settingsMap = settings.reduce(
       (acc: Record<string, string>, curr: { key: string; value: string }) => {
         acc[curr.key] = curr.value;
@@ -27,6 +41,16 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized: Store ID not found" },
+        { status: 401 },
+      );
+    }
+
     const body = await req.json();
     const { key, value } = body;
 
@@ -38,9 +62,14 @@ export async function PATCH(req: NextRequest) {
     }
 
     const setting = await prisma.systemSetting.upsert({
-      where: { key },
+      where: {
+        key_storeId: {
+          key,
+          storeId,
+        },
+      },
       update: { value },
-      create: { key, value },
+      create: { key, value, storeId },
     });
 
     return NextResponse.json({ success: true, data: setting });

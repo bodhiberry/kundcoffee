@@ -74,6 +74,13 @@ export async function finalizeSessionTransaction(data: {
         }
       }
 
+      // 0.1 Find Active Daily Session
+      const activeDailySession = await tx.dailySession.findFirst({
+        where: { storeId: finalStoreId, status: "OPEN" },
+        select: { id: true },
+      });
+      const dailySessionId = activeDailySession?.id || null;
+
       // 1. Handle Payments
       // Delete existing payments for this session/order to avoid duplicates
       if (sessionId) {
@@ -100,6 +107,7 @@ export async function finalizeSessionTransaction(data: {
             sessionId: sessionId || null,
             storeId: finalStoreId as string,
             staffId: staffId || null,
+            dailySessionId: dailySessionId,
           },
         });
         paymentRecords.push(createdPayment);
@@ -128,6 +136,7 @@ export async function finalizeSessionTransaction(data: {
             customerId: customerId || null,
             staffId: staffId || order.staffId,
             paymentId: finalPaymentId,
+            dailySessionId: dailySessionId,
           },
         });
 
@@ -155,6 +164,7 @@ export async function finalizeSessionTransaction(data: {
             customerId: customerId || null,
             paymentId: finalPaymentId,
             total: 0,
+            dailySessionId: dailySessionId,
             items: {
               create: extraFreeItems.map((item) => ({
                 dishId: item.dishId || null,
@@ -185,6 +195,7 @@ export async function finalizeSessionTransaction(data: {
             staffId: staffId || null,
             paymentId: finalPaymentId,
             sessionId: sessionId || null,
+            dailySessionId: dailySessionId,
           },
         });
       }

@@ -849,31 +849,35 @@ export function CheckoutModal({
                         {settings.currency} {summary.subtotal.toFixed(2)}
                       </span>
                     </div>
-                    <div 
-                      className="flex justify-between text-xs font-medium text-zinc-400 cursor-pointer hover:text-white transition-colors"
-                      onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
-                    >
-                      <span className="flex items-center gap-2">
-                        {includeServiceCharge ? <Check size={12} className="text-blue-500" /> : <div className="w-3 h-3 border border-white/20 rounded" />}
-                        Service Charge (10%)
-                      </span>
-                      <span className={includeServiceCharge ? "text-white" : "text-zinc-600 line-through"}>
-                        {settings.currency} {summary.serviceCharge.toFixed(2)}
-                      </span>
-                    </div>
-                    <div 
-                      className="flex justify-between text-xs font-medium text-zinc-400 cursor-pointer hover:text-white transition-colors"
-                      onClick={() => setIncludeTax(!includeTax)}
-                    >
-                      <span className="flex items-center gap-2">
-                        {includeTax ? <Check size={12} className="text-blue-500" /> : <div className="w-3 h-3 border border-white/20 rounded" />}
-                        VAT (13%)
-                      </span>
-                      <span className={includeTax ? "text-white" : "text-zinc-600 line-through"}>
-                        {settings.currency}{" "}
-                        {(summary.subtotal * 0.13).toFixed(2)}
-                      </span>
-                    </div>
+                    {settings.includeServiceChargeByDefault === "true" && (
+                      <div 
+                        className="flex justify-between text-xs font-medium text-zinc-400 cursor-pointer hover:text-white transition-colors"
+                        onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
+                      >
+                        <span className="flex items-center gap-2">
+                          {includeServiceCharge ? <Check size={12} className="text-blue-500" /> : <div className="w-3 h-3 border border-white/20 rounded" />}
+                          Service Charge (10%)
+                        </span>
+                        <span className={includeServiceCharge ? "text-white" : "text-zinc-600 line-through"}>
+                          {settings.currency} {summary.serviceCharge.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {settings.includeTaxByDefault === "true" && (
+                      <div 
+                        className="flex justify-between text-xs font-medium text-zinc-400 cursor-pointer hover:text-white transition-colors"
+                        onClick={() => setIncludeTax(!includeTax)}
+                      >
+                        <span className="flex items-center gap-2">
+                          {includeTax ? <Check size={12} className="text-blue-500" /> : <div className="w-3 h-3 border border-white/20 rounded" />}
+                          VAT (13%)
+                        </span>
+                        <span className={includeTax ? "text-white" : "text-zinc-600 line-through"}>
+                          {settings.currency}{" "}
+                          {(summary.subtotal * 0.13).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     {customTaxes.map((tax, idx) => (
                       <div
                         key={idx}

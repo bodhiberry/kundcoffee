@@ -360,6 +360,8 @@ model Order {
   store      Store?        @relation(fields: [storeId], references: [id])
   table      Table?        @relation(fields: [tableId], references: [id])
   items      OrderItem[]
+  dailySessionId String?
+  dailySession   DailySession? @relation(fields: [dailySessionId], references: [id])
 
   @@index([tableId])
   @@index([sessionId])
@@ -367,6 +369,7 @@ model Order {
   @@index([paymentId])
   @@index([status])
   @@index([createdAt])
+  @@index([dailySessionId])
 }
 
 model OrderItem {
@@ -419,10 +422,13 @@ model Payment {
   session         TableSession? @relation(fields: [sessionId], references: [id])
   staff           Staff?        @relation(fields: [staffId], references: [id])
   store           Store         @relation(fields: [storeId], references: [id])
+  dailySessionId  String?
+  dailySession    DailySession? @relation(fields: [dailySessionId], references: [id])
 
   @@index([sessionId])
   @@index([storeId])
   @@index([staffId])
+  @@index([dailySessionId])
 }
 
 model Customer {
@@ -715,10 +721,14 @@ model PurchaseReturnItem {
 
 model SystemSetting {
   id        String   @id @default(uuid())
-  key       String   @unique
+  key       String
   value     String
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
+
+  @@unique([key, storeId])
 }
 
 model Store {
@@ -753,6 +763,8 @@ model Store {
   tableSessions   TableSession[]
   tableTypes      TableType[]
   users           User[]
+  dailySessions   DailySession[]
+  settings        SystemSetting[]
 }
 
 model QrPayment {
@@ -777,6 +789,8 @@ model User {
   permissions             String[]  @default([])
   sessions                Session[]
   store                   Store?    @relation(fields: [storeId], references: [id])
+  openedSessions          DailySession[] @relation("OpenedBy")
+  closedSessions          DailySession[] @relation("ClosedBy")
 }
 
 model Menu {
@@ -799,6 +813,35 @@ enum Shift {
   MORNING
   EVENING
   DAY
+}
+
+model DailySession {
+  id                    String    @id @default(uuid())
+  openedAt              DateTime  @default(now())
+  closedAt              DateTime?
+  openedById            String
+  closedById            String?
+  openingBalance        Float     @default(0)
+  expectedClosingBalance Float?
+  actualClosingBalance   Float?
+  difference            Float?
+  status                SessionStatus @default(OPEN)
+  storeId               String
+  notes                 String?
+  
+  openedBy              User      @relation("OpenedBy", fields: [openedById], references: [id])
+  closedBy              User?     @relation("ClosedBy", fields: [closedById], references: [id])
+  store                 Store     @relation(fields: [storeId], references: [id])
+  payments              Payment[]
+  orders                Order[]
+
+  @@index([storeId])
+  @@index([status])
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
 }
 
 enum TableStatus {

@@ -28,7 +28,9 @@ import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 import { PaymentMethod, ReturnPaymentStatus, SalesReturn } from "@/lib/types";
 import { useSettings } from "@/components/providers/SettingsProvider";
 
-type Tab = "SALES" | "RETURNS";
+import { DailySessionManager } from "@/components/finance/DailySessionManager";
+
+type Tab = "SALES" | "RETURNS" | "DAILY_SESSIONS";
 
 export default function FinancePage() {
   const { settings } = useSettings();
@@ -220,21 +222,33 @@ export default function FinancePage() {
               >
                 Sales Return
               </button>
+              <button
+                onClick={() => setActiveTab("DAILY_SESSIONS")}
+                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
+                  activeTab === "DAILY_SESSIONS"
+                    ? "bg-white text-zinc-900 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700"
+                }`}
+              >
+                Daily Sessions
+              </button>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <Button
-              onClick={handleExport}
-              className="h-10 px-6 uppercase tracking-widest text-[10px] border-zinc-200 text-zinc-600 bg-white hover:bg-zinc-50"
-            >
-              <Download size={14} className="mr-2" />
-              Export
-            </Button>
+            {activeTab !== "DAILY_SESSIONS" && (
+              <Button
+                onClick={handleExport}
+                className="h-10 px-6 uppercase tracking-widest text-[10px] border-zinc-200 text-zinc-600 bg-white hover:bg-zinc-50"
+              >
+                <Download size={14} className="mr-2" />
+                Export
+              </Button>
+            )}
             {activeTab === "RETURNS" && (
               <Button
                 onClick={() => setShowReturnModal(true)}
-                className="bg-red-600 text-black h-10 px-6 uppercase tracking-widest text-[10px]"
+                className="bg-red-600 text-white h-10 px-6 uppercase tracking-widest text-[10px]"
               >
                 <Plus size={14} className="mr-2" />
                 Add New Return
@@ -243,241 +257,250 @@ export default function FinancePage() {
           </div>
         </div>
 
-        {/* Metrics Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {activeTab === "SALES" ? (
-            <>
-              <MetricCard
-                title="Total Orders"
-                value={salesData.metrics.totalOrders || 0}
-                icon={Receipt}
-              />
-              <MetricCard
-                title="Total Sales"
-                value={`${settings.currency} ${salesData.metrics.totalSales || 0}`}
-                icon={TrendingUp}
-                trend="+0%"
-              />
-              <MetricCard
-                title="Leading Payment"
-                value={salesData.metrics.leadingPayment || "N/A"}
-                icon={CreditCard}
-              />
-            </>
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-hidden">
+          {activeTab === "DAILY_SESSIONS" ? (
+            <DailySessionManager />
           ) : (
-            <>
-              <MetricCard
-                title="Total Return"
-                value={returnsData.metrics.totalReturnCount || 0}
-                icon={RefreshCcw}
-              />
-              <MetricCard
-                title="Total Amount"
-                value={`${settings.currency} ${returnsData.metrics.totalAmount || 0}`}
-                icon={TrendingUp}
-              />
-              <MetricCard
-                title="Most Returned"
-                value={returnsData.metrics.mostReturned || "N/A"}
-                icon={ArrowLeftRight}
-              />
-            </>
-          )}
-        </div>
+            <div className="h-full flex flex-col gap-6">
+              {/* Metrics Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {activeTab === "SALES" ? (
+                  <>
+                    <MetricCard
+                      title="Total Orders"
+                      value={salesData.metrics.totalOrders || 0}
+                      icon={Receipt}
+                    />
+                    <MetricCard
+                      title="Total Sales"
+                      value={`${settings.currency} ${salesData.metrics.totalSales || 0}`}
+                      icon={TrendingUp}
+                      trend="+0%"
+                    />
+                    <MetricCard
+                      title="Leading Payment"
+                      value={salesData.metrics.leadingPayment || "N/A"}
+                      icon={CreditCard}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <MetricCard
+                      title="Total Return"
+                      value={returnsData.metrics.totalReturnCount || 0}
+                      icon={RefreshCcw}
+                    />
+                    <MetricCard
+                      title="Total Amount"
+                      value={`${settings.currency} ${returnsData.metrics.totalAmount || 0}`}
+                      icon={TrendingUp}
+                    />
+                    <MetricCard
+                      title="Most Returned"
+                      value={returnsData.metrics.mostReturned || "N/A"}
+                      icon={ArrowLeftRight}
+                    />
+                  </>
+                )}
+              </div>
 
-        {/* Filters and Table */}
-        <div className="space-y-4">
-          <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-zinc-100 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="relative group w-80">
-                  <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-900 transition-colors"
-                    size={14}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search transactions..."
-                    className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-100 rounded-lg text-xs font-medium focus:border-zinc-900 transition-all outline-none h-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+              {/* Filters and Table */}
+              <div className="space-y-4">
+                <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-zinc-100 shadow-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="relative group w-80">
+                        <Search
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-900 transition-colors"
+                          size={14}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Search transactions..."
+                          className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-100 rounded-lg text-xs font-medium focus:border-zinc-900 transition-all outline-none h-10"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <div className="w-44">
+                        <CustomDropdown
+                          options={[
+                            { id: "today", name: "Today" },
+                            { id: "yesterday", name: "Yesterday" },
+                            { id: "this_month", name: "This Month" },
+                            { id: "this_year", name: "This Year" },
+                          ]}
+                          value={dateFilter}
+                          onChange={(val) => {
+                            setDateFilter(val);
+                            setSelectedDate("");
+                            setSelectedMonth("");
+                          }}
+                          placeholder="Quick Filters"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-zinc-50 pt-6">
+                    <DateRangeSelector
+                      onDateChange={(val) => {
+                        setSelectedDate(val);
+                        setDateFilter("");
+                        setSelectedMonth("");
+                      }}
+                      onMonthChange={(val) => {
+                        setSelectedMonth(val);
+                        setDateFilter("");
+                        setSelectedDate("");
+                      }}
+                      onYearChange={setSelectedYear}
+                      currentDate={selectedDate}
+                      currentMonth={selectedMonth}
+                      currentYear={selectedYear}
+                    />
+                  </div>
                 </div>
-                <div className="w-44">
-                  <CustomDropdown
-                    options={[
-                      { id: "today", name: "Today" },
-                      { id: "yesterday", name: "Yesterday" },
-                      { id: "this_month", name: "This Month" },
-                      { id: "this_year", name: "This Year" },
-                    ]}
-                    value={dateFilter}
-                    onChange={(val) => {
-                      setDateFilter(val);
-                      setSelectedDate("");
-                      setSelectedMonth("");
-                    }}
-                    placeholder="Quick Filters"
-                  />
+
+                <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-zinc-50 border-b border-zinc-100">
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                          SN
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                          ID
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                          {activeTab === "SALES" ? "Type" : "Parties"}
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                          Amount
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                          Mode
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                          Status
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                          Date
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                          Billed By
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest text-right">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {(activeTab === "SALES"
+                        ? salesData.transactions
+                        : returnsData.returns
+                      ).map((txn: any, i: number) => (
+                        <tr
+                          key={txn.id}
+                          className="hover:bg-zinc-50 cursor-pointer transition-colors group"
+                          onClick={() => setSelectedTxn(txn)}
+                        >
+                          <td className="px-6 py-4 text-xs font-medium text-zinc-900">
+                            {i + 1}
+                          </td>
+                          <td className="px-6 py-4 text-xs font-medium text-zinc-500">
+                            {txn.id.slice(0, 8)}
+                          </td>
+                          <td className="px-6 py-4 text-xs font-semibold text-zinc-900">
+                            {activeTab === "SALES" ? txn.orderType : txn.parties}
+                          </td>
+                          <td className="px-6 py-4 text-xs font-bold text-zinc-900">
+                            {settings.currency}{" "}
+                            {activeTab === "SALES" ? txn.amount : txn.txnAmount}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-[10px] font-black px-2 py-1 rounded bg-zinc-100 text-zinc-600 uppercase tracking-widest">
+                              {activeTab === "SALES" ? txn.mode : txn.mode}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest border ${
+                                txn.status === "PAID" || txn.status === "COMPLETED"
+                                  ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                  : "bg-amber-50 text-amber-600 border-amber-100"
+                              }`}
+                            >
+                              {txn.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-zinc-500">
+                            {new Date(
+                              activeTab === "SALES" ? txn.date : txn.txnDate,
+                            ).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-zinc-500">
+                            {txn.billedBy}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Popover
+                              trigger={
+                                <button
+                                  className="p-2 hover:bg-zinc-100 rounded-lg transition-colors border border-transparent hover:border-zinc-200"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical
+                                    size={14}
+                                    className="text-zinc-400 group-hover:text-zinc-600"
+                                  />
+                                </button>
+                              }
+                              content={
+                                <div className="p-2 w-44 bg-white rounded-lg shadow-xl border border-zinc-100 z-50">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedTxn(txn);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:bg-zinc-50 rounded transition-colors"
+                                  >
+                                    <History size={12} />
+                                    View Details
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePrint(txn);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:bg-zinc-50 rounded transition-colors"
+                                  >
+                                    <Printer size={12} />
+                                    Print Bill
+                                  </button>
+                                  <div className="my-1 border-t border-zinc-50" />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      moveToTrash(txn.id);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 hover:bg-red-50 rounded transition-colors"
+                                  >
+                                    <Trash2 size={12} />
+                                    Move to Trash
+                                  </button>
+                                </div>
+                              }
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
-
-            <div className="border-t border-zinc-50 pt-6">
-              <DateRangeSelector
-                onDateChange={(val) => {
-                  setSelectedDate(val);
-                  setDateFilter("");
-                  setSelectedMonth("");
-                }}
-                onMonthChange={(val) => {
-                  setSelectedMonth(val);
-                  setDateFilter("");
-                  setSelectedDate("");
-                }}
-                onYearChange={setSelectedYear}
-                currentDate={selectedDate}
-                currentMonth={selectedMonth}
-                currentYear={selectedYear}
-              />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-zinc-50 border-b border-zinc-100">
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
-                    SN
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
-                    ID
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
-                    {activeTab === "SALES" ? "Type" : "Parties"}
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
-                    Amount
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
-                    Mode
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
-                    Date
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">
-                    Billed By
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest text-right">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {(activeTab === "SALES"
-                  ? salesData.transactions
-                  : returnsData.returns
-                ).map((txn: any, i: number) => (
-                  <tr
-                    key={txn.id}
-                    className="hover:bg-zinc-50 cursor-pointer transition-colors group"
-                    onClick={() => setSelectedTxn(txn)}
-                  >
-                    <td className="px-6 py-4 text-xs font-medium text-zinc-900">
-                      {i + 1}
-                    </td>
-                    <td className="px-6 py-4 text-xs font-medium text-zinc-500">
-                      {txn.id.slice(0, 8)}
-                    </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-zinc-900">
-                      {activeTab === "SALES" ? txn.orderType : txn.parties}
-                    </td>
-                    <td className="px-6 py-4 text-xs font-bold text-zinc-900">
-                      {settings.currency}{" "}
-                      {activeTab === "SALES" ? txn.amount : txn.txnAmount}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-[10px] font-black px-2 py-1 rounded bg-zinc-100 text-zinc-600 uppercase tracking-widest">
-                        {activeTab === "SALES" ? txn.mode : txn.mode}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest border ${
-                          txn.status === "PAID" || txn.status === "COMPLETED"
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            : "bg-amber-50 text-amber-600 border-amber-100"
-                        }`}
-                      >
-                        {txn.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-zinc-500">
-                      {new Date(
-                        activeTab === "SALES" ? txn.date : txn.txnDate,
-                      ).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-xs text-zinc-500">
-                      {txn.billedBy}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Popover
-                        trigger={
-                          <button
-                            className="p-2 hover:bg-zinc-100 rounded-lg transition-colors border border-transparent hover:border-zinc-200"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVertical
-                              size={14}
-                              className="text-zinc-400 group-hover:text-zinc-600"
-                            />
-                          </button>
-                        }
-                        content={
-                          <div className="p-2 w-44 bg-white rounded-lg shadow-xl border border-zinc-100 z-50">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedTxn(txn);
-                              }}
-                              className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:bg-zinc-50 rounded transition-colors"
-                            >
-                              <History size={12} />
-                              View Details
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePrint(txn);
-                              }}
-                              className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:bg-zinc-50 rounded transition-colors"
-                            >
-                              <Printer size={12} />
-                              Print Bill
-                            </button>
-                            <div className="my-1 border-t border-zinc-50" />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveToTrash(txn.id);
-                              }}
-                              className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 hover:bg-red-50 rounded transition-colors"
-                            >
-                              <Trash2 size={12} />
-                              Move to Trash
-                            </button>
-                          </div>
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          )}
         </div>
       </div>
 
