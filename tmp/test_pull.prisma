@@ -353,15 +353,15 @@ model Order {
   storeId        String?
   guests         Int?
   kotRemarks     String?
+  dailySessionId String?
   customer       Customer?     @relation(fields: [customerId], references: [id])
+  dailySession   DailySession? @relation(fields: [dailySessionId], references: [id])
   payment        Payment?      @relation(fields: [paymentId], references: [id])
   session        TableSession? @relation(fields: [sessionId], references: [id])
   staff          Staff?        @relation(fields: [staffId], references: [id])
   store          Store?        @relation(fields: [storeId], references: [id])
   table          Table?        @relation(fields: [tableId], references: [id])
   items          OrderItem[]
-  dailySessionId String?
-  dailySession   DailySession? @relation(fields: [dailySessionId], references: [id])
 
   @@index([tableId])
   @@index([sessionId])
@@ -418,12 +418,12 @@ model Payment {
   isDeleted       Boolean       @default(false)
   storeId         String
   staffId         String?
+  dailySessionId  String?
   orders          Order[]
+  dailySession    DailySession? @relation(fields: [dailySessionId], references: [id])
   session         TableSession? @relation(fields: [sessionId], references: [id])
   staff           Staff?        @relation(fields: [staffId], references: [id])
   store           Store         @relation(fields: [storeId], references: [id])
-  dailySessionId  String?
-  dailySession    DailySession? @relation(fields: [dailySessionId], references: [id])
 
   @@index([sessionId])
   @@index([storeId])
@@ -556,12 +556,12 @@ model Staff {
   storeId         String
   roleId          String?
   joinDate        DateTime?        @default(now())
+  shift           Shift?           @default(DAY)
   orders          Order[]
   payments        Payment[]
   purchases       Purchase[]
   purchaseReturns PurchaseReturn[]
   salesReturns    SalesReturn[]
-  shift           Shift?           @default(DAY)
   roleRef         StaffRole?       @relation(fields: [roleId], references: [id])
   store           Store            @relation(fields: [storeId], references: [id])
 
@@ -591,9 +591,9 @@ model Expense {
   description    String?
   createdAt      DateTime      @default(now())
   storeId        String
-  store          Store         @relation(fields: [storeId], references: [id])
   dailySessionId String?
   dailySession   DailySession? @relation(fields: [dailySessionId], references: [id])
+  store          Store         @relation(fields: [storeId], references: [id])
 
   @@index([storeId])
   @@index([dailySessionId])
@@ -654,11 +654,11 @@ model Purchase {
   totalAmount     Float
   txnDate         DateTime       @default(now())
   staffId         String?
+  dailySessionId  String?
+  dailySession    DailySession?  @relation(fields: [dailySessionId], references: [id])
   staff           Staff?         @relation(fields: [staffId], references: [id])
   store           Store          @relation(fields: [storeId], references: [id])
   supplier        Supplier       @relation(fields: [supplierId], references: [id])
-  dailySessionId  String?
-  dailySession    DailySession?  @relation(fields: [dailySessionId], references: [id])
   items           PurchaseItem[]
 
   @@index([supplierId])
@@ -729,10 +729,10 @@ model SystemSetting {
   id        String   @id @default(uuid())
   key       String
   value     String
-  storeId   String
-  store     Store    @relation(fields: [storeId], references: [id])
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
 
   @@unique([key, storeId])
 }
@@ -746,6 +746,7 @@ model Store {
   combos          ComboOffer[]
   customers       Customer[]
   ledgers         CustomerLedger[]
+  dailySessions   DailySession[]
   dishes          Dish[]
   expenses        Expense[]
   measuringUnits  MeasuringUnit[]
@@ -765,12 +766,11 @@ model Store {
   subMenus        SubMenu[]
   suppliers       Supplier[]
   supplierLedgers SupplierLedger[]
+  settings        SystemSetting[]
   tables          Table[]
   tableSessions   TableSession[]
   tableTypes      TableType[]
   users           User[]
-  dailySessions   DailySession[]
-  settings        SystemSetting[]
 }
 
 model QrPayment {
@@ -793,10 +793,10 @@ model User {
   verificationCode        String?
   verificationCodeExpires DateTime?
   permissions             String[]       @default([])
+  closedSessions          DailySession[] @relation("ClosedBy")
+  openedSessions          DailySession[] @relation("OpenedBy")
   sessions                Session[]
   store                   Store?         @relation(fields: [storeId], references: [id])
-  openedSessions          DailySession[] @relation("OpenedBy")
-  closedSessions          DailySession[] @relation("ClosedBy")
 }
 
 model Menu {
@@ -815,37 +815,36 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-enum Shift {
-  MORNING
-  EVENING
-  DAY
-}
-
 model DailySession {
-  id                     String    @id @default(uuid())
-  openedAt               DateTime  @default(now())
+  id                     String        @id @default(uuid())
+  openedAt               DateTime      @default(now())
   closedAt               DateTime?
   openedById             String
   closedById             String?
-  openingBalance         Float     @default(0)
+  openingBalance         Float         @default(0)
   expectedClosingBalance Float?
   actualClosingBalance   Float?
-  cashOnDrawer           Float?
   difference             Float?
   status                 SessionStatus @default(OPEN)
   storeId                String
   notes                  String?
-  
-  openedBy              User      @relation("OpenedBy", fields: [openedById], references: [id])
-  closedBy              User?     @relation("ClosedBy", fields: [closedById], references: [id])
-  store                 Store     @relation(fields: [storeId], references: [id])
-  payments              Payment[]
-  orders                Order[]
-  purchases             Purchase[]
-  expenses              Expense[]
+  cashOnDrawer           Float?
+  closedBy               User?         @relation("ClosedBy", fields: [closedById], references: [id])
+  openedBy               User          @relation("OpenedBy", fields: [openedById], references: [id])
+  store                  Store         @relation(fields: [storeId], references: [id])
+  expenses               Expense[]
+  orders                 Order[]
+  payments               Payment[]
+  purchases              Purchase[]
 
   @@index([storeId])
   @@index([status])
+}
+
+enum Shift {
+  MORNING
+  EVENING
+  DAY
 }
 
 enum SessionStatus {

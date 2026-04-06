@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Params } from "@/lib/types";
-export async function GET(req: NextRequest,context: { params: Params }) {
+
+export async function GET(req: NextRequest, context: { params: Params }) {
   try {
     const session = await getServerSession(authOptions);
     const storeId = session?.user?.storeId;
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest,context: { params: Params }) {
 
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
-    const {id} = await context.params;
+    const { id } = await context.params;
     const session = await getServerSession(authOptions);
     const storeId = session?.user?.storeId;
     const userId = session?.user?.id;
@@ -78,7 +79,6 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     const body = await req.json();
     const { actualClosingBalance, notes: userNotes } = body;
 
-    // Broaden payment statuses for comprehensive revenue reporting
     const relevantPayments = dailySession.payments
       .filter(p => ["PAID", "CREDIT"].includes(p.status))
       .map(p => ({
@@ -86,7 +86,6 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         amount: parseFloat(p.amount.toString())
       }));
 
-    // Calculate breakdown by method
     const salesByMethod: Record<string, number> = {
       CASH: 0,
       QR: 0,
@@ -105,17 +104,13 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     });
 
     const cashSales = salesByMethod.CASH || 0;
-    const digitalSales = Object.entries(salesByMethod)
-      .filter(([method]) => method !== "CASH" && method !== "CREDIT")
-      .reduce((sum, [_, amount]) => sum + amount, 0);
-    
-    const creditSales = salesByMethod.CREDIT || 0;
-    const totalRevenue = cashSales + digitalSales + creditSales;
-    // Cash outflows (Purchases)
     const totalCashOutflow = dailySession.purchases.reduce((sum, p) => sum + p.totalAmount, 0);
+    
+    // Final calculations
     const cashOnDrawer = cashSales - totalCashOutflow;
     const expectedClosingBalance = dailySession.openingBalance + cashSales - totalCashOutflow;
     const difference = (parseFloat(actualClosingBalance) || 0) - expectedClosingBalance;
+    const totalRevenue = Object.values(salesByMethod).reduce((sum, amount) => sum + amount, 0);
 
     const breakdownNote = Object.entries(salesByMethod)
       .filter(([_, amount]) => amount > 0)
@@ -126,16 +121,17 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       ? `\n\nCash Purchases (-):\n${dailySession.purchases.map(p => `- ${p.referenceNumber}: ${p.totalAmount.toFixed(2)}`).join("\n")}`
       : "";
 
+    // To bypass potential Prisma sync issues with scalar fields, we use relation notation for IDs
     const updatedSession = await prisma.dailySession.update({
       where: { id: id },
       data: {
         closedAt: new Date(),
-        closedById: userId,
+        closedBy: { connect: { id: userId } },
         expectedClosingBalance,
         actualClosingBalance: parseFloat(actualClosingBalance) || 0,
         difference,
         cashOnDrawer,
-        status: "CLOSED",
+        status: "CLOSED" as const,
         notes: `${dailySession.notes || ""}\n\nSession Revenue Breakdown:\n${breakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}${purchaseNote}\n\nFinal Reconciliation:\n- Opening Cash: ${dailySession.openingBalance.toFixed(2)}\n- Cash Sales (+): ${cashSales.toFixed(2)}\n- Cash Purchases (-): ${totalCashOutflow.toFixed(2)}\n- Expected Cash: ${expectedClosingBalance.toFixed(2)}\n- Actual Cash in Drawer: ${actualClosingBalance}\n- Difference: ${difference.toFixed(2)}\n- User Notes: ${userNotes || "None"}`.trim()
       }
     });

@@ -183,7 +183,7 @@ export function DailySessionManager() {
               </h2>
             </div>
             <p className={`text-2xl font-black ${activeSession ? 'text-white' : 'text-zinc-900'}`}>
-              {activeSession ? `Session # ${activeSession.id.substring(0, 8)}` : 'System Standby'}
+              {activeSession?.id ? `Session # ${activeSession.id.substring(0, 8)}` : 'System Standby'}
             </p>
             {activeSession && (
               <div className="space-y-4 mt-4">

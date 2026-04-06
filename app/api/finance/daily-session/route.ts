@@ -13,93 +13,26 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const active = searchParams.get("active");
+    const isActiveOnly = searchParams.get("active") === "true";
 
-    if (active === "true") {
+    if (isActiveOnly) {
       const activeSession = await prisma.dailySession.findFirst({
-        where: {
-          storeId,
-          status: "OPEN",
-        },
+        where: { storeId, status: "OPEN" },
         include: {
-          openedBy: {
-            select: { name: true, email: true }
-          },
-          payments: {
-            where: { status: { in: ["PAID", "CREDIT"] } },
-            select: { amount: true, method: true }
-          },
-          purchases: {
-            where: { paymentMode: "CASH", isDeleted: false },
-            select: { totalAmount: true }
-          }
+          openedBy: { select: { name: true } },
+          closedBy: { select: { name: true } }
         }
       });
-
-      if (activeSession) {
-        // Broaden payment statuses for comprehensive revenue reporting
-        const relevantPayments = activeSession.payments.map(p => ({
-          ...p,
-          amount: parseFloat(p.amount.toString()) // Ensure it's a number
-        }));
-
-        // Calculate breakdown by method
-        const salesByMethod: Record<string, number> = {
-          CASH: 0,
-          QR: 0,
-          ESEWA: 0,
-          CARD: 0,
-          BANK_TRANSFER: 0,
-          CREDIT: 0
-        };
-
-        relevantPayments.forEach(p => {
-          if (salesByMethod[p.method] !== undefined) {
-             salesByMethod[p.method] += p.amount;
-          } else {
-             salesByMethod[p.method] = p.amount;
-          }
-        });
-
-        const cashSales = salesByMethod.CASH || 0;
-        const totalDigitalSales = Object.entries(salesByMethod)
-          .filter(([method]) => method !== "CASH" && method !== "CREDIT")
-          .reduce((sum, [_, amount]) => sum + amount, 0);
-        
-        const creditSales = salesByMethod.CREDIT || 0;
-        const totalRevenue = cashSales + totalDigitalSales + creditSales;
-
-        // Calculate cash outflows from purchases
-        const totalCashOutflow = activeSession.purchases.reduce((sum, p) => sum + p.totalAmount, 0);
-
-        const currentExpectedBalance = activeSession.openingBalance + cashSales - totalCashOutflow;
-
-        return NextResponse.json({ 
-          success: true, 
-          data: { 
-            ...activeSession, 
-            currentExpectedBalance,
-            currentCashSales: cashSales,
-            currentDigitalSales: totalDigitalSales,
-            currentCreditSales: creditSales,
-            currentCashOutflow: totalCashOutflow,
-            netCash: cashSales - totalCashOutflow,
-            salesByMethod,
-            totalRevenue
-          } 
-        });
-      }
-
-      return NextResponse.json({ success: true, data: null });
+      return NextResponse.json({ success: true, data: activeSession });
     }
 
     const sessions = await prisma.dailySession.findMany({
       where: { storeId },
-      orderBy: { openedAt: "desc" },
       include: {
         openedBy: { select: { name: true } },
-        closedBy: { select: { name: true } },
-      }
+        closedBy: { select: { name: true } }
+      },
+      orderBy: { openedAt: "desc" }
     });
 
     return NextResponse.json({ success: true, data: sessions });
@@ -134,10 +67,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "A session is already active" }, { status: 400 });
     }
 
+    // Use full connection syntax to ensure Prisma validation passes
     const newSession = await prisma.dailySession.create({
       data: {
-        storeId,
-        openedById: userId,
+        store: { connect: { id: storeId } },
+        openedBy: { connect: { id: userId } },
         openingBalance: parseFloat(openingBalance) || 0,
         notes,
         status: "OPEN",
