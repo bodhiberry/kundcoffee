@@ -109,13 +109,71 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Additional Metrics calculation
+    const dateRange = where.createdAt;
+    
+    const [purchases, expenses, paymentIn, paymentOut, returns] = await Promise.all([
+      prisma.purchase.aggregate({
+        _sum: { totalAmount: true },
+        where: {
+          storeId,
+          txnDate: dateRange,
+          isDeleted: false,
+        },
+      }),
+      prisma.expense.aggregate({
+        _sum: { amount: true },
+        where: {
+          storeId,
+          date: dateRange,
+        },
+      }),
+      prisma.customerLedger.aggregate({
+        _sum: { amount: true },
+        where: {
+          storeId,
+          type: "PAYMENT_IN",
+          createdAt: dateRange,
+        },
+      }),
+      prisma.customerLedger.aggregate({
+        _sum: { amount: true },
+        where: {
+          storeId,
+          type: "PAYMENT_OUT",
+          createdAt: dateRange,
+        },
+      }),
+      prisma.salesReturn.aggregate({
+        _sum: { totalAmount: true },
+        where: {
+          storeId,
+          txnDate: dateRange,
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    const salesTotal = totalSales;
+    const purchasesTotal = purchases._sum.totalAmount || 0;
+    const expensesTotal = expenses._sum.amount || 0;
+    const paymentInTotal = paymentIn._sum.amount || 0;
+    const paymentOutTotal = paymentOut._sum.amount || 0;
+    const returnsTotal = returns._sum.totalAmount || 0;
+
     const response: ApiResponse = {
       success: true,
       data: {
         metrics: {
           totalOrders,
-          totalSales,
+          totalSales: salesTotal,
           leadingPayment,
+          purchases: purchasesTotal,
+          income: salesTotal + paymentInTotal,
+          expenses: expensesTotal,
+          paymentIn: paymentInTotal,
+          paymentOut: paymentOutTotal,
+          returns: returnsTotal,
         },
         transactions: payments.map((p) => {
           const order = p.orders?.[0];

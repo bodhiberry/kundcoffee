@@ -17,6 +17,10 @@ import {
   RefreshCcw,
   MoreVertical,
   Package,
+  ShoppingCart,
+  Wallet,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
@@ -275,24 +279,38 @@ export default function FinancePage() {
           ) : (
             <div className="h-full flex flex-col gap-6">
               {/* Metrics Section */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 {activeTab === "SALES" ? (
                   <>
-                    <MetricCard
-                      title="Total Orders"
-                      value={salesData.metrics.totalOrders || 0}
-                      icon={Receipt}
-                    />
                     <MetricCard
                       title="Total Sales"
                       value={`${settings.currency} ${salesData.metrics.totalSales || 0}`}
                       icon={TrendingUp}
-                      trend="+0%"
                     />
                     <MetricCard
-                      title="Leading Payment"
-                      value={salesData.metrics.leadingPayment || "N/A"}
+                      title="Total Purchase"
+                      value={`${settings.currency} ${salesData.metrics.purchases || 0}`}
+                      icon={ShoppingCart}
+                    />
+                    <MetricCard
+                      title="Total Income"
+                      value={`${settings.currency} ${salesData.metrics.income || 0}`}
+                      icon={Wallet}
+                    />
+                    <MetricCard
+                      title="Total Expenses"
+                      value={`${settings.currency} ${salesData.metrics.expenses || 0}`}
                       icon={CreditCard}
+                    />
+                    <MetricCard
+                      title="Payment In"
+                      value={`${settings.currency} ${salesData.metrics.paymentIn || 0}`}
+                      icon={ArrowDownLeft}
+                    />
+                    <MetricCard
+                      title="Payment Out"
+                      value={`${settings.currency} ${salesData.metrics.paymentOut || 0}`}
+                      icon={ArrowUpRight}
                     />
                   </>
                 ) : (

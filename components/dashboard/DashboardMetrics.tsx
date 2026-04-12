@@ -9,6 +9,8 @@ import {
   ArrowRightLeft,
   ArrowDownLeft,
   ArrowUpRight,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { useSettings } from "@/components/providers/SettingsProvider";
@@ -27,6 +29,7 @@ export default function DashboardMetrics() {
   const [metrics, setMetrics] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState<MetricType>("SALES");
+  const [isSessionData, setIsSessionData] = useState(false);
 
   // Date states
   const [currentDate, setCurrentDate] = useState("");
@@ -42,21 +45,28 @@ export default function DashboardMetrics() {
       setLoading(true);
       try {
         const params = new URLSearchParams();
+        
+        // If no filter is provided, the API will default to current session
         if (currentDate) {
           params.append("date", currentDate);
           params.append("filter", "custom");
         } else if (currentMonth && currentYear) {
-          params.append("month", currentMonth);
-          params.append("year", currentYear);
-          params.append("filter", "custom");
-        } else {
-          params.append("filter", "this_month");
+          const isCurrentMonth = (new Date().getMonth() + 1).toString() === currentMonth && 
+                                 new Date().getFullYear().toString() === currentYear;
+          
+          // Only show session data if no specific month/year is selected or if current month is selected
+          if (!isCurrentMonth) {
+            params.append("month", currentMonth);
+            params.append("year", currentYear);
+            params.append("filter", "custom");
+          }
         }
 
         const res = await fetch(`/api/dashboard/metrics?${params.toString()}`);
         const data = await res.json();
         if (data.success) {
           setMetrics(data.data);
+          setIsSessionData(data.isSessionData);
         }
       } catch (error) {
         console.error("Failed to fetch metrics", error);
@@ -113,6 +123,7 @@ export default function DashboardMetrics() {
   };
 
   const getFilterLabel = () => {
+    if (isSessionData) return "Current Active Session";
     if (currentDate) return new Date(currentDate).toLocaleDateString();
     if (currentMonth && currentYear) {
       const monthName = new Date(
@@ -127,20 +138,28 @@ export default function DashboardMetrics() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(metricConfig) as MetricType[]).map((type) => (
-            <button
-              key={type}
-              onClick={() => setActiveType(type)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
-                activeType === type
-                  ? "bg-zinc-900 text-white border-zinc-900 shadow-lg shadow-zinc-200"
-                  : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
-              }`}
-            >
-              {type?.replace("_", " ")}
-            </button>
-          ))}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(metricConfig) as MetricType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setActiveType(type)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
+                  activeType === type
+                    ? "bg-zinc-900 text-white border-zinc-900 shadow-lg shadow-zinc-200"
+                    : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+                }`}
+              >
+                {type?.replace("_", " ")}
+              </button>
+            ))}
+          </div>
+          {isSessionData && (
+            <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full w-fit">
+              <Clock size={12} className="animate-pulse" />
+              Live Session Metrics
+            </div>
+          )}
         </div>
         <DateRangeSelector
           currentDate={currentDate}
@@ -225,6 +244,15 @@ export default function DashboardMetrics() {
           },
         )}
       </div>
+
+      {!isSessionData && !currentDate && currentMonth === (new Date().getMonth() + 1).toString() && !metrics.hasActiveSession && (
+        <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-center gap-4 text-amber-800">
+          <AlertCircle className="shrink-0" size={20} />
+          <p className="text-xs font-bold uppercase tracking-widest">
+            Showing partial monthly data. Start a new day session to see live tracking.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

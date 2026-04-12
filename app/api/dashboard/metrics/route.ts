@@ -26,13 +26,22 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const filter = searchParams.get("filter") || "this_month";
+    const filter = searchParams.get("filter");
     const date = searchParams.get("date");
     const month = searchParams.get("month");
     const year = searchParams.get("year");
 
-    let startDate = startOfMonth(new Date());
-    let endDate = endOfMonth(new Date());
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+    let sessionId: string | undefined;
+
+    // Check for an active session
+    const activeSession = await prisma.dailySession.findFirst({
+      where: {
+        storeId,
+        status: "OPEN",
+      },
+    });
 
     if (date) {
       startDate = startOfDay(new Date(date));
@@ -41,7 +50,7 @@ export async function GET(req: NextRequest) {
       const d = new Date(parseInt(year), parseInt(month) - 1);
       startDate = startOfMonth(d);
       endDate = endOfMonth(d);
-    } else {
+    } else if (filter) {
       const now = new Date();
       if (filter === "today") {
         startDate = startOfDay(now);
@@ -57,15 +66,40 @@ export async function GET(req: NextRequest) {
         startDate = startOfYear(now);
         endDate = endOfYear(now);
       }
+    } else if (activeSession) {
+      // DEFAULT: Use active session if no filter is provided
+      sessionId = activeSession.id;
+    } else {
+      // No filter and no active session: Start from zero as requested
+      return NextResponse.json({
+        success: true,
+        isSessionData: true,
+        hasActiveSession: false,
+        data: {
+          sales: 0,
+          purchases: 0,
+          income: 0,
+          expenses: 0,
+          paymentIn: 0,
+          paymentOut: 0,
+          returns: 0,
+        },
+      });
+    }
+
+    const whereBase: any = { storeId };
+    if (sessionId) {
+      whereBase.dailySessionId = sessionId;
+    } else if (startDate && endDate) {
+      whereBase.createdAt = { gte: startDate, lte: endDate };
     }
 
     const type = searchParams.get("type");
     if (type === "chart") {
       const payments = await prisma.payment.findMany({
         where: {
-          storeId,
+          ...whereBase,
           status: "PAID",
-          createdAt: { gte: startDate, lte: endDate },
           isDeleted: false,
         },
         select: {
@@ -103,48 +137,61 @@ export async function GET(req: NextRequest) {
         prisma.payment.aggregate({
           _sum: { amount: true },
           where: {
-            storeId,
+            ...whereBase,
             status: "PAID",
-            createdAt: { gte: startDate, lte: endDate },
             isDeleted: false,
           },
         }),
         prisma.purchase.aggregate({
           _sum: { totalAmount: true },
           where: {
-            storeId,
-            txnDate: { gte: startDate, lte: endDate },
+            ...whereBase,
+            // Map whereBase date filter to txnDate if not using session
+            ...(sessionId? {} : {
+              createdAt: undefined,
+              txnDate: whereBase.createdAt
+            })
           },
         }),
         prisma.expense.aggregate({
           _sum: { amount: true },
           where: {
-            storeId,
-            date: { gte: startDate, lte: endDate },
+            ...whereBase,
+            // Map whereBase date filter to 'date' if not using session
+            ...(sessionId? {} : {
+              createdAt: undefined,
+              date: whereBase.createdAt
+            })
           },
         }),
         prisma.customerLedger.aggregate({
           _sum: { amount: true },
           where: {
-            customer: { storeId },
+            ...whereBase,
+            // customer: { storeId } is already handled if we use storeId in whereBase
+            // But we need to be careful with session filtering as CustomerLedger might not have dailySessionId
+            ...(sessionId ? { dailySessionId: sessionId } : {}),
             type: "PAYMENT_IN",
-            createdAt: { gte: startDate, lte: endDate },
           },
         }),
         prisma.customerLedger.aggregate({
           _sum: { amount: true },
           where: {
-            customer: { storeId },
+            ...whereBase,
+            ...(sessionId ? { dailySessionId: sessionId } : {}),
             type: "PAYMENT_OUT",
-            createdAt: { gte: startDate, lte: endDate },
           },
         }),
         prisma.salesReturn.aggregate({
           _sum: { totalAmount: true },
           where: {
-            storeId,
-            txnDate: { gte: startDate, lte: endDate },
+            ...whereBase,
             isDeleted: false,
+            // Map whereBase date filter to txnDate if not using session
+            ...(sessionId? {} : {
+              createdAt: undefined,
+              txnDate: whereBase.createdAt
+            })
           },
         }),
       ]);
@@ -156,8 +203,10 @@ export async function GET(req: NextRequest) {
     const paymentOutTotal = paymentOut._sum.amount || 0;
     const returnsTotal = returns._sum.totalAmount || 0;
 
-    const response: ApiResponse = {
+    const response: any = {
       success: true,
+      isSessionData: !!sessionId,
+      hasActiveSession: !!activeSession,
       data: {
         sales: salesTotal,
         purchases: purchasesTotal,
