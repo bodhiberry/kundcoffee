@@ -15,8 +15,8 @@ export default async function middleware(req: NextRequest) {
 
   // 1. If user is NOT logged in
   if (!token) {
-    // PROTECT the Dashboard and onboarding pages
-    if (isDashboardPage || isVerifyPage || isSetupPage) {
+    // PROTECT the Dashboard, onboarding, and Home pages
+    if (isDashboardPage || isVerifyPage || isSetupPage || isHomePage) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
     // ALLOW Login and Signup
@@ -24,7 +24,7 @@ export default async function middleware(req: NextRequest) {
   }
 
   // 2. If user IS logged in, prevent them from seeing Login/Signup/Home
-  if (isAuthPage) {
+  if (isAuthPage || isHomePage) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
