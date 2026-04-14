@@ -19,8 +19,8 @@ import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 type MetricType =
   | "SALES"
   | "PURCHASE"
-  | "INCOME"
-  | "EXPENSES"
+  | "Differnece"
+  // | "EXPENSES"
   | "PAYMENT_IN"
   | "PAYMENT_OUT";
 
@@ -92,20 +92,20 @@ export default function DashboardMetrics() {
       color: "text-blue-600",
       bg: "bg-blue-50",
     },
-    INCOME: {
-      label: "Total Income",
+    Differnece: {
+      label: "Difference",
       value: metrics.income,
       icon: Wallet,
       color: "text-indigo-600",
       bg: "bg-indigo-50",
     },
-    EXPENSES: {
-      label: "Total Expenses",
-      value: metrics.expenses,
-      icon: CreditCard,
-      color: "text-red-600",
-      bg: "bg-red-50",
-    },
+    // EXPENSES: {
+    //   label: "Total Expenses",
+    //   value: metrics.expenses,
+    //   icon: CreditCard,
+    //   color: "text-red-600",
+    //   bg: "bg-red-50",
+    // },
     PAYMENT_IN: {
       label: "Payment In",
       value: metrics.paymentIn,

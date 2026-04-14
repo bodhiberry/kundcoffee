@@ -542,7 +542,7 @@ export function DailySessionManager() {
               onClick={() => setActiveTab("income")}
               className={`py-4 px-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === "income" ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-400 hover:text-zinc-600"}`}
             >
-              Income ({selectedSession?.payments?.length || 0})
+              Difference ({selectedSession?.payments?.length || 0})
             </button>
             <button 
               onClick={() => setActiveTab("purchases")}
@@ -612,7 +612,7 @@ export function DailySessionManager() {
                     {selectedSession?.payments?.length === 0 ? (
                       <div className="text-center py-10 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
                         <TrendingUp size={32} className="mx-auto text-zinc-300 mb-2" />
-                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">No Income Recorded</p>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">No Records Recorded</p>
                       </div>
                     ) : (
                       <div className="border border-zinc-100 rounded-2xl overflow-hidden divide-y divide-zinc-100">
