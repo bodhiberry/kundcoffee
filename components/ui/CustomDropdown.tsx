@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, ReactNode } from "react";
 
 interface Option {
   id: string;
@@ -14,6 +14,7 @@ interface CustomDropdownProps {
   onAddNew?: () => void;
   addNewLabel?: string;
   placeholder?: string;
+  icon?: ReactNode; // Added icon prop to support <Users /> or other icons
 }
 
 export const CustomDropdown = ({
@@ -24,6 +25,7 @@ export const CustomDropdown = ({
   onAddNew,
   addNewLabel = "Create New...",
   placeholder = "Select an option",
+  icon,
 }: CustomDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,44 +48,61 @@ export const CustomDropdown = ({
   return (
     <div className="w-full" ref={containerRef}>
       {label && (
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1 block text-sm font-bold text-black">
           {label}
         </label>
       )}
       <div className="relative">
+        {/* Trigger Button matching the target select design */}
         <button
           type="button"
-          className="relative w-full cursor-default rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:text-sm"
+          className={`relative w-full cursor-pointer bg-white border border-black py-3 pr-10 text-left text-sm font-bold outline-none focus:ring-1 focus:ring-black focus:border-black ${
+            icon ? "pl-9" : "pl-4"
+          }`}
           onClick={() => setIsOpen(!isOpen)}
         >
+          {/* Icon rendering */}
+          {icon && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 flex items-center justify-center pointer-events-none">
+              {icon}
+            </span>
+          )}
+
+          {/* Selected Value */}
           <span
-            className={`block truncate ${!selectedOption ? "text-gray-400" : ""}`}
+            className={`block truncate ${!selectedOption ? "text-zinc-400 font-bold" : "text-black"}`}
           >
             {selectedOption ? selectedOption.name : placeholder}
           </span>
-          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+
+          {/* Dropdown Chevron */}
+          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
             <svg
-              className="h-5 w-5 text-gray-400"
+              className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
               xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <path
-                fillRule="evenodd"
-                d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
+              <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </span>
         </button>
 
+        {/* Dropdown Menu (Styled sharply to match the border-black aesthetic) */}
         {isOpen && (
-          <div className="absolute z-[100] mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+          <div className="absolute z-[100] mt-1 max-h-60 w-full overflow-auto bg-white border border-black py-1 text-sm shadow-md focus:outline-none">
             {options.map((option) => (
               <div
                 key={option.id}
-                className={`relative cursor-default select-none py-2 pl-3 pr-9 hover:bg-zinc-100 ${option.id === value ? "bg-zinc-50 text-zinc-900 font-semibold" : "text-gray-900"}`}
+                className={`relative cursor-pointer select-none py-3 pl-4 pr-9 hover:bg-zinc-100 ${
+                  option.id === value
+                    ? "bg-zinc-50 font-bold text-black"
+                    : "font-medium text-black"
+                }`}
                 onClick={() => {
                   onChange(option.id);
                   setIsOpen(false);
@@ -91,12 +110,8 @@ export const CustomDropdown = ({
               >
                 <span className="block truncate">{option.name}</span>
                 {option.id === value && (
-                  <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-zinc-600">
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
+                  <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-black">
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fillRule="evenodd"
                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -110,7 +125,7 @@ export const CustomDropdown = ({
 
             {onAddNew && (
               <div
-                className="relative cursor-pointer select-none border-t border-gray-100 py-2 pl-3 pr-9 text-blue-600 hover:bg-blue-50 font-medium"
+                className="relative cursor-pointer select-none border-t border-black py-3 pl-4 pr-9 text-black hover:bg-zinc-100 font-bold transition-colors"
                 onClick={() => {
                   setIsOpen(false);
                   onAddNew();

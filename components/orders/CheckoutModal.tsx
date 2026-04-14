@@ -59,7 +59,7 @@ export function CheckoutModal({
   const [selectedStaffId, setSelectedStaffId] = useState("");
 
   // Settlement States
-  const [paymentReceived, setPaymentReceived] = useState(false);
+  const [paymentReceived, setPaymentReceived] = useState(true);
   const [tenderAmount, setTenderAmount] = useState<number>(0);
   const [complimentaryItems, setComplimentaryItems] = useState<
     Record<string, number>
@@ -94,9 +94,10 @@ export function CheckoutModal({
     if (isOpen) fetchData();
   }, [isOpen]);
 
-  useEffect(() => {
-    setPaymentReceived(false);
-  }, [paymentMethod]);
+  // Removed: automatic reset of paymentReceived on method change to allow QR default to true
+  // useEffect(() => {
+  //   setPaymentReceived(false);
+  // }, [paymentMethod]);
 
   // --- Calculations Logic ---
   const calculatedSubtotal = useMemo(() => {
@@ -136,8 +137,8 @@ export function CheckoutModal({
   const grandTotal = subtotalAfterDiscount + taxAmount + serviceChargeAmount;
 
   const canSettle = useMemo(() => {
-    if (paymentMethod === "CASH") return tenderAmount >= grandTotal - 0.01;
-    if (paymentMethod === "QR") return paymentReceived;
+    if (paymentMethod === "CASH") return true; // Enabled by default as per user request
+    if (paymentMethod === "QR") return paymentReceived; // Defaulted to true in state
     if (paymentMethod === "CREDIT") return !!selectedCustomer;
     if (paymentMethod === "SPLIT") {
       const totalEntered =
@@ -392,8 +393,125 @@ export function CheckoutModal({
             </div>
           </div>
 
-          {/* Payment Interaction Area */}
-          <div className="p-4 bg-zinc-50 border-t border-black space-y-3">
+        </div>
+
+        {/* --- MIDDLE COLUMN: ADJUSTMENTS & CUSTOMER --- */}
+        <div className="flex flex-col gap-6">
+          <div className="p-6 border border-black bg-white space-y-6">
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border-b border-black pb-2">
+                <Info size={12} /> Discount Settings
+              </h4>
+              <div className="flex border border-black p-0.5">
+                <button
+                  onClick={() => setDiscountType("PERCENT")}
+                  className={`flex-1 py-2 text-[9px] font-black transition-colors ${discountType === "PERCENT" ? "bg-black text-white" : ""}`}
+                >
+                  %
+                </button>
+                <button
+                  onClick={() => setDiscountType("AMOUNT")}
+                  className={`flex-1 py-2 text-[9px] font-black transition-colors ${discountType === "AMOUNT" ? "bg-black text-white" : ""}`}
+                >
+                  AMT
+                </button>
+              </div>
+              <input
+                type="number"
+                value={discountValue || ""}
+                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
+                className="w-full border border-black px-4 py-3 text-sm font-black outline-none focus:ring-1 focus:ring-black"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              {settings.includeTaxByDefault === "true" && (
+                <button
+                  onClick={() => setIncludeTax(!includeTax)}
+                  className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeTax ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
+                >
+                  Add VAT (13%) {includeTax && <Check size={14} />}
+                </button>
+              )}
+              {settings.includeServiceChargeByDefault === "true" && (
+                <button
+                  onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
+                  className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeServiceCharge ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
+                >
+                  Add Service Chg (10%){" "}
+                  {includeServiceCharge && <Check size={14} />}
+                </button>
+              )}
+            </div>
+          </div>
+            <div className="flex flex-col gap-4">
+            <div className="bg-white space-y-4">
+            {/* <h4 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-2">
+              Link Customer
+            </h4> */}
+            {!selectedCustomer ? (
+              <CustomDropdown
+                label=""
+                options={customers.map((c) => ({ id: c.id, name: c.fullName }))}
+                value={undefined}
+                onChange={(val) =>
+                  setSelectedCustomer(
+                    customers.find((c) => c.id === val) ?? null,
+                  )
+                }
+                placeholder="Link Customer"
+                onAddNew={() => setIsAddModalOpen(true)}
+              />
+            ) : (
+              <div className="flex items-center justify-between border-2 border-black p-3 bg-zinc-50">
+                <div className="flex items-center gap-3">
+                  <User size={16} />
+                  <div>
+                    <span className="text-[10px] font-black uppercase block leading-none">
+                      {selectedCustomer.fullName}
+                    </span>
+                    <span className="text-[8px] font-bold text-zinc-500 uppercase">
+                      Loyalty Tier: {selectedCustomer.loyaltyDiscount}%
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedCustomer(null)}
+                  className="text-zinc-500 hover:text-black transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className=" bg-white space-y-4">
+            {/* <h4 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-2">
+              Link Staff
+            </h4> */}
+            <div className="relative">
+              <Users
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                size={14}
+              />
+              <select
+                className="w-full pl-9 pr-4 py-3 bg-white border border-black text-sm font-bold outline-none focus:ring-1 focus:ring-black appearance-none"
+                value={selectedStaffId}
+                onChange={(e) => setSelectedStaffId(e.target.value)}
+              >
+                <option value="">Select Staff</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+                   {/* Payment Interaction Area */}
+                   <div className="p-4 bg-zinc-50 border-t border-black space-y-3">
             <div className="flex border border-black p-0.5">
               {["CASH", "QR", "CREDIT", "SPLIT"].map((m) => (
                 <button
@@ -632,124 +750,9 @@ export function CheckoutModal({
               </Button>
             </div>
           </div>
-        </div>
 
-        {/* --- MIDDLE COLUMN: ADJUSTMENTS & CUSTOMER --- */}
-        <div className="flex flex-col gap-6">
-          <div className="p-6 border border-black bg-white space-y-6">
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border-b border-black pb-2">
-                <Info size={12} /> Discount Settings
-              </h4>
-              <div className="flex border border-black p-0.5">
-                <button
-                  onClick={() => setDiscountType("PERCENT")}
-                  className={`flex-1 py-2 text-[9px] font-black transition-colors ${discountType === "PERCENT" ? "bg-black text-white" : ""}`}
-                >
-                  %
-                </button>
-                <button
-                  onClick={() => setDiscountType("AMOUNT")}
-                  className={`flex-1 py-2 text-[9px] font-black transition-colors ${discountType === "AMOUNT" ? "bg-black text-white" : ""}`}
-                >
-                  AMT
-                </button>
-              </div>
-              <input
-                type="number"
-                value={discountValue || ""}
-                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
-                className="w-full border border-black px-4 py-3 text-sm font-black outline-none focus:ring-1 focus:ring-black"
-                placeholder="0.00"
-              />
             </div>
-
-            <div className="space-y-2">
-              {settings.includeTaxByDefault === "true" && (
-                <button
-                  onClick={() => setIncludeTax(!includeTax)}
-                  className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeTax ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
-                >
-                  Add VAT (13%) {includeTax && <Check size={14} />}
-                </button>
-              )}
-              {settings.includeServiceChargeByDefault === "true" && (
-                <button
-                  onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
-                  className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeServiceCharge ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
-                >
-                  Add Service Chg (10%){" "}
-                  {includeServiceCharge && <Check size={14} />}
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="p-6 border border-black bg-white space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-2">
-              Link Customer
-            </h4>
-            {!selectedCustomer ? (
-              <CustomDropdown
-                label="Search Profiles"
-                options={customers.map((c) => ({ id: c.id, name: c.fullName }))}
-                value={undefined}
-                onChange={(val) =>
-                  setSelectedCustomer(
-                    customers.find((c) => c.id === val) ?? null,
-                  )
-                }
-                placeholder="Search..."
-                onAddNew={() => setIsAddModalOpen(true)}
-              />
-            ) : (
-              <div className="flex items-center justify-between border-2 border-black p-3 bg-zinc-50">
-                <div className="flex items-center gap-3">
-                  <User size={16} />
-                  <div>
-                    <span className="text-[10px] font-black uppercase block leading-none">
-                      {selectedCustomer.fullName}
-                    </span>
-                    <span className="text-[8px] font-bold text-zinc-500 uppercase">
-                      Loyalty Tier: {selectedCustomer.loyaltyDiscount}%
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedCustomer(null)}
-                  className="text-zinc-500 hover:text-black transition-colors"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="p-6 border border-black bg-white space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-2">
-              Link Staff / Server
-            </h4>
-            <div className="relative">
-              <Users
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-                size={14}
-              />
-              <select
-                className="w-full pl-9 pr-4 py-3 bg-white border border-black text-sm font-bold outline-none focus:ring-1 focus:ring-black appearance-none"
-                value={selectedStaffId}
-                onChange={(e) => setSelectedStaffId(e.target.value)}
-              >
-                <option value="">Select Staff</option>
-                {staff.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
+        
         {/* --- RIGHT COLUMN: ORDER ITEMS & COMPLIMENTARY --- */}
         {/* <div className="bg-white border border-black p-6 flex flex-col h-[760px]">
           <h3 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-3 mb-6 shrink-0">

@@ -21,8 +21,8 @@ type MetricType =
   | "PURCHASE"
   | "Differnece"
   // | "EXPENSES"
-  | "PAYMENT_IN"
-  | "PAYMENT_OUT";
+  // | "PAYMENT_IN"
+  // | "PAYMENT_OUT";
 
 export default function DashboardMetrics() {
   const { settings } = useSettings();
@@ -94,7 +94,7 @@ export default function DashboardMetrics() {
     },
     Differnece: {
       label: "Difference",
-      value: metrics.income,
+      value: metrics.income - metrics.purchases,
       icon: Wallet,
       color: "text-indigo-600",
       bg: "bg-indigo-50",
@@ -106,20 +106,20 @@ export default function DashboardMetrics() {
     //   color: "text-red-600",
     //   bg: "bg-red-50",
     // },
-    PAYMENT_IN: {
-      label: "Payment In",
-      value: metrics.paymentIn,
-      icon: ArrowDownLeft,
-      color: "text-green-600",
-      bg: "bg-green-50",
-    },
-    PAYMENT_OUT: {
-      label: "Payment Out",
-      value: metrics.paymentOut,
-      icon: ArrowUpRight,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
-    },
+    // PAYMENT_IN: {
+    //   label: "Payment In",
+    //   value: metrics.paymentIn,
+    //   icon: ArrowDownLeft,
+    //   color: "text-green-600",
+    //   bg: "bg-green-50",
+    // },
+    // PAYMENT_OUT: {
+    //   label: "Payment Out",
+    //   value: metrics.paymentOut,
+    //   icon: ArrowUpRight,
+    //   color: "text-orange-600",
+    //   bg: "bg-orange-50",
+    // },
   };
 
   const getFilterLabel = () => {
