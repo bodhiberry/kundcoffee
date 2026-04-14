@@ -50,6 +50,7 @@ export async function finalizeSessionTransaction(data: {
             select: { storeId: true },
           });
           finalStoreId = table?.storeId || undefined;
+          console.log(`[CheckoutHelper] Resolved storeId from tableId: ${finalStoreId}`);
         }
 
         if (!finalStoreId && sessionId) {
@@ -59,6 +60,7 @@ export async function finalizeSessionTransaction(data: {
             select: { storeId: true },
           });
           finalStoreId = session?.storeId || undefined;
+          console.log(`[CheckoutHelper] Resolved storeId from sessionId: ${finalStoreId}`);
         }
 
         if (!finalStoreId && orderId) {
@@ -67,9 +69,11 @@ export async function finalizeSessionTransaction(data: {
             select: { storeId: true },
           });
           finalStoreId = order?.storeId || undefined;
+          console.log(`[CheckoutHelper] Resolved storeId from orderId: ${finalStoreId}`);
         }
 
         if (!finalStoreId) {
+          console.error(`[CheckoutHelper] Failed to resolve storeId. Data:`, { tableId, sessionId, orderId });
           throw new Error("Store identification failed. storeId is required.");
         }
       }
@@ -78,8 +82,10 @@ export async function finalizeSessionTransaction(data: {
       const activeDailySession = await tx.dailySession.findFirst({
         where: { storeId: finalStoreId, status: "OPEN" },
         select: { id: true },
+        orderBy: { openedAt: 'desc' } // Pick the most recent if multiple are open by error
       });
       const dailySessionId = activeDailySession?.id || null;
+      console.log(`[CheckoutHelper] Linked to Daily Session: ${dailySessionId} for Store: ${finalStoreId}`);
 
       // 1. Handle Payments
       // Delete existing payments for this session/order to avoid duplicates

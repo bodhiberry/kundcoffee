@@ -94,6 +94,15 @@ export async function GET(req: NextRequest) {
       whereBase.createdAt = { gte: startDate, lte: endDate };
     }
 
+    // Determine fallback date range for models without dailySessionId when in session mode
+    let fallbackDateFilter: any = undefined;
+    if (sessionId && activeSession) {
+      fallbackDateFilter = {
+        gte: activeSession.openedAt,
+        lte: new Date(),
+      };
+    }
+
     const type = searchParams.get("type");
     if (type === "chart") {
       const payments = await prisma.payment.findMany({
@@ -167,31 +176,25 @@ export async function GET(req: NextRequest) {
         prisma.customerLedger.aggregate({
           _sum: { amount: true },
           where: {
-            ...whereBase,
-            // customer: { storeId } is already handled if we use storeId in whereBase
-            // But we need to be careful with session filtering as CustomerLedger might not have dailySessionId
-            ...(sessionId ? { dailySessionId: sessionId } : {}),
+            storeId,
+            ...(sessionId ? { createdAt: fallbackDateFilter } : { createdAt: whereBase.createdAt }),
             type: "PAYMENT_IN",
           },
         }),
         prisma.customerLedger.aggregate({
           _sum: { amount: true },
           where: {
-            ...whereBase,
-            ...(sessionId ? { dailySessionId: sessionId } : {}),
+            storeId,
+            ...(sessionId ? { createdAt: fallbackDateFilter } : { createdAt: whereBase.createdAt }),
             type: "PAYMENT_OUT",
           },
         }),
         prisma.salesReturn.aggregate({
           _sum: { totalAmount: true },
           where: {
-            ...whereBase,
+            storeId,
             isDeleted: false,
-            // Map whereBase date filter to txnDate if not using session
-            ...(sessionId? {} : {
-              createdAt: undefined,
-              txnDate: whereBase.createdAt
-            })
+            ...(sessionId ? { txnDate: fallbackDateFilter } : { txnDate: whereBase.createdAt }),
           },
         }),
       ]);

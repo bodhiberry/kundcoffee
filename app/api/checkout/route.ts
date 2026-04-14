@@ -131,6 +131,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Get active daily session
+      const activeDailySession = await prisma.dailySession.findFirst({
+        where: { storeId: effectiveStoreId as string, status: "OPEN" },
+        select: { id: true }
+      });
+
       const payment = await prisma.payment.create({
         data: {
           sessionId: activeSessionId,
@@ -140,6 +146,7 @@ export async function POST(req: NextRequest) {
           transactionUuid,
           storeId: effectiveStoreId as string,
           staffId: staffId || null,
+          dailySessionId: activeDailySession?.id || null,
           orders: orderId ? { connect: { id: orderId } } : undefined,
         },
       });
