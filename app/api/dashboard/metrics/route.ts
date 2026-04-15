@@ -120,25 +120,48 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      const dailyMap = new Map<string, number>();
+      if (sessionId) {
+        // Hourly grouping for session data
+        const hourlyMap = new Map<string, number>();
+        payments.forEach((p) => {
+          const hour = new Date(p.createdAt).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            hour12: true,
+          });
+          const current = hourlyMap.get(hour) || 0;
+          hourlyMap.set(hour, current + p.amount);
+        });
 
-      payments.forEach((p) => {
-        const day = new Date(p.createdAt).toLocaleDateString("en-CA");
-        const current = dailyMap.get(day) || 0;
-        dailyMap.set(day, current + p.amount);
-      });
+        const chartData = Array.from(hourlyMap.entries()).map(([hour, total]) => ({
+          date: hour, // reusing the field 'date' for simplicity in frontend
+          total,
+        }));
 
-      const chartData = Array.from(dailyMap.entries()).map(([date, total]) => ({
-        date,
-        total,
-      }));
+        return NextResponse.json({
+          success: true,
+          data: chartData,
+        });
+      } else {
+        // Daily grouping for historical data
+        const dailyMap = new Map<string, number>();
+        payments.forEach((p) => {
+          const day = new Date(p.createdAt).toLocaleDateString("en-CA");
+          const current = dailyMap.get(day) || 0;
+          dailyMap.set(day, current + p.amount);
+        });
 
-      chartData.sort((a, b) => a.date.localeCompare(b.date));
+        const chartData = Array.from(dailyMap.entries()).map(([date, total]) => ({
+          date,
+          total,
+        }));
 
-      return NextResponse.json({
-        success: true,
-        data: chartData,
-      });
+        chartData.sort((a, b) => a.date.localeCompare(b.date));
+
+        return NextResponse.json({
+          success: true,
+          data: chartData,
+        });
+      }
     }
 
     const [sales, purchases, expenses, paymentIn, paymentOut, returns] =

@@ -2,17 +2,14 @@
 
 import { useEffect, useState } from "react";
 import {
-  Line,
-  LineChart,
+  Area,
+  AreaChart,
+  CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Area,
-  AreaChart,
 } from "recharts";
-import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 import { ChevronRight } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
 
@@ -26,15 +23,6 @@ export default function SalesLineChart() {
   const [data, setData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Date states
-  const [currentDate, setCurrentDate] = useState("");
-  const [currentMonth, setCurrentMonth] = useState(
-    (new Date().getMonth() + 1).toString(),
-  );
-  const [currentYear, setCurrentYear] = useState(
-    new Date().getFullYear().toString(),
-  );
-
   // Interaction states
   const [selectedPoint, setSelectedPoint] = useState<ChartDataPoint | null>(
     null,
@@ -46,23 +34,12 @@ export default function SalesLineChart() {
       try {
         const params = new URLSearchParams();
         params.append("type", "chart");
-
-        if (currentDate) {
-          params.append("date", currentDate);
-          params.append("filter", "custom");
-        } else if (currentMonth && currentYear) {
-          params.append("month", currentMonth);
-          params.append("year", currentYear);
-          params.append("filter", "custom");
-        } else {
-          params.append("filter", "this_month");
-        }
-
+        
+        // No dates appended, defaults to session hourly data from the updated API
         const res = await fetch(`/api/dashboard/metrics?${params.toString()}`);
         const json = await res.json();
         if (json.success) {
           setData(json.data);
-          // Auto-select the last point if available for better initial UX
           if (json.data.length > 0 && !selectedPoint) {
             setSelectedPoint(json.data[json.data.length - 1]);
           }
@@ -74,39 +51,25 @@ export default function SalesLineChart() {
       }
     }
     fetchChartData();
-  }, [currentDate, currentMonth, currentYear]);
+    const interval = setInterval(fetchChartData, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold text-zinc-900">Sales Trend</h3>
-          <p className="text-xs text-zinc-500 font-medium">
-            Daily sales performance
+          <h3 className="text-lg font-bold text-zinc-900">Session Sales Trend</h3>
+          <p className="text-xs text-zinc-500 font-medium italic">
+            Hourly performance in current session
           </p>
         </div>
-        <DateRangeSelector
-          currentDate={currentDate}
-          currentMonth={currentMonth}
-          currentYear={currentYear}
-          onDateChange={(d) => {
-            setCurrentDate(d);
-          }}
-          onMonthChange={(m) => {
-            setCurrentMonth(m);
-            setCurrentDate("");
-          }}
-          onYearChange={(y) => {
-            setCurrentYear(y);
-            setCurrentDate("");
-          }}
-        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart Area */}
         <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm min-h-[350px]">
-          {loading ? (
+          {loading && data.length === 0 ? (
             <div className="h-full w-full flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
             </div>
@@ -139,10 +102,6 @@ export default function SalesLineChart() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 10, fill: "#71717a" }}
-                    tickFormatter={(value) => {
-                      const date = new Date(value);
-                      return date.getDate().toString();
-                    }}
                     dy={10}
                   />
                   <YAxis
@@ -150,7 +109,7 @@ export default function SalesLineChart() {
                     tickLine={false}
                     tick={{ fontSize: 10, fill: "#71717a" }}
                     tickFormatter={(value) =>
-                      `${settings.currency}${(value / 1000).toFixed(0)}k`
+                      `${settings.currency}${value.toLocaleString()}`
                     }
                     dx={-10}
                   />
@@ -171,14 +130,6 @@ export default function SalesLineChart() {
                       `${settings.currency} ${(value || 0).toLocaleString()}`,
                       "Sales",
                     ]}
-                    labelFormatter={(label) =>
-                      new Date(label).toLocaleDateString(undefined, {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    }
                   />
                   <Area
                     type="monotone"
@@ -190,16 +141,14 @@ export default function SalesLineChart() {
                     activeDot={{
                       r: 6,
                       strokeWidth: 0,
-                      className: "outline-none focus:outline-none",
                     }}
-                    className="outline-none focus:outline-none"
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-zinc-400">
-              <p>No sales data available for this selection</p>
+              <p>No activity yet in this session</p>
             </div>
           )}
         </div>
@@ -210,21 +159,16 @@ export default function SalesLineChart() {
             <div className="bg-zinc-900 text-white p-8 rounded-3xl h-full flex flex-col justify-between shadow-xl shadow-zinc-200">
               <div>
                 <h4 className="text-zinc-400 font-bold text-xs uppercase tracking-widest mb-2">
-                  Selected Date
+                  Selected Hour
                 </h4>
                 <p className="text-2xl font-bold">
-                  {new Date(selectedPoint.date).toLocaleDateString(undefined, {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {selectedPoint.date}
                 </p>
               </div>
 
               <div className="my-8">
                 <h4 className="text-zinc-400 font-bold text-xs uppercase tracking-widest mb-2">
-                  Total Sales
+                  Sales at this Hour
                 </h4>
                 <p className="text-5xl font-black tracking-tighter text-emerald-400">
                   {settings.currency} {selectedPoint.total.toLocaleString()}
@@ -233,36 +177,23 @@ export default function SalesLineChart() {
 
               <div className="bg-zinc-800/50 rounded-2xl p-4 flex items-center justify-between group cursor-pointer hover:bg-zinc-800 transition-colors">
                 <span className="text-sm font-medium text-zinc-300">
-                  View Detailed Report
+                  Real-time tracking
                 </span>
                 <ChevronRight
                   size={16}
-                  className="text-zinc-500 group-hover:translate-x-1 transition-transform"
+                  className="text-zinc-500"
                 />
               </div>
             </div>
           ) : (
             <div className="bg-slate-100 p-8 rounded-3xl h-full flex items-center justify-center border border-slate-200 border-dashed">
-              <p className="text-zinc-400 text-center text-sm font-medium">
-                Select a date point on the chart to view details
+              <p className="text-zinc-400 text-center text-sm font-medium uppercase tracking-widest">
+                Analytics for current session
               </p>
             </div>
           )}
         </div>
       </div>
-
-      {/* Styles */}
-      <style jsx global>{`
-        .recharts-active-dot:focus {
-          outline: none !important;
-        }
-        .recharts-surface:focus {
-          outline: none !important;
-        }
-        .recharts-wrapper:focus {
-          outline: none !important;
-        }
-      `}</style>
     </div>
   );
 }

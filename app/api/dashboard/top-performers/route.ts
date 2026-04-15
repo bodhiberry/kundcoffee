@@ -16,14 +16,35 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Top Customers by Sales Volume (Completed Orders)
+    // Check for an active session
+    const activeSession = await prisma.dailySession.findFirst({
+      where: {
+        storeId,
+        status: "OPEN",
+      },
+    });
+
+    if (!activeSession) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          topCustomers: [],
+          topStaff: [],
+        },
+      });
+    }
+
+    const sessionId = activeSession.id;
+
+    // Top Customers by Sales Volume (Completed Orders in current session)
     const topCustomersGroups = await prisma.order.groupBy({
       by: ["customerId"],
       _sum: {
         total: true,
       },
       where: {
-        storeId, // Filter by storeId
+        storeId,
+        dailySessionId: sessionId,
         status: "COMPLETED",
         customerId: { not: null },
         isDeleted: false,
@@ -43,7 +64,7 @@ export async function GET(req: NextRequest) {
     const customers = await prisma.customer.findMany({
       where: {
         id: { in: customerIds },
-        storeId, // Ensure customers belong to store (extra safety)
+        storeId,
       },
     });
 
@@ -58,7 +79,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Top Staff by Order Count or Volume
+    // Top Staff by Order Count or Volume in current session
     const topStaffGroups = await prisma.order.groupBy({
       by: ["staffId"],
       _count: {
@@ -68,7 +89,8 @@ export async function GET(req: NextRequest) {
         total: true,
       },
       where: {
-        storeId, // Filter by storeId
+        storeId,
+        dailySessionId: sessionId,
         staffId: { not: null },
         isDeleted: false,
       },
@@ -87,7 +109,7 @@ export async function GET(req: NextRequest) {
     const staffMembers = await prisma.staff.findMany({
       where: {
         id: { in: staffIds },
-        storeId, // Ensure staff belong to store
+        storeId,
       },
     });
 

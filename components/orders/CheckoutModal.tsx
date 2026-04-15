@@ -555,8 +555,8 @@ export function CheckoutModal({
               )}
 
               {paymentMethod === "QR" && (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="border border-black p-2 bg-white flex items-center justify-center">
+                <div className="flex flex-col  gap-2">
+                  {/* <div className="border border-black p-2 bg-white flex items-center justify-center">
                     {qrData?.image?.[0] ? (
                       <img
                         src={qrData.image[0]}
@@ -568,8 +568,8 @@ export function CheckoutModal({
                         <QrCode size={40} className="text-zinc-400" />
                       </div>
                     )}
-                  </div>
-                  <button
+                  </div> */}
+                  {/* <button
                     onClick={() => setPaymentReceived(!paymentReceived)}
                     className={`w-full py-2 text-[8px] font-black uppercase border border-black transition-all ${
                       paymentReceived
@@ -580,7 +580,11 @@ export function CheckoutModal({
                     {paymentReceived
                       ? "Payment Confirmed ✓"
                       : "Confirm Payment Received"}
-                  </button>
+                  </button> */}
+                  <div className=" p-2 bg-white flex items-center justify-between">
+                    <h1 className="font-semibold text-lg">GrandTotal</h1>
+                    <p className="font-medium flex gap-2 text-sm items-center ">Rs <span className="text-lg underline">{grandTotal}</span></p>
+                  </div>
                 </div>
               )}
 

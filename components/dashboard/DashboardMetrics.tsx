@@ -5,24 +5,15 @@ import {
   TrendingUp,
   ShoppingCart,
   Wallet,
-  CreditCard,
-  ArrowRightLeft,
-  ArrowDownLeft,
-  ArrowUpRight,
   Clock,
   AlertCircle,
 } from "lucide-react";
-import { MetricCard } from "@/components/ui/MetricCard";
 import { useSettings } from "@/components/providers/SettingsProvider";
-import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 
 type MetricType =
   | "SALES"
   | "PURCHASE"
-  | "Differnece"
-  // | "EXPENSES"
-  // | "PAYMENT_IN"
-  // | "PAYMENT_OUT";
+  | "Differnece";
 
 export default function DashboardMetrics() {
   const { settings } = useSettings();
@@ -30,43 +21,19 @@ export default function DashboardMetrics() {
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState<MetricType>("SALES");
   const [isSessionData, setIsSessionData] = useState(false);
-
-  // Date states
-  const [currentDate, setCurrentDate] = useState("");
-  const [currentMonth, setCurrentMonth] = useState(
-    (new Date().getMonth() + 1).toString(),
-  );
-  const [currentYear, setCurrentYear] = useState(
-    new Date().getFullYear().toString(),
-  );
+  const [hasActiveSession, setHasActiveSession] = useState(false);
 
   useEffect(() => {
     async function fetchMetrics() {
       setLoading(true);
       try {
-        const params = new URLSearchParams();
-        
-        // If no filter is provided, the API will default to current session
-        if (currentDate) {
-          params.append("date", currentDate);
-          params.append("filter", "custom");
-        } else if (currentMonth && currentYear) {
-          const isCurrentMonth = (new Date().getMonth() + 1).toString() === currentMonth && 
-                                 new Date().getFullYear().toString() === currentYear;
-          
-          // Only show session data if no specific month/year is selected or if current month is selected
-          if (!isCurrentMonth) {
-            params.append("month", currentMonth);
-            params.append("year", currentYear);
-            params.append("filter", "custom");
-          }
-        }
-
-        const res = await fetch(`/api/dashboard/metrics?${params.toString()}`);
+        // Fetch metrics without parameters - API defaults to active session
+        const res = await fetch(`/api/dashboard/metrics`);
         const data = await res.json();
         if (data.success) {
           setMetrics(data.data);
           setIsSessionData(data.isSessionData);
+          setHasActiveSession(data.hasActiveSession);
         }
       } catch (error) {
         console.error("Failed to fetch metrics", error);
@@ -75,9 +42,13 @@ export default function DashboardMetrics() {
       }
     }
     fetchMetrics();
-  }, [currentDate, currentMonth, currentYear]);
+    
+    // Refresh interval for live data (every minute)
+    const interval = setInterval(fetchMetrics, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const metricConfig = {
+  const metricConfig: Record<MetricType, any> = {
     SALES: {
       label: "Total Sales",
       value: metrics.sales,
@@ -94,45 +65,11 @@ export default function DashboardMetrics() {
     },
     Differnece: {
       label: "Difference",
-      value: metrics.income - metrics.purchases,
+      value: (metrics.income || 0) - (metrics.purchases || 0),
       icon: Wallet,
       color: "text-indigo-600",
       bg: "bg-indigo-50",
     },
-    // EXPENSES: {
-    //   label: "Total Expenses",
-    //   value: metrics.expenses,
-    //   icon: CreditCard,
-    //   color: "text-red-600",
-    //   bg: "bg-red-50",
-    // },
-    // PAYMENT_IN: {
-    //   label: "Payment In",
-    //   value: metrics.paymentIn,
-    //   icon: ArrowDownLeft,
-    //   color: "text-green-600",
-    //   bg: "bg-green-50",
-    // },
-    // PAYMENT_OUT: {
-    //   label: "Payment Out",
-    //   value: metrics.paymentOut,
-    //   icon: ArrowUpRight,
-    //   color: "text-orange-600",
-    //   bg: "bg-orange-50",
-    // },
-  };
-
-  const getFilterLabel = () => {
-    if (isSessionData) return "Current Active Session";
-    if (currentDate) return new Date(currentDate).toLocaleDateString();
-    if (currentMonth && currentYear) {
-      const monthName = new Date(
-        parseInt(currentYear),
-        parseInt(currentMonth) - 1,
-      ).toLocaleString("default", { month: "long" });
-      return `${monthName} ${currentYear}`;
-    }
-    return "This Month";
   };
 
   return (
@@ -154,35 +91,20 @@ export default function DashboardMetrics() {
               </button>
             ))}
           </div>
-          {isSessionData && (
+          {isSessionData && hasActiveSession && (
             <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full w-fit">
               <Clock size={12} className="animate-pulse" />
               Live Session Metrics
             </div>
           )}
         </div>
-        <DateRangeSelector
-          currentDate={currentDate}
-          currentMonth={currentMonth}
-          currentYear={currentYear}
-          onDateChange={setCurrentDate}
-          onMonthChange={(m) => {
-            setCurrentMonth(m);
-            setCurrentDate("");
-          }}
-          onYearChange={(y) => {
-            setCurrentYear(y);
-            setCurrentDate("");
-          }}
-        />
       </div>
 
       {/* Main Metric Display */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Primary Selected Metric */}
         <div className="col-span-1 md:col-span-2 lg:col-span-4">
           <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm flex items-center justify-between relative overflow-hidden">
-            {loading && (
+            {loading && !metrics.sales && (
               <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-10 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div>
               </div>
@@ -195,8 +117,8 @@ export default function DashboardMetrics() {
                 {settings.currency}{" "}
                 {(metricConfig[activeType].value || 0).toLocaleString()}
               </p>
-              <p className="text-xs font-bold text-zinc-400">
-                {getFilterLabel()}
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                {hasActiveSession ? "Current Active Session" : "No Active Session"}
               </p>
             </div>
             <div className={`p-6 rounded-2xl ${metricConfig[activeType].bg}`}>
@@ -223,9 +145,6 @@ export default function DashboardMetrics() {
                 onClick={() => setActiveType(key)}
                 className="bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm cursor-pointer hover:border-zinc-200 transition-all group relative overflow-hidden"
               >
-                {loading && (
-                  <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px] z-10" />
-                )}
                 <div className="flex items-center justify-between mb-3">
                   <div
                     className={`p-2 rounded-lg ${config.bg} group-hover:scale-110 transition-transform`}
@@ -245,11 +164,11 @@ export default function DashboardMetrics() {
         )}
       </div>
 
-      {!isSessionData && !currentDate && currentMonth === (new Date().getMonth() + 1).toString() && !metrics.hasActiveSession && (
+      {!hasActiveSession && (
         <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-center gap-4 text-amber-800">
           <AlertCircle className="shrink-0" size={20} />
           <p className="text-xs font-bold uppercase tracking-widest">
-            Showing partial monthly data. Start a new day session to see live tracking.
+            No active session. Start a new day session in Finance to begin tracking today's data.
           </p>
         </div>
       )}
