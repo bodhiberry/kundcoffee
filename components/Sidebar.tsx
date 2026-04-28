@@ -160,9 +160,9 @@ export default function Sidebar() {
   return (
     <aside className="w-64 h-screen sticky top-0 bg-white border-r border-zinc-200 flex flex-col z-30">
       {/* Brand Header */}
-      <div className="h-20 flex items-center px-6 border-b border-zinc-50">
+      <Link href="/dashboard" className="h-20 flex items-center px-6 border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors cursor-pointer group/logo">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white shadow-sm overflow-hidden border border-zinc-100/10">
+          <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white shadow-sm overflow-hidden border border-zinc-100/10 group-hover/logo:scale-105 transition-transform">
             {settings.logo ? (
               <img src={settings.logo} alt="Logo" className="w-full h-full object-contain" />
             ) : (
@@ -178,7 +178,7 @@ export default function Sidebar() {
             </span>
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation Area */}
       <div className="flex-1 overflow-y-auto px-3 py-6 space-y-8 custom-scrollbar">

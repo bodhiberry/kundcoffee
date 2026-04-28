@@ -193,23 +193,14 @@ export function DailySessionManager() {
                   <span className="flex items-center gap-1.5"><Banknote size={14} /> Opening: {settings.currency} {activeSession.openingBalance.toFixed(2)}</span>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Cash Sales</p>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Cash Sales (+)</p>
                     <p className="text-sm font-black text-white">{settings.currency} {activeSession.currentCashSales?.toFixed(2)}</p>
                   </div>
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1 font-black">Cash Purchases (-)</p>
                     <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCashOutflow?.toFixed(2)}</p>
-                  </div>
-                  
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Digital (QR+)</p>
-                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentDigitalSales?.toFixed(2)}</p>
-                  </div>
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Credit Sales</p>
-                    <p className="text-sm font-black text-blue-400">{settings.currency} {activeSession.currentCreditSales?.toFixed(2)}</p>
                   </div>
                   <div className="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1">Cash on Drawer</p>
@@ -218,6 +209,23 @@ export function DailySessionManager() {
                   <div className="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1">Total Revenue</p>
                     <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.totalRevenue?.toFixed(2)}</p>
+                  </div>
+
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Digital Sales (QR+)</p>
+                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentDigitalSales?.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                    <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1">Digital Purchases (-)</p>
+                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentDigitalOutflow?.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Credit Sales</p>
+                    <p className="text-sm font-black text-blue-400">{settings.currency} {activeSession.currentCreditSales?.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                    <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1">Credit Purchases (-)</p>
+                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCreditOutflow?.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -450,18 +458,31 @@ export function DailySessionManager() {
 
                 {/* Additional Sales Info */}
                 <div className="mt-4 bg-white/50 rounded-lg p-3 space-y-2 border border-rose-100">
-                   <p className="text-[9px] font-black text-rose-900/50 uppercase tracking-[0.2em] mb-2">Other Revenue (Not in Drawer)</p>
-                   <div className="flex justify-between text-[10px]">
-                     <span className="font-bold text-zinc-500">Digital (QR/Esewa)</span>
-                     <span className="font-black text-zinc-900">{settings.currency} {activeSession?.currentDigitalSales?.toFixed(2)}</span>
+                   <p className="text-[9px] font-black text-rose-900/50 uppercase tracking-[0.2em] mb-2">Other Transactions (Not in Drawer)</p>
+                   <div className="flex flex-col gap-2">
+                     <div className="flex justify-between text-[10px]">
+                       <span className="font-bold text-zinc-500">Digital Sales (QR+)</span>
+                       <span className="font-black text-zinc-900">{settings.currency} {activeSession?.currentDigitalSales?.toFixed(2)}</span>
+                     </div>
+                     <div className="flex justify-between text-[10px]">
+                       <span className="font-bold text-rose-500/70">Digital Purchases (-)</span>
+                       <span className="font-black text-rose-600">-{settings.currency} {activeSession?.currentDigitalOutflow?.toFixed(2)}</span>
+                     </div>
                    </div>
-                   <div className="flex justify-between text-[10px]">
-                     <span className="font-bold text-zinc-500">Credit Sales</span>
-                     <span className="font-black text-rose-600">{settings.currency} {activeSession?.currentCreditSales?.toFixed(2)}</span>
+                   <div className="h-px bg-zinc-100 my-1" />
+                   <div className="flex flex-col gap-2">
+                     <div className="flex justify-between text-[10px]">
+                       <span className="font-bold text-zinc-500">Credit Sales</span>
+                       <span className="font-black text-zinc-900">{settings.currency} {activeSession?.currentCreditSales?.toFixed(2)}</span>
+                     </div>
+                     <div className="flex justify-between text-[10px]">
+                       <span className="font-bold text-rose-500/70">Credit Purchases (-)</span>
+                       <span className="font-black text-rose-600">-{settings.currency} {activeSession?.currentCreditOutflow?.toFixed(2)}</span>
+                     </div>
                    </div>
                    <div className="h-px bg-zinc-100 my-1" />
                    <div className="flex justify-between text-[10px]">
-                     <span className="font-black text-emerald-600 uppercase tracking-widest">Total Net Sales</span>
+                     <span className="font-black text-emerald-600 uppercase tracking-widest">Total Net Revenue</span>
                      <span className="font-black text-emerald-600">{settings.currency} {activeSession?.totalRevenue?.toFixed(2)}</span>
                    </div>
                 </div>

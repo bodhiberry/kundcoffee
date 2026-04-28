@@ -69,8 +69,19 @@ export async function autoCloseStaleSessions(storeId: string) {
         }
       });
 
+      const purchaseByMethod: Record<string, number> = {
+        CASH: 0, QR: 0, ESEWA: 0, CARD: 0, BANK_TRANSFER: 0, CREDIT: 0
+      };
+
+      for (const p of activeSession.purchases) {
+        const amount = parseFloat(p.totalAmount.toString());
+        purchaseByMethod[p.paymentMode || "CASH"] = (purchaseByMethod[p.paymentMode || "CASH"] ?? 0) + amount;
+      }
+
       const cashSales = salesByMethod.CASH || 0;
-      const totalCashOutflow = activeSession.purchases.reduce((sum, p) => sum + parseFloat(p.totalAmount.toString()), 0);
+      const totalCashOutflow = purchaseByMethod.CASH || 0;
+      const digitalOutflow = (purchaseByMethod.QR ?? 0) + (purchaseByMethod.ESEWA ?? 0) + (purchaseByMethod.CARD ?? 0) + (purchaseByMethod.BANK_TRANSFER ?? 0);
+      const creditOutflow = purchaseByMethod.CREDIT ?? 0;
       
       // For auto-close, we assume expected == actual
       const expectedClosingBalance = parseFloat(activeSession.openingBalance.toString()) + cashSales - totalCashOutflow;
@@ -79,7 +90,12 @@ export async function autoCloseStaleSessions(storeId: string) {
       const cashOnDrawer = cashSales - totalCashOutflow;
       const totalRevenue = Object.values(salesByMethod).reduce((sum, amount) => sum + amount, 0);
 
-      const breakdownNote = Object.entries(salesByMethod)
+      const salesBreakdownNote = Object.entries(salesByMethod)
+        .filter(([_, amount]) => amount > 0)
+        .map(([method, amount]) => `- ${method}: ${amount.toFixed(2)}`)
+        .join("\n");
+
+      const purchaseBreakdownNote = Object.entries(purchaseByMethod)
         .filter(([_, amount]) => amount > 0)
         .map(([method, amount]) => `- ${method}: ${amount.toFixed(2)}`)
         .join("\n");
@@ -98,7 +114,7 @@ export async function autoCloseStaleSessions(storeId: string) {
           difference,
           cashOnDrawer,
           status: "CLOSED",
-          notes: `${activeSession.notes || ""}\n\n[SYSTEM] Automatically closed because the day ended.\n\nSession Revenue Breakdown:\n${breakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}${purchaseNote}\n\nFinal Reconciliation:\n- Opening Cash: ${parseFloat(activeSession.openingBalance.toString()).toFixed(2)}\n- Cash Sales (+): ${cashSales.toFixed(2)}\n- Cash Purchases (-): ${totalCashOutflow.toFixed(2)}\n- Expected Cash: ${expectedClosingBalance.toFixed(2)}\n- Actual Cash in Drawer (Auto): ${actualClosingBalance.toFixed(2)}\n- Difference: ${difference.toFixed(2)}`.trim()
+          notes: `${activeSession.notes || ""}\n\n[SYSTEM] Automatically closed because the day ended.\n\nSession Revenue Breakdown:\n${salesBreakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}\n\nSession Purchase Breakdown:\n${purchaseBreakdownNote}\n- Total Purchases: ${(totalCashOutflow + digitalOutflow + creditOutflow).toFixed(2)}${purchaseNote}\n\nFinal Reconciliation:\n- Opening Cash: ${parseFloat(activeSession.openingBalance.toString()).toFixed(2)}\n- Cash Sales (+): ${cashSales.toFixed(2)}\n- Cash Purchases (-): ${totalCashOutflow.toFixed(2)}\n- Expected Cash: ${expectedClosingBalance.toFixed(2)}\n- Actual Cash in Drawer (Auto): ${actualClosingBalance.toFixed(2)}\n- Difference: ${difference.toFixed(2)}`.trim()
         }
       });
       

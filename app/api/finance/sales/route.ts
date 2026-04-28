@@ -217,12 +217,21 @@ export async function GET(req: NextRequest) {
       }
     });
 
+    const cashSales = payments
+      .filter((p) => p.method === "CASH")
+      .reduce((acc, p) => acc + p.amount, 0);
+    const digitalSales = payments
+      .filter((p) => ["QR", "ESEWA", "CARD", "BANK_TRANSFER"].includes(p.method))
+      .reduce((acc, p) => acc + p.amount, 0);
+
     const response: ApiResponse = {
       success: true,
       data: {
         metrics: {
           totalOrders,
           totalSales: salesTotal,
+          cashSales,
+          digitalSales,
           leadingPayment,
           purchases: purchasesTotal,
           income: salesTotal + paymentInTotal,

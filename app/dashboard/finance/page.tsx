@@ -39,7 +39,7 @@ type Tab = "SALES" | "RETURNS" | "DAILY_SESSIONS";
 
 export default function FinancePage() {
   const { settings } = useSettings();
-  const [activeTab, setActiveTab] = useState<Tab>("SALES");
+  const [activeTab, setActiveTab] = useState<Tab>("DAILY_SESSIONS");
   const [loading, setLoading] = useState(true);
   const [salesData, setSalesData] = useState<any>({
     metrics: {},
@@ -273,6 +273,16 @@ export default function FinancePage() {
             </h1>
             <div className="bg-zinc-100 p-1 rounded-lg flex items-center gap-1">
               <button
+                onClick={() => setActiveTab("DAILY_SESSIONS")}
+                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
+                  activeTab === "DAILY_SESSIONS"
+                    ? "bg-white text-zinc-900 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700"
+                }`}
+              >
+                Today's Sales
+              </button>
+              <button
                 onClick={() => setActiveTab("SALES")}
                 className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
                   activeTab === "SALES"
@@ -280,7 +290,7 @@ export default function FinancePage() {
                     : "text-zinc-500 hover:text-zinc-700"
                 }`}
               >
-                Sales
+                Sales History
               </button>
               <button
                 onClick={() => setActiveTab("RETURNS")}
@@ -291,16 +301,6 @@ export default function FinancePage() {
                 }`}
               >
                 Sales Return
-              </button>
-              <button
-                onClick={() => setActiveTab("DAILY_SESSIONS")}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
-                  activeTab === "DAILY_SESSIONS"
-                    ? "bg-white text-zinc-900 shadow-sm"
-                    : "text-zinc-500 hover:text-zinc-700"
-                }`}
-              >
-                Daily Sessions
               </button>
             </div>
           </div>
@@ -334,14 +334,28 @@ export default function FinancePage() {
           ) : (
             <div className="h-full flex flex-col gap-6">
               {/* Metrics Section */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
                 {activeTab === "SALES" ? (
                   <>
-                    <MetricCard
-                      title="Total Sales"
-                      value={`${settings.currency} ${salesData.metrics.totalSales || 0}`}
-                      icon={TrendingUp}
-                    />
+                    <div className="col-span-2 md:col-span-3 lg:col-span-3 bg-zinc-900 p-6 rounded-3xl shadow-xl flex flex-col justify-between group overflow-hidden relative">
+                      <div className="relative z-10">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total Sales History</p>
+                        <p className="text-3xl font-black text-white mt-1">{settings.currency} {salesData.metrics.totalSales?.toFixed(2) || "0.00"}</p>
+                        
+                        <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-zinc-800">
+                          <div>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">Cash Sales</p>
+                            <p className="text-sm font-black text-white">{settings.currency} {salesData.metrics.cashSales?.toFixed(2) || "0.00"}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">Digital Sales</p>
+                            <p className="text-sm font-black text-emerald-400">{settings.currency} {salesData.metrics.digitalSales?.toFixed(2) || "0.00"}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <TrendingUp size={48} className="text-zinc-800 absolute -right-4 -top-4 rotate-12 opacity-50 group-hover:scale-110 transition-transform" />
+                    </div>
+
                     <MetricCard
                       title="Total Purchase"
                       value={`${settings.currency} ${salesData.metrics.purchases || 0}`}

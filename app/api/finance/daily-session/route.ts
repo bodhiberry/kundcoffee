@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
             select: { method: true, amount: true, status: true }
           },
           purchases: {
-            where: { isDeleted: false, paymentMode: "CASH" },
-            select: { totalAmount: true }
+            where: { isDeleted: false },
+            select: { totalAmount: true, paymentMode: true }
           }
         }
       });
@@ -56,9 +56,20 @@ export async function GET(req: NextRequest) {
       const currentCashSales = salesByMethod.CASH;
       const currentDigitalSales = (salesByMethod.QR ?? 0) + (salesByMethod.ESEWA ?? 0) + (salesByMethod.CARD ?? 0) + (salesByMethod.BANK_TRANSFER ?? 0);
       const currentCreditSales = salesByMethod.CREDIT ?? 0;
-      const currentCashOutflow = activeSession.purchases.reduce(
-        (sum, p) => sum + parseFloat(p.totalAmount.toString()), 0
-      );
+      
+      const purchaseByMethod: Record<string, number> = {
+        CASH: 0, QR: 0, ESEWA: 0, CARD: 0, BANK_TRANSFER: 0, CREDIT: 0
+      };
+
+      for (const p of activeSession.purchases) {
+        const amount = parseFloat(p.totalAmount.toString());
+        purchaseByMethod[p.paymentMode || "CASH"] = (purchaseByMethod[p.paymentMode || "CASH"] ?? 0) + amount;
+      }
+
+      const currentCashOutflow = purchaseByMethod.CASH || 0;
+      const currentDigitalOutflow = (purchaseByMethod.QR ?? 0) + (purchaseByMethod.ESEWA ?? 0) + (purchaseByMethod.CARD ?? 0) + (purchaseByMethod.BANK_TRANSFER ?? 0);
+      const currentCreditOutflow = purchaseByMethod.CREDIT ?? 0;
+
       const currentExpectedBalance =
         parseFloat(activeSession.openingBalance.toString()) + currentCashSales - currentCashOutflow;
       const totalRevenue = Object.values(salesByMethod).reduce((s, a) => s + a, 0);
@@ -73,7 +84,9 @@ export async function GET(req: NextRequest) {
           currentCashSales,
           currentCashOutflow,
           currentDigitalSales,
+          currentDigitalOutflow,
           currentCreditSales,
+          currentCreditOutflow,
           currentExpectedBalance,
           totalRevenue
         }

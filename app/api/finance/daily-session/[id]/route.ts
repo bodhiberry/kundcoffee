@@ -67,7 +67,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       include: { 
         payments: true,
         purchases: {
-          where: { paymentMode: "CASH", isDeleted: false }
+          where: { isDeleted: false }
         }
       }
     });
@@ -87,12 +87,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       }));
 
     const salesByMethod: Record<string, number> = {
-      CASH: 0,
-      QR: 0,
-      ESEWA: 0,
-      CARD: 0,
-      BANK_TRANSFER: 0,
-      CREDIT: 0
+      CASH: 0, QR: 0, ESEWA: 0, CARD: 0, BANK_TRANSFER: 0, CREDIT: 0
     };
 
     relevantPayments.forEach(p => {
@@ -103,8 +98,22 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       }
     });
 
+    const purchaseByMethod: Record<string, number> = {
+      CASH: 0, QR: 0, ESEWA: 0, CARD: 0, BANK_TRANSFER: 0, CREDIT: 0
+    };
+
+    dailySession.purchases.forEach(p => {
+      const mode = p.paymentMode || "CASH";
+      const amount = parseFloat(p.totalAmount.toString());
+      if (purchaseByMethod[mode] !== undefined) {
+        purchaseByMethod[mode] += amount;
+      } else {
+        purchaseByMethod[mode] = amount;
+      }
+    });
+
     const cashSales = salesByMethod.CASH || 0;
-    const totalCashOutflow = dailySession.purchases.reduce((sum, p) => sum + p.totalAmount, 0);
+    const totalCashOutflow = purchaseByMethod.CASH || 0;
     
     // Final calculations
     const cashOnDrawer = cashSales - totalCashOutflow;
@@ -117,8 +126,13 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       .map(([method, amount]) => `- ${method}: ${amount.toFixed(2)}`)
       .join("\n");
 
-    const purchaseNote = dailySession.purchases.length > 0 
-      ? `\n\nCash Purchases (-):\n${dailySession.purchases.map(p => `- ${p.referenceNumber}: ${p.totalAmount.toFixed(2)}`).join("\n")}`
+    const purchaseBreakdownNote = Object.entries(purchaseByMethod)
+      .filter(([_, amount]) => amount > 0)
+      .map(([method, amount]) => `- ${method}: ${amount.toFixed(2)}`)
+      .join("\n");
+
+    const purchaseListNote = dailySession.purchases.length > 0 
+      ? `\n\nDetailed Purchases List:\n${dailySession.purchases.map(p => `- ${p.referenceNumber} (${p.paymentMode || "CASH"}): ${p.totalAmount.toFixed(2)}`).join("\n")}`
       : "";
 
     // To bypass potential Prisma sync issues with scalar fields, we use relation notation for IDs
@@ -132,7 +146,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         difference,
         cashOnDrawer,
         status: "CLOSED" as const,
-        notes: `${dailySession.notes || ""}\n\nSession Revenue Breakdown:\n${breakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}${purchaseNote}\n\nFinal Reconciliation:\n- Opening Cash: ${dailySession.openingBalance.toFixed(2)}\n- Cash Sales (+): ${cashSales.toFixed(2)}\n- Cash Purchases (-): ${totalCashOutflow.toFixed(2)}\n- Expected Cash: ${expectedClosingBalance.toFixed(2)}\n- Actual Cash in Drawer: ${actualClosingBalance}\n- Difference: ${difference.toFixed(2)}\n- User Notes: ${userNotes || "None"}`.trim()
+        notes: `${dailySession.notes || ""}\n\nSession Revenue Breakdown:\n${breakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}\n\nSession Purchase Breakdown:\n${purchaseBreakdownNote}${purchaseListNote}\n\nFinal Reconciliation:\n- Opening Cash: ${dailySession.openingBalance.toFixed(2)}\n- Cash Sales (+): ${cashSales.toFixed(2)}\n- Cash Purchases (-): ${totalCashOutflow.toFixed(2)}\n- Expected Cash: ${expectedClosingBalance.toFixed(2)}\n- Actual Cash in Drawer: ${actualClosingBalance}\n- Difference: ${difference.toFixed(2)}\n- User Notes: ${userNotes || "None"}`.trim()
       }
     });
 
