@@ -594,7 +594,7 @@ export default function OrdersPage() {
                   order={order}
                   onClick={setSelectedOrder}
                   onQuickCheckout={setCheckoutOrder}
-                  onPrint={() => window.print()}
+                  onPrint={() => {}}
                   onCopy={handleCopyOrder}
                   onAddItems={setExistingOrderForAdding}
                 />
@@ -643,7 +643,7 @@ export default function OrdersPage() {
                         order={order}
                         onClick={setSelectedOrder}
                         onQuickCheckout={setCheckoutOrder}
-                        onPrint={() => window.print()}
+                    onPrint={() => {}} // Handled internally
                         onCopy={handleCopyOrder}
                         onAddItems={setExistingOrderForAdding}
                       />

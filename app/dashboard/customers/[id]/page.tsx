@@ -163,6 +163,17 @@ export default function CustomerProfilePage() {
           </table>
           <div class="total">
             <p>Grand Total: ${settings.currency} ${order.total.toLocaleString()}</p>
+            <div style="margin-top: 10px; font-size: 12px; font-weight: normal; border-top: 1px dashed #eee; pt: 5px;">
+              ${(order.splitPayments || [])
+                .map(
+                  (p: any) =>
+                    `<div style="display: flex; justify-content: space-between;">
+                      <span>${p.method}</span>
+                      <span>${settings.currency} ${p.amount.toLocaleString()}</span>
+                    </div>`
+                )
+                .join("")}
+            </div>
           </div>
           <script>window.onload = () => { window.print(); window.close(); }</script>
         </body>
@@ -381,7 +392,22 @@ export default function CustomerProfilePage() {
                       <td className="px-4 py-3 font-medium text-gray-900">
                         {txn.txnNo}
                       </td>
-                      <td className="px-4 py-3">{txn.remarks || "-"}</td>
+                      <td className="px-4 py-3">
+                        {txn.isSplit ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold text-zinc-900">{txn.remarks}</span>
+                            <div className="flex flex-wrap gap-2">
+                              {txn.parts?.map((part: any, idx: number) => (
+                                <span key={idx} className="text-[10px] bg-zinc-50 text-zinc-500 px-1.5 py-0.5 rounded border border-zinc-100">
+                                  {part.remarks?.replace("Payment for Order - ", "") || part.method}: {part.amount}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          txn.remarks || "-"
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTxnColor(txn.type)}`}
@@ -417,6 +443,9 @@ export default function CustomerProfilePage() {
                     </th>
                     <th className="px-4 py-3 font-semibold text-gray-700">
                       Type
+                    </th>
+                    <th className="px-4 py-3 font-semibold text-gray-700">
+                      Mode
                     </th>
                     <th className="px-4 py-3 font-semibold text-gray-700">
                       Paid
@@ -457,11 +486,25 @@ export default function CustomerProfilePage() {
                           {order.id.slice(0, 8)}
                         </td>
                         <td className="px-4 py-3">{order.type}</td>
+                        <td className="px-4 py-3">
+                          {order.splitPayments && order.splitPayments.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {order.splitPayments.map((p: any, idx: number) => (
+                                <span key={idx} className="text-[10px] bg-zinc-50 text-zinc-500 px-1.5 py-0.5 rounded border border-zinc-100 flex justify-between gap-2">
+                                  <span>{p.method}</span>
+                                  <span className="font-bold">{p.amount}</span>
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">N/A</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-green-600 font-medium">
-                          {settings.currency} {paid.toLocaleString()}
+                          {settings.currency} {order.splitPayments?.filter((p:any) => p.status !== "CREDIT").reduce((acc:number, p:any) => acc + p.amount, 0).toLocaleString() || 0}
                         </td>
                         <td className="px-4 py-3 text-red-600 font-medium">
-                          {settings.currency} {unpaid.toLocaleString()}
+                          {settings.currency} {order.splitPayments?.filter((p:any) => p.status === "CREDIT").reduce((acc:number, p:any) => acc + p.amount, 0).toLocaleString() || 0}
                         </td>
                         <td className="px-4 py-3 font-semibold text-gray-900">
                           {settings.currency} {order.total.toLocaleString()}
@@ -567,6 +610,17 @@ export default function CustomerProfilePage() {
                 value={`${settings.currency} ${selectedTxn.amount?.toLocaleString() || selectedTxn.total?.toLocaleString()}`}
                 color="text-red-600 font-bold"
               />
+              {selectedTxn.splitPayments && selectedTxn.splitPayments.length > 0 && (
+                <div className="py-2 space-y-1">
+                  <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-tight">Payment Breakdown</p>
+                  {selectedTxn.splitPayments.map((p: any, idx: number) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span className="text-gray-500">{p.method}</span>
+                      <span className="font-medium text-gray-900">{settings.currency} {p.amount.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <DetailRow label="Remarks" value={selectedTxn.remarks || "N/A"} />
               <DetailRow
                 label="Reference ID"

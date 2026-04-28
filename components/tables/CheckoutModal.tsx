@@ -187,9 +187,136 @@ export function CheckoutModal({
   };
 
   const handlePrint = () => {
-    // Basic print functionality
-    window.print();
-    // After printing, move to payment step
+    const summary = calculateSummary();
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const itemsHtml = checkoutData.items.map((item: any) => {
+      const comp = complimentaryItems[item.id] || 0;
+      const cost = ((item.quantity - comp) * item.unitPrice).toFixed(2);
+      return `
+        <tr style="border-bottom: 0.5px solid #eee;">
+          <td style="padding: 5px 0; font-size: 11px;">
+            ${item.quantity}x ${item.name}
+            ${comp > 0 ? `<br/><small style="font-weight: bold;">(${comp} Comp)</small>` : ""}
+          </td>
+          <td style="padding: 5px 0; font-size: 11px; text-align: right;">
+            ${settings.currency} ${cost}
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    const extraItemsHtml = extraFreeItems.map((item) => `
+      <tr style="border-bottom: 0.5px solid #eee;">
+        <td style="padding: 5px 0; font-size: 11px;">
+          ${item.quantity}x ${item.name} <br/><small style="font-weight: bold;">(Free)</small>
+        </td>
+        <td style="padding: 5px 0; font-size: 11px; text-align: right;">
+          ${settings.currency} 0.00
+        </td>
+      </tr>
+    `).join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receipt - Table ${table.name}</title>
+          <style>
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+              font-family: 'Courier New', Courier, monospace; 
+              width: 80mm; 
+              margin: 0; 
+              padding: 5mm; 
+              font-size: 11px;
+              color: #000;
+              background: #fff;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .divider { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            .footer { margin-top: 20px; font-size: 9px; text-align: center; }
+            .qr-container { margin-top: 15px; display: flex; flex-direction: column; align-items: center; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            ${settings.logo ? `<img src="${settings.logo}" style="max-height: 40px; margin-bottom: 5px;" />` : ""}
+            <div class="bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
+            <div>${settings.address || "Kathmandu, Nepal"}</div>
+            <div>PAN/VAT: ${settings.panNumber || "123456789"}</div>
+            <div class="bold" style="margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;">Table Summary Receipt</div>
+            <div class="bold">Table: ${table.name}</div>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span>Date: ${new Date().toLocaleDateString()}</span>
+            <span>Time: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <table>
+            <thead>
+              <tr style="border-bottom: 1px solid #000;">
+                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
+                <th style="text-align: right; padding-bottom: 5px;">AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+              ${extraItemsHtml}
+            </tbody>
+          </table>
+          
+          <div class="divider"></div>
+          
+          <div style="space-y: 2px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>Subtotal</span>
+              <span>${settings.currency} ${summary.subtotal.toFixed(2)}</span>
+            </div>
+            ${includeServiceCharge ? `
+            <div style="display: flex; justify-content: space-between;">
+              <span>Service Charge (10%)</span>
+              <span>${settings.currency} ${summary.serviceCharge.toFixed(2)}</span>
+            </div>
+            ` : ""}
+            ${includeTax ? `
+            <div style="display: flex; justify-content: space-between;">
+              <span>VAT (13%)</span>
+              <span>${settings.currency} ${(summary.subtotal * 0.13).toFixed(2)}</span>
+            </div>
+            ` : ""}
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 5px;" class="bold">
+              <span>GRAND TOTAL</span>
+              <span>${settings.currency} ${summary.grandTotal.toFixed(2)}</span>
+            </div>
+          </div>
+          
+          ${qrData?.image ? `
+            <div class="qr-container">
+              <img src="${qrData.image}" style="width: 100px; height: 100px; object-contain;" />
+              <div style="font-size: 8px; font-weight: bold; margin-top: 2px;">SCAN TO PAY</div>
+            </div>
+          ` : ""}
+          
+          <div class="footer">
+            <p class="bold">THANK YOU FOR YOUR VISIT!</p>
+            <p>POWERED BY ${settings.name || "BODHIBERRY"} ERP</p>
+          </div>
+          
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
     setStep(3);
   };
 

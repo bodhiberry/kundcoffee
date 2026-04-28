@@ -37,6 +37,52 @@ export async function GET(req: NextRequest, context: { params: Params }) {
       if (l.type === "PAYMENT_OUT") paymentOut += l.amount;
     });
 
+    const ledgerData: any[] = [];
+    const processedPaymentGroups = new Set<string>();
+
+    customer.CustomerLedger.forEach((l: any) => {
+      if (l.type === "PAYMENT_IN" && l.splitGroupId) {
+        if (!processedPaymentGroups.has(l.splitGroupId)) {
+          const group = customer.CustomerLedger.filter(
+            (sl) => sl.splitGroupId === l.splitGroupId && sl.type === "PAYMENT_IN"
+          );
+          
+          if (group.length > 1) {
+            const totalAmount = group.reduce((sum, item) => sum + item.amount, 0);
+            const methods = group.map(item => item.remarks?.replace("Payment for Order - ", "")).join(", ");
+            
+            ledgerData.push({
+              ...l,
+              amount: totalAmount,
+              remarks: `Split Payment (${methods})`,
+              isSplit: true,
+              parts: group
+            });
+            processedPaymentGroups.add(l.splitGroupId);
+          } else {
+            ledgerData.push(l);
+          }
+        }
+      } else {
+        ledgerData.push(l);
+      }
+    });
+
+    const ordersWithPayments = await Promise.all(
+      customer.orders.map(async (order: any) => {
+        if (order.splitGroupId) {
+          const splitPayments = await prisma.payment.findMany({
+            where: { splitGroupId: order.splitGroupId },
+          });
+          return { ...order, splitPayments };
+        }
+        return {
+          ...order,
+          splitPayments: order.payment ? [order.payment] : [],
+        };
+      })
+    );
+
     const dueAmount =
       customer.openingBalance +
       (totalSales + paymentOut) -
@@ -46,6 +92,8 @@ export async function GET(req: NextRequest, context: { params: Params }) {
       success: true,
       data: {
         ...customer,
+        CustomerLedger: ledgerData,
+        orders: ordersWithPayments,
         dueAmount,
         metrics: {
           totalSales,

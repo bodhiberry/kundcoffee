@@ -159,6 +159,143 @@ export function CheckoutModal({
     creditAmount,
   ]);
 
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const itemsHtml = order.items.map((item: any) => {
+      const compQty = complimentaryItems[item.id] || 0;
+      const cost = ((item.quantity - compQty) * item.unitPrice).toFixed(2);
+      return `
+        <tr style="border-bottom: 0.5px solid #eee;">
+          <td style="padding: 5px 0; font-size: 11px;">
+            ${item.quantity}x ${item.dish?.name || item.combo?.name}
+            ${compQty > 0 ? `<br/><small style="font-weight: bold;">(FREE: ${compQty})</small>` : ""}
+          </td>
+          <td style="padding: 5px 0; font-size: 11px; text-align: right;">
+            ${settings.currency} ${cost}
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receipt - Order ${order.id.slice(-6).toUpperCase()}</title>
+          <style>
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+              font-family: 'Courier New', Courier, monospace; 
+              width: 80mm; 
+              margin: 0; 
+              padding: 5mm; 
+              font-size: 11px;
+              color: #000;
+              background: #fff;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .divider { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            .footer { margin-top: 20px; font-size: 9px; text-align: center; }
+            .qr-container { margin-top: 15px; display: flex; flex-direction: column; align-items: center; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            ${settings.logo ? `<img src="${settings.logo}" style="max-height: 40px; margin-bottom: 5px;" />` : ""}
+            <div class="bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
+            <div>${settings.address || "Kathmandu, Nepal"}</div>
+            <div>Phone: ${settings.phone || ""}</div>
+            <div>PAN/VAT: ${settings.panNumber || "123456789"}</div>
+            <div class="bold" style="margin-top: 5px; text-transform: uppercase;">Tax Invoice</div>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span>Inv: #${order.id.slice(-6).toUpperCase()}</span>
+            <span>Date: ${new Date().toLocaleDateString()}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Table: ${order.table?.name || "N/A"}</span>
+            <span>Time: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          ${selectedCustomer ? `<div>Customer: ${selectedCustomer.fullName}</div>` : ""}
+          
+          <div class="divider"></div>
+          
+          <table>
+            <thead>
+              <tr style="border-bottom: 1px solid #000;">
+                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
+                <th style="text-align: right; padding-bottom: 5px;">AMT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          
+          <div class="divider"></div>
+          
+          <div style="space-y: 2px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>Subtotal</span>
+              <span>${settings.currency} ${calculatedSubtotal.toFixed(2)}</span>
+            </div>
+            ${manualDiscountAmount > 0 ? `
+            <div style="display: flex; justify-content: space-between;">
+              <span>Manual Discount</span>
+              <span>-${manualDiscountAmount.toFixed(2)}</span>
+            </div>
+            ` : ""}
+            ${loyaltyDiscountAmount > 0 ? `
+            <div style="display: flex; justify-content: space-between;">
+              <span>Loyalty Reward (${selectedCustomer?.loyaltyDiscount}%)</span>
+              <span>-${loyaltyDiscountAmount.toFixed(2)}</span>
+            </div>
+            ` : ""}
+            ${includeTax ? `
+            <div style="display: flex; justify-content: space-between;">
+              <span>VAT (13%)</span>
+              <span>${taxAmount.toFixed(2)}</span>
+            </div>
+            ` : ""}
+            ${includeServiceCharge ? `
+            <div style="display: flex; justify-content: space-between;">
+              <span>Service Charge (10%)</span>
+              <span>${serviceChargeAmount.toFixed(2)}</span>
+            </div>
+            ` : ""}
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 5px;" class="bold">
+              <span>Grand Total</span>
+              <span>${settings.currency} ${grandTotal.toFixed(2)}</span>
+            </div>
+          </div>
+          
+          ${qrData?.image ? `
+            <div class="qr-container">
+              <img src="${qrData.image}" style="width: 100px; height: 100px;" />
+              <div style="font-size: 8px; font-weight: bold; margin-top: 2px;">SCAN TO PAY</div>
+            </div>
+          ` : ""}
+          
+          <div class="footer">
+            <p class="bold">THANK YOU FOR YOUR VISIT!</p>
+            <p>POWERED BY ${settings.name || "BODHIBERRY"} ERP</p>
+          </div>
+          
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handleProcessCheckout = async () => {
     if (!canSettle) return;
     setIsProcessing(true);
@@ -746,7 +883,7 @@ export function CheckoutModal({
                 )}
               </Button>
               <Button
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 variant="secondary"
                 className="h-10 rounded-none text-[10px] font-black uppercase tracking-widest border-black hover:bg-zinc-100"
               >

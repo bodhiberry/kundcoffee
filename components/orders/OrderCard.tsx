@@ -2,6 +2,7 @@
 
 import { Order, OrderStatus } from "@/lib/types";
 import { Plus, Printer, Copy, Zap, Clock, Utensils } from "lucide-react";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 interface OrderCardProps {
   order: Order;
@@ -20,6 +21,7 @@ export function OrderCard({
   onCopy,
   onAddItems,
 }: OrderCardProps) {
+  const { settings } = useSettings();
   const statusColors: Record<OrderStatus, string> = {
     PENDING: "border-emerald-100 text-emerald-600 bg-emerald-50",
     PREPARING: "border-zinc-200 text-zinc-600 bg-zinc-50",
@@ -30,6 +32,98 @@ export function OrderCard({
   };
 
   const totalDishes = order.items.reduce((acc, item) => acc + item.quantity, 0);
+
+  const handlePrint = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const itemsHtml = order.items.map((item: any) => `
+      <tr style="border-bottom: 0.5px solid #eee;">
+        <td style="padding: 5px 0; font-size: 11px;">
+          ${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}
+        </td>
+        <td style="padding: 5px 0; font-size: 11px; text-align: right;">
+          ${settings.currency} ${(item.quantity * item.unitPrice).toFixed(2)}
+        </td>
+      </tr>
+    `).join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Prov. Bill - ${order.table?.name || "Direct"}</title>
+          <style>
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+              font-family: 'Courier New', Courier, monospace; 
+              width: 80mm; 
+              margin: 0; 
+              padding: 5mm; 
+              font-size: 11px;
+              color: #000;
+              background: #fff;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .divider { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            .footer { margin-top: 20px; font-size: 9px; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            ${settings.logo ? `<img src="${settings.logo}" style="max-height: 40px; margin-bottom: 5px;" />` : ""}
+            <div class="center bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
+            <div class="center">${settings.address || "Kathmandu, Nepal"}</div>
+            <div class="center bold" style="margin-top: 5px; text-transform: uppercase;">Provisional Bill</div>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span>Order: #${order.id.slice(-6).toUpperCase()}</span>
+            <span>Date: ${new Date(order.createdAt).toLocaleDateString()}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Table: ${order.table?.name || "N/A"}</span>
+            <span>Type: ${order.type || "DINE_IN"}</span>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <table>
+            <thead>
+              <tr style="border-bottom: 1px solid #000;">
+                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
+                <th style="text-align: right; padding-bottom: 5px;">AMT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          
+          <div class="divider"></div>
+          
+          <div style="display: flex; justify-content: space-between; font-size: 13px;" class="bold">
+            <span>TOTAL</span>
+            <span>${settings.currency} ${order.total.toFixed(2)}</span>
+          </div>
+          
+          <div class="footer">
+            <p class="bold">THANK YOU!</p>
+            <p>POWERED BY ${settings.name || "BODHIBERRY"} ERP</p>
+          </div>
+          
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   return (
     <div
@@ -47,6 +141,13 @@ export function OrderCard({
           >
             {order.status}
           </div>
+          <button
+            onClick={handlePrint}
+            className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all"
+            title="Print Provisional Bill"
+          >
+            <Printer size={14} />
+          </button>
         </div>
         <div className="flex items-center justify-between mt-1">
           <div className="flex items-center gap-3">

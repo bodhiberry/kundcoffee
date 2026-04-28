@@ -21,6 +21,7 @@ import {
   Users,
   MessageSquare,
 } from "lucide-react";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 interface OrderDetailViewProps {
   order: Order;
@@ -45,6 +46,7 @@ export function OrderDetailView({
   onRemoveItem,
   onPrint,
 }: OrderDetailViewProps) {
+  const { settings } = useSettings();
   const [activeItemForPopover, setActiveItemForPopover] = useState<
     string | null
   >(null);
@@ -92,6 +94,112 @@ export function OrderDetailView({
   const taxAmount = includeTax ? order.total * 0.13 : 0;
   const grandTotal = order.total + taxAmount;
 
+  const handleInternalPrint = () => {
+    // If a custom onPrint is provided and we want to use it, we can.
+    // But we'll implement a robust default here.
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const itemsHtml = order.items.map((item: any) => `
+      <tr style="border-bottom: 0.5px solid #eee;">
+        <td style="padding: 5px 0; font-size: 11px;">
+          ${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}
+        </td>
+        <td style="padding: 5px 0; font-size: 11px; text-align: right;">
+          ${settings.currency} ${(item.quantity * item.unitPrice).toFixed(2)}
+        </td>
+      </tr>
+    `).join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Bill - ${order.table?.name || "Direct"}</title>
+          <style>
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+              font-family: 'Courier New', Courier, monospace; 
+              width: 80mm; 
+              margin: 0; 
+              padding: 5mm; 
+              font-size: 11px;
+              color: #000;
+              background: #fff;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .divider { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            .footer { margin-top: 20px; font-size: 9px; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            ${settings.logo ? `<img src="${settings.logo}" style="max-height: 40px; margin-bottom: 5px;" />` : ""}
+            <div class="bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
+            <div>${settings.address || "Kathmandu, Nepal"}</div>
+            <div>Phone: ${settings.phone || ""}</div>
+            <div class="bold" style="margin-top: 5px; text-transform: uppercase;">Provisional Bill</div>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span>Order: #${order.id.slice(-6).toUpperCase()}</span>
+            <span>Date: ${new Date(order.createdAt).toLocaleDateString()}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Table: ${order.table?.name || "N/A"}</span>
+            <span>Type: ${order.type || "DINE_IN"}</span>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <table>
+            <thead>
+              <tr style="border-bottom: 1px solid #000;">
+                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
+                <th style="text-align: right; padding-bottom: 5px;">AMT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          
+          <div class="divider"></div>
+          
+          <div style="space-y: 2px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>Subtotal</span>
+              <span>${settings.currency} ${order.total.toFixed(2)}</span>
+            </div>
+            ${includeTax ? `
+            <div style="display: flex; justify-content: space-between;">
+              <span>VAT (13%)</span>
+              <span>${settings.currency} ${taxAmount.toFixed(2)}</span>
+            </div>
+            ` : ""}
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 5px;" class="bold">
+              <span>Grand Total</span>
+              <span>${settings.currency} ${grandTotal.toFixed(2)}</span>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p class="bold">THANK YOU!</p>
+            <p>POWERED BY ${settings.name || "BODHIBERRY"} ERP</p>
+          </div>
+          
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <div className="flex flex-col m-auto h-[85vh] bg-white overflow-hidden rounded-xl border border-zinc-100 printable-area">
       {/* HEADER */}
@@ -137,7 +245,7 @@ export function OrderDetailView({
             </Button>
           )}
           <Button
-            onClick={() => onPrint?.(order)}
+            onClick={handleInternalPrint}
             variant="secondary"
             className="h-10 px-5 border-zinc-200 text-zinc-700 font-medium flex items-center gap-2 uppercase text-[10px] tracking-widest bg-white"
           >

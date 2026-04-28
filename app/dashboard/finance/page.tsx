@@ -193,7 +193,7 @@ export default function FinancePage() {
           </div>
           <div style="display: flex; justify-content: space-between;">
             <span>Table: ${txn.table || "N/A"}</span>
-            <span>Mode: ${txn.mode}</span>
+            <span>Mode: ${txn.modes?.map((m: any) => `${m.method}(${m.amount})`).join(", ") || txn.mode}</span>
           </div>
           <div>Customer: ${customer}</div>
           
@@ -504,9 +504,24 @@ export default function FinancePage() {
                             {activeTab === "SALES" ? txn.amount : txn.txnAmount}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-[10px] font-black px-2 py-1 rounded bg-zinc-100 text-zinc-600 uppercase tracking-widest">
-                              {activeTab === "SALES" ? txn.mode : txn.mode}
-                            </span>
+                            {txn.modes && txn.modes.length > 1 ? (
+                              <div className="flex flex-col gap-0.5">
+                                {txn.modes.map((m: any, idx: number) => (
+                                  <div key={idx} className="flex items-center gap-1">
+                                    <span className="text-[8px] font-black px-1 py-0.25 rounded bg-zinc-100 text-zinc-500 uppercase">
+                                      {m.method}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-zinc-700">
+                                      {m.amount}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-black px-2 py-1 rounded bg-zinc-100 text-zinc-600 uppercase tracking-widest">
+                                {txn.mode}
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span
@@ -604,9 +619,19 @@ export default function FinancePage() {
                   <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
                     Payment Mode
                   </span>
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 uppercase tracking-widest inline-block">
-                    {selectedTxn.mode}
-                  </span>
+                  {selectedTxn.modes && selectedTxn.modes.length > 1 ? (
+                    <div className="flex flex-col gap-1 items-end pt-1">
+                      {selectedTxn.modes.map((m: any, idx: number) => (
+                        <span key={idx} className="text-[10px] font-black px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 uppercase tracking-widest">
+                          {m.method}: {settings.currency} {m.amount}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 uppercase tracking-widest inline-block">
+                      {selectedTxn.mode}
+                    </span>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">

@@ -164,6 +164,59 @@ export async function GET(req: NextRequest) {
     const paymentOutTotal = paymentOut._sum.amount || 0;
     const returnsTotal = returns._sum.totalAmount || 0;
 
+    const transactionsMap = new Map<string, any>();
+
+    payments.forEach((p: any) => {
+      // Use splitGroupId as key, or p.id if it's a single payment without splitGroupId
+      const key = p.splitGroupId || p.id;
+      
+      if (!transactionsMap.has(key)) {
+        const order = p.orders?.[0];
+        const allItems = p.orders?.flatMap((o: any) => 
+          o.items.map((it: any) => ({
+            dishName: it.dish?.name || it.combo?.name || "Unknown Item",
+            quantity: it.quantity,
+            amount: it.totalPrice,
+          }))
+        ) || [];
+
+        transactionsMap.set(key, {
+          id: p.id,
+          orderId: order?.id,
+          sessionId: p.sessionId,
+          splitGroupId: p.splitGroupId,
+          orderType: order?.type || "DINE_IN", 
+          amount: p.amount,
+          mode: p.method,
+          modes: [{ method: p.method, amount: p.amount }],
+          status: p.status,
+          date: p.createdAt,
+          billedBy: p.staff?.name || "Admin",
+          customer: order?.customer?.fullName || "Guest",
+          table: order?.table?.name || p.session?.table?.name || "N/A",
+          items: allItems,
+        });
+      } else {
+        const existing = transactionsMap.get(key);
+        existing.amount += p.amount;
+        existing.modes.push({ method: p.method, amount: p.amount });
+        // Join modes for the 'mode' display field
+        existing.mode = existing.modes.map((m: any) => m.method).join(", ");
+        
+        // If this payment has orders (unlikely for subsequent ones but safe), add items
+        if (p.orders?.length > 0) {
+          const newItems = p.orders.flatMap((o: any) => 
+            o.items.map((it: any) => ({
+              dishName: it.dish?.name || it.combo?.name || "Unknown Item",
+              quantity: it.quantity,
+              amount: it.totalPrice,
+            }))
+          );
+          existing.items = [...existing.items, ...newItems];
+        }
+      }
+    });
+
     const response: ApiResponse = {
       success: true,
       data: {
@@ -178,31 +231,7 @@ export async function GET(req: NextRequest) {
           paymentOut: paymentOutTotal,
           returns: returnsTotal,
         },
-        transactions: payments.map((p: any) => {
-          const order = p.orders?.[0];
-          const allItems = p.orders?.flatMap((o: any) => 
-            o.items.map((it: any) => ({
-              dishName: it.dish?.name || it.combo?.name || "Unknown Item",
-              quantity: it.quantity,
-              amount: it.totalPrice,
-            }))
-          ) || [];
-
-          return {
-            id: p.id,
-            orderId: order?.id,
-            sessionId: p.sessionId,
-            orderType: order?.type || "DINE_IN", 
-            amount: p.amount,
-            mode: p.method,
-            status: p.status,
-            date: p.createdAt,
-            billedBy: p.staff?.name || "Admin",
-            customer: order?.customer?.fullName || "Guest",
-            table: order?.table?.name || p.session?.table?.name || "N/A",
-            items: allItems,
-          };
-        }),
+        transactions: Array.from(transactionsMap.values()),
       },
     };
 

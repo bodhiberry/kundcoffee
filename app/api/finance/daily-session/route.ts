@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { autoCloseStaleSessions } from "@/services/session-service";
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,6 +17,9 @@ export async function GET(req: NextRequest) {
     const isActiveOnly = searchParams.get("active") === "true";
 
     if (isActiveOnly) {
+      // Auto-close any stale sessions first
+      await autoCloseStaleSessions(storeId);
+
       const activeSession = await prisma.dailySession.findFirst({
         where: { storeId, status: "OPEN" },
         include: {
@@ -104,6 +108,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { openingBalance, notes } = body;
+
+    // Auto-close any stale sessions first
+    await autoCloseStaleSessions(storeId);
 
     // Check if there's already an active session
     const existingActive = await prisma.dailySession.findFirst({

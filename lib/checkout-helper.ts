@@ -1,5 +1,5 @@
-// lib/checkout-helper.ts
 import { prisma } from "@/lib/prisma";
+import { v4 as uuidv4 } from "uuid";
 
 export async function finalizeSessionTransaction(data: {
   orderId?: string;
@@ -101,6 +101,8 @@ export async function finalizeSessionTransaction(data: {
           ? payments
           : [{ method: paymentMethod, amount }];
 
+      const splitGroupId = uuidv4();
+
       for (const p of splitPayments) {
         const paymentStatus = (
           p.method === "CREDIT" ? "CREDIT" : "PAID"
@@ -114,6 +116,7 @@ export async function finalizeSessionTransaction(data: {
             storeId: finalStoreId as string,
             staffId: staffId || null,
             dailySessionId: dailySessionId,
+            splitGroupId: splitGroupId,
           },
         });
         paymentRecords.push(createdPayment);
@@ -143,6 +146,7 @@ export async function finalizeSessionTransaction(data: {
             staffId: staffId || order.staffId,
             paymentId: finalPaymentId,
             dailySessionId: dailySessionId,
+            splitGroupId: splitGroupId,
           },
         });
 
@@ -171,6 +175,7 @@ export async function finalizeSessionTransaction(data: {
             paymentId: finalPaymentId,
             total: 0,
             dailySessionId: dailySessionId,
+            splitGroupId: splitGroupId,
             items: {
               create: extraFreeItems.map((item) => ({
                 dishId: item.dishId || null,
@@ -202,6 +207,7 @@ export async function finalizeSessionTransaction(data: {
             paymentId: finalPaymentId,
             sessionId: sessionId || null,
             dailySessionId: dailySessionId,
+            splitGroupId: splitGroupId,
           },
         });
       }
@@ -261,6 +267,7 @@ export async function finalizeSessionTransaction(data: {
             amount: amount,
             closingBalance: newBalance,
             referenceId: sessionId || finalPaymentId,
+            splitGroupId: splitGroupId,
             remarks: tableId
               ? `Table Checkout - ${tableId} (${paymentMethod})`
               : `Take Away Checkout (${paymentMethod})`,
@@ -281,6 +288,7 @@ export async function finalizeSessionTransaction(data: {
                 amount: payRec.amount,
                 closingBalance: runningBalance,
                 referenceId: payRec.id,
+                splitGroupId: splitGroupId,
                 remarks: `Payment for Order - ${payRec.method}`,
               },
             });
