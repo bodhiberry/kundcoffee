@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
       sessionId = activeSession.id;
     } else {
       // No filter and no active session: Start from zero as requested
+      // The user wants strictly session data, "if not nothing"
       return NextResponse.json({
         success: true,
         isSessionData: true,
@@ -78,6 +79,7 @@ export async function GET(req: NextRequest) {
         data: {
           sales: 0,
           purchases: 0,
+          difference: 0,
           income: 0,
           expenses: 0,
           paymentIn: 0,
@@ -164,7 +166,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const [sales, purchases, expenses, paymentIn, paymentOut, returns] =
+    const [sales, purchases, expenses, paymentIn, paymentOut, returns, creditSales, creditPurchases] =
       await Promise.all([
         prisma.payment.aggregate({
           _sum: { amount: true },
@@ -220,6 +222,25 @@ export async function GET(req: NextRequest) {
             ...(sessionId ? { txnDate: fallbackDateFilter } : { txnDate: whereBase.createdAt }),
           },
         }),
+        prisma.payment.aggregate({
+          _sum: { amount: true },
+          where: {
+            ...whereBase,
+            method: "CREDIT",
+            isDeleted: false,
+          },
+        }),
+        prisma.purchase.aggregate({
+          _sum: { totalAmount: true },
+          where: {
+            ...whereBase,
+            paymentMode: "CREDIT",
+            ...(sessionId? {} : {
+              createdAt: undefined,
+              txnDate: whereBase.createdAt
+            })
+          },
+        }),
       ]);
 
     const salesTotal = sales._sum.amount || 0;
@@ -228,6 +249,8 @@ export async function GET(req: NextRequest) {
     const paymentInTotal = paymentIn._sum.amount || 0;
     const paymentOutTotal = paymentOut._sum.amount || 0;
     const returnsTotal = returns._sum.totalAmount || 0;
+    const creditSalesTotal = creditSales._sum.amount || 0;
+    const creditPurchasesTotal = creditPurchases._sum.totalAmount || 0;
 
     const response: any = {
       success: true,
@@ -236,6 +259,9 @@ export async function GET(req: NextRequest) {
       data: {
         sales: salesTotal,
         purchases: purchasesTotal,
+        creditSales: creditSalesTotal,
+        creditPurchases: creditPurchasesTotal,
+        difference: salesTotal - purchasesTotal,
         income: salesTotal + paymentInTotal, // Aggregated inflow
         expenses: expensesTotal,
         paymentIn: paymentInTotal,
