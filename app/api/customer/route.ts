@@ -58,17 +58,21 @@ export async function POST(req: NextRequest) {
 
     const customer = await prisma.$transaction(
       async (tx) => {
+        const normalizedPhone = phone?.trim() || null;
+        const normalizedEmail = email?.trim() || null;
+        const normalizedLoyaltyId = loyaltyId?.trim() || null;
+
         const newCustomer = await tx.customer.create({
           data: {
             fullName,
-            phone,
-            email,
+            phone: normalizedPhone,
+            email: normalizedEmail,
             dob: dob ? new Date(dob) : null,
-            loyaltyId,
-            openingBalance: parseFloat(openingBalance) || 0,
-            creditLimit: parseFloat(creditLimit) || 0,
-            creditTermDays: parseInt(creditTermDays) || 0,
-            loyaltyDiscount: parseFloat(loyaltyDiscount) || 0,
+            loyaltyId: normalizedLoyaltyId,
+            openingBalance: parseFloat(openingBalance as any) || 0,
+            creditLimit: parseFloat(creditLimit as any) || 0,
+            creditTermDays: parseInt(creditTermDays as any) || 0,
+            loyaltyDiscount: parseFloat(loyaltyDiscount as any) || 0,
             legalName,
             taxNumber,
             address,

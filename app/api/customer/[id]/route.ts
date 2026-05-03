@@ -158,9 +158,15 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       );
     }
 
-    if (phone && phone !== customer.phone) {
+    // Normalize empty strings to null for unique fields
+    const normalizedPhone = phone?.trim() || null;
+    const normalizedEmail = email?.trim() || null;
+    const normalizedLoyaltyId = loyaltyId?.trim() || null;
+
+    // Check Phone Uniqueness
+    if (normalizedPhone && normalizedPhone !== customer.phone) {
       const phoneExists = await prisma.customer.findUnique({
-        where: { phone },
+        where: { phone: normalizedPhone },
       });
       if (phoneExists) {
         return NextResponse.json(
@@ -169,6 +175,20 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         );
       }
     }
+
+    // Check LoyaltyId Uniqueness
+    if (normalizedLoyaltyId && normalizedLoyaltyId !== customer.loyaltyId) {
+      const loyaltyExists = await prisma.customer.findUnique({
+        where: { loyaltyId: normalizedLoyaltyId },
+      });
+      if (loyaltyExists) {
+        return NextResponse.json(
+          { success: false, message: "Loyalty ID already in use" },
+          { status: 409 },
+        );
+      }
+    }
+
     if (creditLimit !== undefined && creditLimit < 0) {
       return NextResponse.json(
         { success: false, message: "Invalid credit limit" },
@@ -180,13 +200,13 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       where: { id },
       data: {
         fullName,
-        phone,
-        email,
-        dob,
-        loyaltyId,
-        creditLimit,
-        creditTermDays,
-        loyaltyDiscount,
+        phone: normalizedPhone,
+        email: normalizedEmail,
+        dob: dob ? new Date(dob) : null,
+        loyaltyId: normalizedLoyaltyId,
+        creditLimit: parseFloat(creditLimit as any) || 0,
+        creditTermDays: parseInt(creditTermDays as any) || 0,
+        loyaltyDiscount: parseFloat(loyaltyDiscount as any) || 0,
         legalName,
         taxNumber,
         address,
@@ -199,9 +219,9 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       data: updatedCustomer,
     });
   } catch (error: any) {
-    console.error(error);
+    console.error("PATCH /api/customer/[id] error:", error);
     return NextResponse.json(
-      { success: false, message: "Failed to update customer" },
+      { success: false, message: error.message || "Failed to update customer" },
       { status: 500 },
     );
   }
