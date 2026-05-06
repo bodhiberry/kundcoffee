@@ -27,6 +27,14 @@ export default function SupplierProfile() {
   const [ledger, setLedger] = useState<SupplierLedger[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTxn, setSelectedTxn] = useState<SupplierLedger | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    amount: "",
+    paymentMethod: "CASH",
+    remarks: "",
+    date: new Date().toISOString().split("T")[0],
+  });
 
   const fetchSupplierData = async () => {
     if (!supplierId) return;
@@ -45,6 +53,37 @@ export default function SupplierProfile() {
       toast.error("Failed to fetch supplier details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/suppliers/${supplierId}/payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Payment recorded successfully");
+        setIsPaymentModalOpen(false);
+        setPaymentForm({
+          amount: "",
+          paymentMethod: "CASH",
+          remarks: "",
+          date: new Date().toISOString().split("T")[0],
+        });
+        fetchSupplierData();
+      } else {
+        toast.error(data.message || "Failed to record payment");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -185,6 +224,13 @@ export default function SupplierProfile() {
               >
                 Statements
               </Button>
+              <Button
+                className="flex-1 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => setIsPaymentModalOpen(true)}
+                size="sm"
+              >
+                Record Payment
+              </Button>
             </div>
           </div>
         </div>
@@ -320,6 +366,85 @@ export default function SupplierProfile() {
           </div>
         </Modal>
       )}
+
+      {/* Record Payment Modal */}
+      <Modal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        title="Record Supplier Payment"
+      >
+        <form onSubmit={handlePaymentSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
+                Payment Amount
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-zinc-400">Rs.</span>
+                <input
+                  type="number"
+                  required
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  className="w-full h-12 pl-12 pr-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all font-bold"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
+                Payment Method
+              </label>
+              <select
+                value={paymentForm.paymentMethod}
+                onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none font-semibold"
+              >
+                <option value="CASH">Cash</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="ESEWA">eSewa</option>
+                <option value="QR">QR Payment</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
+                Transaction Date
+              </label>
+              <input
+                type="date"
+                required
+                value={paymentForm.date}
+                onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })}
+                className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all font-semibold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
+                Remarks
+              </label>
+              <textarea
+                value={paymentForm.remarks}
+                onChange={(e) => setPaymentForm({ ...paymentForm, remarks: e.target.value })}
+                className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all h-32 resize-none font-medium"
+                placeholder="Optional notes about this payment..."
+              />
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-12 bg-zinc-900 hover:bg-black text-white font-black rounded-xl shadow-lg transition-all active:scale-[0.98] uppercase tracking-widest"
+            >
+              {isSubmitting ? "Recording..." : "Record Payment"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

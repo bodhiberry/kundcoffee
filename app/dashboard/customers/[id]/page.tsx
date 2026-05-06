@@ -26,14 +26,25 @@ export default function CustomerProfilePage() {
     "transactions" | "invoices" | "activity"
   >("transactions");
   const [selectedTxn, setSelectedTxn] = useState<any>(null);
+  const [isPaymentPanelOpen, setIsPaymentPanelOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    amount: "",
+    type: "PAYMENT_IN",
+    paymentMethod: "CASH",
+    remarks: "",
+    date: new Date().toISOString().split("T")[0],
+    splitGroupId: "",
+  });
+
+  const fetchData = async () => {
+    const res = await getCustomerById(id);
+    if (res.success) {
+      setCustomer(res.data);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await getCustomerById(id);
-      if (res.success) {
-        setCustomer(res.data);
-      }
-    };
     fetchData();
   }, [id]);
 
@@ -110,6 +121,38 @@ export default function CustomerProfilePage() {
       </html>
     `);
     printWindow.document.close();
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/customer/${id}/payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsPaymentPanelOpen(false);
+        setPaymentForm({
+          amount: "",
+          type: "PAYMENT_IN",
+          paymentMethod: "CASH",
+          remarks: "",
+          date: new Date().toISOString().split("T")[0],
+          splitGroupId: "",
+        });
+        fetchData();
+      } else {
+        alert(data.message || "Failed to record payment");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handlePrintInvoice = (order: any) => {
@@ -285,6 +328,13 @@ export default function CustomerProfilePage() {
                 onClick={() => setActiveTab("invoices")}
               >
                 <span className="flex items-center gap-2">View Invoices</span>
+              </Button>
+              <Button
+                variant="primary"
+                className="w-full justify-start text-sm py-2 px-4 bg-red-600 hover:bg-red-700 border-none"
+                onClick={() => setIsPaymentPanelOpen(true)}
+              >
+                <span className="flex items-center gap-2 text-white">Record Payment</span>
               </Button>
             </div>
           </div>
@@ -501,10 +551,10 @@ export default function CustomerProfilePage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-green-600 font-medium">
-                          {settings.currency} {order.splitPayments?.filter((p:any) => p.status !== "CREDIT").reduce((acc:number, p:any) => acc + p.amount, 0).toLocaleString() || 0}
+                          {settings.currency} {(order.splitPayments?.filter((p:any) => p.status === "PAID").reduce((acc:number, p:any) => acc + p.amount, 0) || 0).toLocaleString()}
                         </td>
                         <td className="px-4 py-3 text-red-600 font-medium">
-                          {settings.currency} {order.splitPayments?.filter((p:any) => p.status === "CREDIT").reduce((acc:number, p:any) => acc + p.amount, 0).toLocaleString() || 0}
+                          {settings.currency} {Math.max(0, order.total - (order.splitPayments?.filter((p:any) => p.status === "PAID").reduce((acc:number, p:any) => acc + p.amount, 0) || 0)).toLocaleString()}
                         </td>
                         <td className="px-4 py-3 font-semibold text-gray-900">
                           {settings.currency} {order.total.toLocaleString()}
@@ -665,6 +715,136 @@ export default function CustomerProfilePage() {
             </div>
           </div>
         )}
+      </SidePanel>
+
+      {/* Record Payment Side Panel */}
+      <SidePanel
+        isOpen={isPaymentPanelOpen}
+        onClose={() => setIsPaymentPanelOpen(false)}
+        title="Record Payment"
+      >
+        <form onSubmit={handlePaymentSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Transaction Type
+              </label>
+              <select
+                value={paymentForm.type}
+                onChange={(e) => setPaymentForm({ ...paymentForm, type: e.target.value })}
+                className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all appearance-none"
+              >
+                <option value="PAYMENT_IN">Payment In (Receive)</option>
+                <option value="PAYMENT_OUT">Payment Out (Pay)</option>
+              </select>
+            </div>
+
+            {paymentForm.type === "PAYMENT_IN" && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  Link to Unpaid Invoice (Optional)
+                </label>
+                <select
+                  value={paymentForm.splitGroupId}
+                  onChange={(e) => {
+                    const selectedGroupId = e.target.value;
+                    const order = customer.orders.find((o: any) => o.splitGroupId === selectedGroupId);
+                    if (order) {
+                      const paid = order.splitPayments?.filter((p: any) => p.status === "PAID").reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+                      const remaining = order.total - paid;
+                      setPaymentForm({ 
+                        ...paymentForm, 
+                        splitGroupId: selectedGroupId,
+                        amount: remaining.toString(),
+                        remarks: `Payment for Invoice #${order.id.slice(0, 8)}`
+                      });
+                    } else {
+                      setPaymentForm({ ...paymentForm, splitGroupId: "" });
+                    }
+                  }}
+                  className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all appearance-none"
+                >
+                  <option value="">No specific invoice (General Payment)</option>
+                  {customer.orders
+                    .filter((order: any) => {
+                      const paid = order.splitPayments?.filter((p: any) => p.status === "PAID").reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+                      return order.total - paid > 0;
+                    })
+                    .map((order: any) => (
+                      <option key={order.id} value={order.splitGroupId}>
+                        Invoice #{order.id.slice(0, 8)} - Due: {settings.currency} {(order.total - (order.splitPayments?.filter((p: any) => p.status === "PAID").reduce((acc: number, p: any) => acc + p.amount, 0) || 0)).toLocaleString()}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Amount
+              </label>
+              <input
+                type="number"
+                required
+                value={paymentForm.amount}
+                onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Payment Method
+              </label>
+              <select
+                value={paymentForm.paymentMethod}
+                onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all appearance-none"
+              >
+                <option value="CASH">Cash</option>
+                <option value="ESEWA">eSewa</option>
+                <option value="QR">QR Payment</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Transaction Date
+              </label>
+              <input
+                type="date"
+                required
+                value={paymentForm.date}
+                onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })}
+                className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Remarks
+              </label>
+              <textarea
+                value={paymentForm.remarks}
+                onChange={(e) => setPaymentForm({ ...paymentForm, remarks: e.target.value })}
+                className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all h-32 resize-none"
+                placeholder="Optional notes about this payment..."
+              />
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-200 transition-all active:scale-[0.98]"
+            >
+              {isSubmitting ? "Recording..." : "Record Payment"}
+            </Button>
+          </div>
+        </form>
       </SidePanel>
     </div>
   );
