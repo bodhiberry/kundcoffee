@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
+import { SidePanel } from "@/components/ui/SidePanel";
+import PurchaseDetailView from "@/components/procurement/PurchaseDetailView";
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<any[]>([]);
@@ -30,6 +32,7 @@ export default function PurchasesPage() {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedPurchase, setSelectedPurchase] = useState<any>(null);
 
   const [dateFilter, setDateFilter] = useState("this_month");
   const [selectedDate, setSelectedDate] = useState("");
@@ -360,8 +363,17 @@ export default function PurchasesPage() {
             },
           ]}
           data={filteredPurchases}
+          onRowClick={(row) => setSelectedPurchase(row)}
         />
       </div>
+
+      <SidePanel
+        isOpen={!!selectedPurchase}
+        onClose={() => setSelectedPurchase(null)}
+        title="Purchase Detail"
+      >
+        {selectedPurchase && <PurchaseDetailView id={selectedPurchase.id} />}
+      </SidePanel>
 
       <PurchaseModal
         isOpen={isModalOpen}
