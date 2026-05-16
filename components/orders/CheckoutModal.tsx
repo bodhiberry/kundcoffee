@@ -199,7 +199,7 @@ export function CheckoutModal({
               background: #fff;
             }
             body { 
-              font-family: 'Courier New', Courier, monospace; 
+              font-family: Arial, Helvetica, sans-serif; 
               padding: 5mm; 
               font-size: 11px;
               color: #000;

@@ -56,7 +56,7 @@ export function OrderCard({
           <style>
             @page { size: 80mm auto; margin: 0; }
             body { 
-              font-family: 'Courier New', Courier, monospace; 
+              font-family: Arial, Helvetica, sans-serif; 
               width: 80mm; 
               margin: 0; 
               padding: 5mm; 
