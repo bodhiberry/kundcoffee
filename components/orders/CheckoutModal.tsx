@@ -99,14 +99,19 @@ export function CheckoutModal({
   //   setPaymentReceived(false);
   // }, [paymentMethod]);
 
+  // Filter out cancelled items for all checkout calculations and displays
+  const activeItems = useMemo(() => {
+    return order.items.filter((item) => (item.status || "PENDING") !== "CANCELLED");
+  }, [order.items]);
+
   // --- Calculations Logic ---
   const calculatedSubtotal = useMemo(() => {
-    return order.items.reduce((sum, item) => {
+    return activeItems.reduce((sum, item) => {
       const compQty = complimentaryItems[item.id] || 0;
       const paidQty = Math.max(0, item.quantity - compQty);
       return sum + paidQty * item.unitPrice;
     }, 0);
-  }, [order.items, complimentaryItems]);
+  }, [activeItems, complimentaryItems]);
 
   const manualDiscountAmount = useMemo(() => {
     if (discountType === "PERCENT") {
@@ -163,7 +168,7 @@ export function CheckoutModal({
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const itemsHtml = order.items.map((item: any) => {
+    const itemsHtml = activeItems.map((item: any) => {
       const compQty = complimentaryItems[item.id] || 0;
       const cost = ((item.quantity - compQty) * item.unitPrice).toFixed(2);
       return `
@@ -488,7 +493,7 @@ export function CheckoutModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200">
-                {order.items.map((item) => {
+                {activeItems.map((item) => {
                   const compQty = complimentaryItems[item.id] || 0;
                   return (
                     <tr key={item.id}>

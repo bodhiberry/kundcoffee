@@ -22,6 +22,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { toast } from "sonner";
 
 interface OrderDetailViewProps {
   order: Order;
@@ -88,7 +89,8 @@ export function OrderDetailView({
   const pendingItems = order.items.filter(
     (i) =>
       (i.status || "PENDING") !== "SERVED" &&
-      (i.status || "PENDING") !== "COMPLETED",
+      (i.status || "PENDING") !== "COMPLETED" &&
+      (i.status || "PENDING") !== "CANCELLED",
   );
 
   const taxAmount = includeTax ? order.total * 0.13 : 0;
@@ -100,7 +102,9 @@ export function OrderDetailView({
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const itemsHtml = order.items.map((item: any) => `
+    const itemsHtml = order.items
+      .filter((item: any) => (item.status || "PENDING") !== "CANCELLED")
+      .map((item: any) => `
       <tr style="border-bottom: 0.5px solid #eee;">
         <td style="padding: 5px 0; font-size: 11px;">
           ${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}
@@ -315,10 +319,16 @@ export function OrderDetailView({
             </div>
           )}
           <div className="space-y-3">
-            {order.items.map((item) => (
+            {order.items.map((item) => {
+              const isCancelled = (item.status || "PENDING") === "CANCELLED";
+              return (
               <div
                 key={item.id}
-                className="bg-white rounded-xl border border-zinc-200 p-5 hover:border-zinc-950 transition-all group flex items-center justify-between gap-6 shadow-sm"
+                className={`bg-white rounded-xl border p-5 transition-all group flex items-center justify-between gap-6 shadow-sm ${
+                  isCancelled
+                    ? "border-red-200 bg-red-50/30 opacity-60"
+                    : "border-zinc-200 hover:border-zinc-950"
+                }`}
               >
                 <div className="flex items-center gap-5 flex-1">
                   <div className="w-14 h-14 bg-zinc-50 rounded-xl flex items-center justify-center overflow-hidden border border-zinc-200 flex-shrink-0">
@@ -334,12 +344,17 @@ export function OrderDetailView({
  
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                      <h4 className="font-black text-zinc-900 text-[13px] uppercase tracking-tight leading-none">
+                      <h4 className={`font-black text-[13px] uppercase tracking-tight leading-none ${isCancelled ? "line-through text-zinc-400" : "text-zinc-900"}`}>
                         {item.dish?.name || "Dish Item"}
                       </h4>
                       <span className="text-[10px] font-black text-zinc-800 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">
                         x{item.quantity}
                       </span>
+                      {isCancelled && (
+                        <span className="text-[8px] font-black text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-200 uppercase">
+                          Cancelled
+                        </span>
+                      )}
                     </div>
                     {item.remarks && (
                       <p className="text-[9px] text-zinc-500 uppercase font-black italic mt-1.5 bg-zinc-50 px-2 py-1 rounded border border-zinc-100 inline-block">
@@ -376,8 +391,8 @@ export function OrderDetailView({
                     )}
                   </div>
 
-                  {/* Modify Button */}
-                  {!isReadOnly && (
+                  {/* Modify Button - hide for cancelled items */}
+                  {!isReadOnly && !isCancelled && (
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block ml-0.5">
                         Action
@@ -396,13 +411,14 @@ export function OrderDetailView({
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
                       Subtotal
                     </span>
-                    <p className="text-sm font-black text-zinc-950 h-[30px] flex items-center justify-end">
+                    <p className={`text-sm font-black h-[30px] flex items-center justify-end ${isCancelled ? "line-through text-red-400" : "text-zinc-950"}`}>
                       {settings.currency} {item.totalPrice.toFixed(2)}
                     </p>
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
 
@@ -478,16 +494,20 @@ export function OrderDetailView({
             {!isReadOnly ? (
               <>
                 <Button
+                  onClick={() => onCheckout(order)}
                   variant="secondary"
                   className="w-full flex items-center justify-center gap-3 font-black text-[9px] h-12 uppercase tracking-widest bg-white border border-zinc-200 text-zinc-800 rounded-xl hover:bg-zinc-50 hover:border-zinc-300 transition-all"
                 >
-                  <CreditCard size={16} strokeWidth={2.5} /> Advance Payment
+                  <CreditCard size={16} strokeWidth={2.5} /> Checkout
                 </Button>
                 <Button
-                  onClick={() => onCheckout(order)}
+                  onClick={() => {
+                    toast.success("Changes saved successfully");
+                    onClose();
+                  }}
                   className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-black text-[9px] h-12 uppercase tracking-widest flex items-center justify-center gap-2 rounded-xl shadow-lg shadow-zinc-200/50 border-none transition-all"
                 >
-                  <CheckCircle2 size={16} strokeWidth={2.5} /> Checkout
+                  <CheckCircle2 size={16} strokeWidth={2.5} /> Save Changes
                 </Button>
               </>
             ) : (

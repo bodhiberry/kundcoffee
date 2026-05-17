@@ -248,11 +248,19 @@ export default function OrdersPage() {
       getTableTypes(),
     ]);
 
-    setOrders(oData || []);
+    const freshOrdersList = oData || [];
+    setOrders(freshOrdersList);
     setOccupiedTable(busyTables || []);
     setTables(tData || []);
     setSpaces(sData || []);
     setTableTypes(ttData || []);
+
+    // Instantly refresh the selectedOrder state in real-time to avoid requiring a manual page reload!
+    setSelectedOrder((prevSelectedOrder) => {
+      if (!prevSelectedOrder) return null;
+      const refreshed = freshOrdersList.find((o) => o.id === prevSelectedOrder.id);
+      return refreshed || null;
+    });
   };
 
   useEffect(() => {

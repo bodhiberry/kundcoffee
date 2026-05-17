@@ -55,6 +55,7 @@ export function EditOrderItemForm({
     onSave({
       id: item.id,
       quantity,
+      unitPrice: item.unitPrice,
       remarks,
       selectedAddOns: selectedAddOnIds.map((id) => {
         const addon = availableAddOns.find((a) => a.id === id);

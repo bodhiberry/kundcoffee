@@ -66,19 +66,24 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
                 },
               });
             } else if (item.action === "update") {
+              const existingOrderItem = await tx.orderItem.findUnique({
+                where: { id: item.id },
+              });
+              const unitPrice = item.unitPrice !== undefined ? item.unitPrice : (existingOrderItem?.unitPrice || 0);
+
               const addOnsTotal = (item.selectedAddOns || []).reduce(
                 (sum: number, a: any) =>
                   sum + (a.unitPrice || 0) * (a.quantity || 1),
                 0,
               );
               const totalPrice =
-                (item.unitPrice || 0) * (item.quantity || 1) + addOnsTotal;
+                unitPrice * (item.quantity || 1) + addOnsTotal;
 
               await (tx.orderItem.update as any)({
                 where: { id: item.id },
                 data: {
                   quantity: item.quantity,
-                  unitPrice: item.unitPrice,
+                  unitPrice: unitPrice,
                   totalPrice,
                   remarks: item.remarks,
                 },
@@ -107,7 +112,8 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         const allItems = await tx.orderItem.findMany({
           where: { orderId: id },
         });
-        const newTotal = allItems.reduce((sum, i) => sum + i.totalPrice, 0);
+        const nonCancelledItems = allItems.filter((i) => i.status !== "CANCELLED");
+        const newTotal = nonCancelledItems.reduce((sum, i) => sum + i.totalPrice, 0);
 
         const updateData: any = { total: newTotal };
         if (status) updateData.status = status;
