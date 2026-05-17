@@ -45,3 +45,11 @@ next-env.d.ts
 /app/generated/prisma
 
 /lib/generated/prisma
+
+
+
+#Backups
+
+production-main-backup/
+production-main-backup.dumpproduction-main-backup/
+production-main-backup.dump

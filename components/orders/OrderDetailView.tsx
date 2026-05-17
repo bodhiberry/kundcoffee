@@ -69,17 +69,17 @@ export function OrderDetailView({
   const getStatusStyle = (status: OrderStatus) => {
     switch (status) {
       case "PENDING":
-        return "border-emerald-100 text-emerald-600 bg-emerald-50";
+        return "border-zinc-200 text-zinc-600 bg-zinc-50 font-bold";
       case "PREPARING":
-        return "border-zinc-200 text-zinc-600 bg-zinc-50";
+        return "border-zinc-300 text-zinc-800 bg-zinc-100/50 font-bold animate-pulse";
       case "READYTOPICK":
-        return "border-emerald-100 text-emerald-600 bg-emerald-50";
+        return "border-zinc-950 text-white bg-zinc-950 font-black";
       case "SERVED":
-        return "border-blue-100 text-blue-600 bg-blue-50";
+        return "border-zinc-200 text-zinc-600 bg-zinc-50/60 font-bold";
       case "COMPLETED":
-        return "border-zinc-200 text-zinc-400 bg-zinc-50";
+        return "border-zinc-200 text-zinc-400 bg-zinc-50 font-bold";
       case "CANCELLED":
-        return "border-zinc-200 text-zinc-400 bg-zinc-100";
+        return "border-zinc-200 text-zinc-400 bg-zinc-100/50 font-bold line-through";
       default:
         return "border-zinc-200 text-zinc-400 bg-zinc-50";
     }
@@ -238,33 +238,33 @@ export function OrderDetailView({
   };
 
   return (
-    <div className="flex flex-col m-auto h-[85vh] bg-white overflow-hidden rounded-xl border border-zinc-100 printable-area">
+    <div className="flex flex-col m-auto h-[85vh] bg-white overflow-hidden rounded-xl border border-zinc-200 printable-area shadow-2xl">
       {/* HEADER */}
-      <div className="bg-white border-b border-zinc-100 p-6 flex items-center justify-between">
+      <div className="bg-white border-b border-zinc-200 p-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-            <Package size={20} />
+          <div className="w-11 h-11 bg-zinc-950 rounded-xl flex items-center justify-center text-white shadow-md shadow-zinc-900/10">
+            <Package size={20} strokeWidth={2} />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-medium text-zinc-900 tracking-tight">
+              <h2 className="text-lg font-black text-zinc-900 tracking-tight uppercase">
                 Order #{order.id.slice(-6).toUpperCase()}
               </h2>
-              <span className="text-[9px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-700 uppercase tracking-widest">
+              <span className="text-[9px] font-black px-2.5 py-1 rounded bg-zinc-100 text-zinc-800 uppercase tracking-widest border border-zinc-200">
                 {order.type?.replace("_", " ")}
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-1.5">
-              <span className="text-[11px] text-zinc-600 font-bold uppercase tracking-widest">
+            <div className="flex items-center gap-4 mt-1.5">
+              <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-widest">
                 Table:{" "}
-                <span className="text-zinc-900">
+                <span className="text-zinc-950 font-black">
                   {order.table?.name || "Direct"}
                 </span>
               </span>
               <div className="flex items-center gap-1 text-[11px] text-zinc-400">
-                <Users size={12} />
-                <span className="font-bold uppercase tracking-widest">
-                  Guests: {order.guests || 1}
+                <Users size={12} strokeWidth={2.5} />
+                <span className="font-bold text-zinc-500 uppercase tracking-widest">
+                  Guests: <span className="text-zinc-950 font-black">{order.guests || 1}</span>
                 </span>
               </div>
             </div>
@@ -276,24 +276,24 @@ export function OrderDetailView({
             <Button
               onClick={() => onAddMore(order)}
               variant="secondary"
-              className="h-10 px-5 border-zinc-200 text-zinc-700 font-medium flex items-center gap-2 uppercase text-[10px] tracking-widest bg-white"
+              className="h-10 px-5 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-800 font-black flex items-center gap-2 uppercase text-[9px] tracking-widest bg-white rounded-xl transition-all"
             >
-              <Plus size={16} /> Add Items
+              <Plus size={14} strokeWidth={3} /> Add Items
             </Button>
           )}
           <Button
             onClick={handleInternalPrint}
             variant="secondary"
-            className="h-10 px-5 border-zinc-200 text-zinc-700 font-medium flex items-center gap-2 uppercase text-[10px] tracking-widest bg-white"
+            className="h-10 px-5 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-800 font-black flex items-center gap-2 uppercase text-[9px] tracking-widest bg-white rounded-xl transition-all"
           >
-            <Printer size={16} /> Print Bill
+            <Printer size={14} strokeWidth={2.5} /> Print Bill
           </Button>
           <div className="h-6 w-px bg-zinc-200 mx-1" />
           <button
             onClick={onClose}
-            className="p-2 text-zinc-400 hover:text-emerald-500 transition-colors"
+            className="p-2 text-zinc-400 hover:text-zinc-950 hover:bg-zinc-50 rounded-xl transition-all"
           >
-            <X size={20} strokeWidth={1.5} />
+            <X size={20} strokeWidth={2.5} />
           </button>
         </div>
       </div>
@@ -302,14 +302,14 @@ export function OrderDetailView({
         {/* DISHES LIST */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white">
           {order.kotRemarks && (
-            <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-2 opacity-10">
+            <div className="mb-6 p-4 bg-zinc-50 border border-zinc-200 rounded-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-2 opacity-[0.03] text-zinc-900">
                 <MessageSquare size={40} />
               </div>
-              <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1 relative z-10">
+              <h4 className="text-[10px] font-black text-zinc-900 uppercase tracking-widest mb-1 relative z-10">
                 Special Instructions / KOT Remarks
               </h4>
-              <p className="text-xs font-black text-rose-700 uppercase relative z-10">
+              <p className="text-xs font-bold text-zinc-600 uppercase relative z-10">
                 {order.kotRemarks}
               </p>
             </div>
@@ -318,104 +318,86 @@ export function OrderDetailView({
             {order.items.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl border border-zinc-200 p-5 hover:border-zinc-400 transition-all group flex items-center justify-between gap-4"
+                className="bg-white rounded-xl border border-zinc-200 p-5 hover:border-zinc-950 transition-all group flex items-center justify-between gap-6 shadow-sm"
               >
                 <div className="flex items-center gap-5 flex-1">
-                  <Popover
-                    isOpen={activeItemForPopover === item.id}
-                    setIsOpen={(open) =>
-                      setActiveItemForPopover(open ? item.id : null)
-                    }
-                    trigger={
-                      <div className="w-14 h-14 bg-zinc-50 rounded-lg flex items-center justify-center overflow-hidden border border-zinc-100 cursor-pointer">
-                        {item.dish?.image?.[0] ? (
-                          <img
-                            src={item.dish.image[0]}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <LayoutGrid size={20} className="text-zinc-300" />
-                        )}
-                      </div>
-                    }
-                    content={
-                      <div className="w-60 p-2 space-y-4">
-                        {/* Status Change - Disabled in History */}
-                        <div className="grid grid-cols-2 gap-1">
-                          {statuses.map((s) => (
-                            <button
-                              key={s}
-                              disabled={isReadOnly}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onUpdateItemStatus(item.id, s);
-                                setActiveItemForPopover(null);
-                              }}
-                              className={`text-left px-3 py-1.5 text-[9px] font-medium rounded uppercase tracking-widest transition-all ${
-                                (item.status || "PENDING") === s
-                                  ? "bg-zinc-900 text-white shadow-sm"
-                                  : isReadOnly
-                                    ? "text-zinc-300 cursor-not-allowed"
-                                    : "text-zinc-500 hover:bg-zinc-50"
-                              }`}
-                            >
-                              {s}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* HIDE MODIFY IF READ ONLY */}
-                        {!isReadOnly && (
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveItemForPopover(null);
-                              setEditingItem(item);
-                            }}
-                            variant="secondary"
-                            className="w-full h-9 border-zinc-200 text-zinc-700 text-[9px] uppercase tracking-widest bg-white"
-                          >
-                            <Edit2 size={12} className="mr-2" /> Modify Item
-                          </Button>
-                        )}
-                      </div>
-                    }
-                  />
-
+                  <div className="w-14 h-14 bg-zinc-50 rounded-xl flex items-center justify-center overflow-hidden border border-zinc-200 flex-shrink-0">
+                    {item.dish?.image?.[0] ? (
+                      <img
+                        src={item.dish.image[0]}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <LayoutGrid size={20} className="text-zinc-300" />
+                    )}
+                  </div>
+ 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                      <h4 className="font-medium text-zinc-900 text-[13px] uppercase tracking-tight leading-none">
+                      <h4 className="font-black text-zinc-900 text-[13px] uppercase tracking-tight leading-none">
                         {item.dish?.name || "Dish Item"}
                       </h4>
-                      <span className="text-[10px] font-medium text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded">
+                      <span className="text-[10px] font-black text-zinc-800 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">
                         x{item.quantity}
                       </span>
                     </div>
                     {item.remarks && (
-                      <p className="text-[9px] text-zinc-600 uppercase italic mt-1 bg-zinc-50 px-2 py-1 rounded inline-block">
+                      <p className="text-[9px] text-zinc-500 uppercase font-black italic mt-1.5 bg-zinc-50 px-2 py-1 rounded border border-zinc-100 inline-block">
                         {item.remarks}
                       </p>
                     )}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-8 text-right">
-                  <div className="flex flex-col items-end">
-                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+ 
+                <div className="flex items-center gap-6">
+                  {/* Status Dropdown */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block ml-0.5">
                       Status
                     </span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase mt-1 ${getStatusStyle(item.status || "PENDING")}`}
-                    >
-                      {item.status || "PENDING"}
-                    </span>
+                    {isReadOnly ? (
+                      <span
+                        className={`text-[10px] font-black px-2.5 py-1 rounded-lg border uppercase ${getStatusStyle(item.status || "PENDING")}`}
+                      >
+                        {item.status || "PENDING"}
+                      </span>
+                    ) : (
+                      <select
+                        value={item.status || "PENDING"}
+                        onChange={(e) => onUpdateItemStatus(item.id, e.target.value as OrderStatus)}
+                        className="border border-zinc-200 bg-white rounded-xl px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-zinc-800 focus:border-zinc-950 focus:bg-zinc-50 outline-none cursor-pointer hover:border-zinc-300 transition-all"
+                      >
+                        {statuses.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
-                  <div className="min-w-[70px]">
-                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+
+                  {/* Modify Button */}
+                  {!isReadOnly && (
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block ml-0.5">
+                        Action
+                      </span>
+                      <button
+                        onClick={() => setEditingItem(item)}
+                        className="h-[30px] px-3.5 border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 text-zinc-800 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Edit2 size={10} strokeWidth={2.5} /> Modify
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Subtotal */}
+                  <div className="min-w-[80px] text-right flex flex-col gap-1.5">
+                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
                       Subtotal
                     </span>
-                    <p className="text-sm font-bold text-zinc-900 mt-1">
-                      Rs. {item.totalPrice.toFixed(2)}
+                    <p className="text-sm font-black text-zinc-950 h-[30px] flex items-center justify-end">
+                      {settings.currency} {item.totalPrice.toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -425,25 +407,25 @@ export function OrderDetailView({
         </div>
 
         {/* SUMMARY SIDEBAR */}
-        <div className="w-80 border-l border-zinc-100 p-8 flex flex-col gap-8 bg-zinc-50/30">
+        <div className="w-80 border-l border-zinc-200 p-8 flex flex-col gap-8 bg-zinc-50/50">
           <div className="space-y-6">
-            <h3 className="font-medium text-zinc-400 text-[9px] uppercase tracking-[0.2em] border-b border-zinc-100 pb-4">
+            <h3 className="font-black text-zinc-400 text-[9px] uppercase tracking-[0.2em] border-b border-zinc-200 pb-4">
               Order Summary
             </h3>
 
             <div className="space-y-4">
-              <div className="bg-white p-5 rounded-xl border border-zinc-200 space-y-3 shadow-sm">
-                <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest text-zinc-400">
+              <div className="bg-white p-5 rounded-xl border border-zinc-200 space-y-3.5 shadow-sm">
+                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   <span className="flex items-center gap-2">
-                    <User size={12} /> Guests
+                    <User size={12} strokeWidth={2.5} /> Guests
                   </span>
-                  <span className="text-zinc-900">04</span>
+                  <span className="text-zinc-950 font-black">{String(order.guests || 1).padStart(2, "0")}</span>
                 </div>
-                <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest text-zinc-400">
-                  <span className="flex items-center gap-2 text-emerald-500">
-                    <Clock size={12} /> Pending
+                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                  <span className="flex items-center gap-2 text-zinc-500">
+                    <Clock size={12} strokeWidth={2.5} /> Pending
                   </span>
-                  <span className="text-emerald-600 font-black">
+                  <span className="text-zinc-950 font-black">
                     {pendingItems.length} Items
                   </span>
                 </div>
@@ -451,30 +433,30 @@ export function OrderDetailView({
 
               <div className="space-y-3 px-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
                     Include Tax (13%)
                   </span>
                   <button
                     disabled={isReadOnly}
                     onClick={() => setIncludeTax(!includeTax)}
-                    className={`w-8 h-4 rounded-full transition-colors relative ${includeTax ? "bg-zinc-900" : "bg-zinc-300"}`}
+                    className={`w-8 h-4 rounded-full transition-colors relative ${includeTax ? "bg-zinc-950" : "bg-zinc-200"}`}
                   >
                     <div
                       className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${includeTax ? "left-[18px]" : "left-0.5"}`}
                     />
                   </button>
                 </div>
-                <div className="flex justify-between text-[11px] text-zinc-600 uppercase font-bold">
+                <div className="flex justify-between text-[10px] text-zinc-500 uppercase font-black">
                   <span>Subtotal</span>
-                  <span className="text-zinc-900">
-                    Rs. {order.total.toFixed(2)}
+                  <span className="text-zinc-950">
+                    {settings.currency} {order.total.toFixed(2)}
                   </span>
                 </div>
                 {includeTax && (
-                  <div className="flex justify-between text-[11px] text-zinc-600 uppercase font-bold">
+                  <div className="flex justify-between text-[10px] text-zinc-500 uppercase font-black">
                     <span>VAT Amount</span>
-                    <span className="text-zinc-900">
-                      Rs. {taxAmount.toFixed(2)}
+                    <span className="text-zinc-950 font-black">
+                      {settings.currency} {taxAmount.toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -484,11 +466,11 @@ export function OrderDetailView({
 
           <div className="mt-auto space-y-4">
             <div className="text-right mb-6 pr-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                 Grand Total
               </span>
-              <p className="text-4xl font-bold text-zinc-900 leading-none mt-1">
-                Rs. {grandTotal.toFixed(2)}
+              <p className="text-3xl font-black text-zinc-950 leading-none mt-2">
+                {settings.currency} {grandTotal.toFixed(2)}
               </p>
             </div>
 
@@ -497,25 +479,25 @@ export function OrderDetailView({
               <>
                 <Button
                   variant="secondary"
-                  className="w-full flex items-center justify-center gap-3 font-bold text-[10px] h-12 uppercase tracking-widest bg-white"
+                  className="w-full flex items-center justify-center gap-3 font-black text-[9px] h-12 uppercase tracking-widest bg-white border border-zinc-200 text-zinc-800 rounded-xl hover:bg-zinc-50 hover:border-zinc-300 transition-all"
                 >
-                  <CreditCard size={18} strokeWidth={1.5} /> Advance Payment
+                  <CreditCard size={16} strokeWidth={2.5} /> Advance Payment
                 </Button>
                 <Button
                   onClick={() => onCheckout(order)}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] h-12 uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 border-none"
+                  className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-black text-[9px] h-12 uppercase tracking-widest flex items-center justify-center gap-2 rounded-xl shadow-lg shadow-zinc-200/50 border-none transition-all"
                 >
-                  <CheckCircle2 size={18} /> Checkout
+                  <CheckCircle2 size={16} strokeWidth={2.5} /> Checkout
                 </Button>
               </>
             ) : (
-              <div className="w-full py-4 bg-emerald-50 rounded-xl border border-emerald-100 flex flex-col items-center gap-1 shadow-sm">
+              <div className="w-full py-4 bg-zinc-950 rounded-xl border border-zinc-950 flex flex-col items-center gap-2 shadow-lg shadow-zinc-200/50">
                 {order.status === "COMPLETED" ? (
-                  <CheckCircle2 className="text-emerald-500" size={20} />
+                  <CheckCircle2 className="text-white" size={20} strokeWidth={2.5} />
                 ) : (
-                  <Ban className="text-emerald-400" size={20} />
+                  <Ban className="text-zinc-400" size={20} strokeWidth={2.5} />
                 )}
-                <span className="text-[10px] font-black text-emerald-600/70 uppercase tracking-widest">
+                <span className="text-[9px] font-black text-white uppercase tracking-widest">
                   Order {order.status}
                 </span>
               </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { Order, OrderStatus } from "@/lib/types";
-import { Plus, Printer, Copy, Zap, Clock, Utensils } from "lucide-react";
+import { Plus, Printer, Copy, Zap, Clock, Utensils, Edit } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { useSession } from "next-auth/react";
 
 interface OrderCardProps {
   order: Order;
@@ -22,6 +23,11 @@ export function OrderCard({
   onAddItems,
 }: OrderCardProps) {
   const { settings } = useSettings();
+  const { data: session } = useSession();
+
+  const userRole = session?.user?.role as string | undefined;
+  const userPermissions = (session?.user?.permissions as string[]) || [];
+  const canEdit = userRole === "ADMIN" || userRole === "SUPERADMIN" || userPermissions.includes("edit_orders");
   const statusColors: Record<OrderStatus, string> = {
     PENDING: "border-emerald-100 text-emerald-600 bg-emerald-50",
     PREPARING: "border-zinc-200 text-zinc-600 bg-zinc-50",
@@ -141,13 +147,27 @@ export function OrderCard({
           >
             {order.status}
           </div>
-          <button
-            onClick={handlePrint}
-            className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all"
-            title="Print Provisional Bill"
-          >
-            <Printer size={14} />
-          </button>
+          <div className="flex items-center gap-1">
+            {canEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick(order);
+                }}
+                className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                title="Edit Order"
+              >
+                <Edit size={14} />
+              </button>
+            )}
+            <button
+              onClick={handlePrint}
+              className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all"
+              title="Print Provisional Bill"
+            >
+              <Printer size={14} />
+            </button>
+          </div>
         </div>
         <div className="flex items-center justify-between mt-1">
           <div className="flex items-center gap-3">

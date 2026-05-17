@@ -9,6 +9,7 @@ export const PERMISSIONS = {
   MANAGE_INVENTORY: "manage_inventory",
   VIEW_FINANCE: "view_finance",
   MANAGE_SETTINGS: "manage_settings",
+  EDIT_ORDERS: "edit_orders",
 } as const;
 
 /**

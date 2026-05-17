@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Plus, Minus, Check } from "lucide-react";
 import { getAddOns } from "@/services/menu";
 import Image from "next/image";
+import { useSettings } from "@/components/providers/SettingsProvider";
 import { deleteOrderItem } from "@/services/order";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ export function EditOrderItemForm({
   onCancel,
   onDelete,
 }: EditOrderItemFormProps) {
+  const { settings } = useSettings();
   const [quantity, setQuantity] = useState(item.quantity);
   const [remarks, setRemarks] = useState(item.remarks || "");
   const [availableAddOns, setAvailableAddOns] = useState<AddOn[]>([]);
@@ -72,9 +74,9 @@ export function EditOrderItemForm({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between bg-white p-2 rounded-lg">
+      <div className="flex items-center justify-between bg-zinc-50 p-4 rounded-xl border border-zinc-200">
         <div className="flex items-center gap-3">
-          <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-zinc-200 bg-white">
             <Image
               src={dishImage || "/placeholder.png"}
               alt={item.dish?.name || ""}
@@ -83,102 +85,107 @@ export function EditOrderItemForm({
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-gray-800">
+            <span className="text-sm font-black text-zinc-900 uppercase tracking-tight">
               {item.dish?.name}
             </span>
-            <span className="text-xs text-gray-500">
-              ${item.dish?.price?.listedPrice}
+            <span className="text-xs font-bold text-zinc-500 mt-1">
+              {settings.currency} {item.dish?.price?.listedPrice.toFixed(2)}
             </span>
           </div>
         </div>
 
         <button
           onClick={() => onDelete(item.id)}
-          className="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-md border border-emerald-100"
+          className="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-rose-100 shadow-sm"
         >
           Remove Item
         </button>
       </div>
 
       {/* Quantity Control */}
-      <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-gray-100 shadow-inner">
+      <div className="flex items-center justify-between bg-zinc-50 p-5 rounded-xl border border-zinc-200 shadow-sm">
         <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+          <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
             Quantity
           </span>
-          <span className="text-xl font-black text-gray-900">{quantity}</span>
+          <span className="text-2xl font-black text-zinc-900 mt-1">{quantity}</span>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-emerald-600"
+            className="w-11 h-11 bg-white border border-zinc-200 shadow-sm rounded-xl flex items-center justify-center text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 active:scale-95 transition-all"
           >
-            <Minus size={20} />
+            <Minus size={18} strokeWidth={2.5} />
           </button>
           <button
             onClick={() => setQuantity(quantity + 1)}
-            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-emerald-600"
+            className="w-11 h-11 bg-white border border-zinc-200 shadow-sm rounded-xl flex items-center justify-center text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 active:scale-95 transition-all"
           >
-            <Plus size={20} />
+            <Plus size={18} strokeWidth={2.5} />
           </button>
         </div>
       </div>
 
       {/* Add-ons List */}
       <div className="space-y-3">
-        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block ml-1">
           Available Add-ons / Extras
         </label>
-        <div className="grid grid-cols-2 gap-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-          {availableAddOns.map((addon) => (
-            <button
-              key={addon.id}
-              onClick={() => handleToggleAddOn(addon.id)}
-              className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
-                selectedAddOnIds.includes(addon.id)
-                  ? "border-emerald-600 bg-emerald-50 text-emerald-700"
-                  : "border-gray-100 bg-white text-gray-600"
-              }`}
-            >
-              <div className="flex flex-col items-start px-1 text-left">
-                <span className="text-xs font-bold truncate">{addon.name}</span>
-                <span className="text-[10px] opacity-70">
-                  ${addon.price?.listedPrice.toFixed(2)}
-                </span>
-              </div>
-              {selectedAddOnIds.includes(addon.id) && (
-                <Check size={14} className="text-emerald-600" />
-              )}
-            </button>
-          ))}
+        <div className="grid grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+          {availableAddOns.map((addon) => {
+            const isSelected = selectedAddOnIds.includes(addon.id);
+            return (
+              <button
+                key={addon.id}
+                onClick={() => handleToggleAddOn(addon.id)}
+                className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                  isSelected
+                    ? "bg-zinc-900 border-zinc-900 text-white shadow-md shadow-zinc-900/10"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300"
+                }`}
+              >
+                <div className="flex flex-col items-start px-1 text-left">
+                  <span className="text-[11px] font-black uppercase tracking-tight truncate max-w-[140px]">
+                    {addon.name}
+                  </span>
+                  <span className={`text-[9px] font-bold mt-1 ${isSelected ? "text-zinc-300" : "text-zinc-400"}`}>
+                    +{settings.currency} {addon.price?.listedPrice.toFixed(2)}
+                  </span>
+                </div>
+                {isSelected && (
+                  <Check size={14} strokeWidth={3} className="text-white" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Remarks */}
       <div className="space-y-2">
-        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
-          Remarks
+        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block ml-1">
+          Special Instructions
         </label>
         <textarea
-          placeholder="Specific instructions..."
-          className="w-full p-4 bg-slate-50 border border-gray-100 rounded-xl text-xs outline-none focus:bg-white focus:border-emerald-500 h-24 resize-none"
+          placeholder="e.g. Extra spicy, no onions, well done..."
+          className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:bg-white focus:border-zinc-900 h-24 resize-none transition-all font-bold text-zinc-800"
           value={remarks}
           onChange={(e) => setRemarks(e.target.value)}
         />
       </div>
 
       {/* Footer Buttons */}
-      <div className="pt-4 border-t border-gray-100 flex gap-3">
+      <div className="pt-5 border-t border-zinc-100 flex gap-4">
         <Button
           variant="secondary"
           onClick={onCancel}
-          className="flex-1 font-bold h-11"
+          className="flex-1 font-black h-12 text-[10px] uppercase tracking-widest rounded-xl border-zinc-200 hover:bg-zinc-50"
         >
           Cancel
         </Button>
         <Button
           onClick={handleSave}
-          className="flex-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black h-11 shadow-lg border-none"
+          className="flex-1 bg-zinc-950 hover:bg-zinc-800 text-white font-black h-12 text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-zinc-200 border-none"
         >
           Save Changes
         </Button>
