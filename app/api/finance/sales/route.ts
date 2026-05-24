@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ApiResponse } from "@/lib/types";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { v4 as uuidv4 } from "uuid";
 
 export async function GET(req: NextRequest) {
   try {
@@ -202,7 +203,7 @@ export async function GET(req: NextRequest) {
         const order = p.orders?.[0];
         const allItems = p.orders?.flatMap((o: any) => 
           o.items.map((it: any) => ({
-            dishName: it.dish?.name || it.combo?.name || "Unknown Item",
+            dishName: it.dish?.name || it.combo?.name || it.remarks || "Unknown Item",
             quantity: it.quantity,
             amount: it.totalPrice,
           }))
@@ -235,7 +236,7 @@ export async function GET(req: NextRequest) {
         if (p.orders?.length > 0) {
           const newItems = p.orders.flatMap((o: any) => 
             o.items.map((it: any) => ({
-              dishName: it.dish?.name || it.combo?.name || "Unknown Item",
+              dishName: it.dish?.name || it.combo?.name || it.remarks || "Unknown Item",
               quantity: it.quantity,
               amount: it.totalPrice,
             }))
@@ -276,6 +277,155 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error("Sales API Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const body = await req.json();
+    const { customerId, amount, paymentMethod, description, staffId, date } = body;
+
+    if (!amount || amount <= 0) {
+      return NextResponse.json(
+        { success: false, message: "Invalid amount" },
+        { status: 400 },
+      );
+    }
+
+    if (!paymentMethod) {
+      return NextResponse.json(
+        { success: false, message: "Payment method is required" },
+        { status: 400 },
+      );
+    }
+
+    // 0. Find active daily session
+    const activeDailySession = await prisma.dailySession.findFirst({
+      where: { storeId, status: "OPEN" },
+      select: { id: true },
+      orderBy: { openedAt: "desc" },
+    });
+    const dailySessionId = activeDailySession?.id || null;
+
+    const txnDate = date ? new Date(date) : new Date();
+
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // 1. Create Payment
+        const paymentStatus = paymentMethod === "CREDIT" ? "CREDIT" : "PAID";
+        const splitGroupId = `split-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        const payment = await tx.payment.create({
+          data: {
+            amount: parseFloat(amount),
+            method: paymentMethod,
+            status: paymentStatus,
+            storeId,
+            staffId: staffId || null,
+            dailySessionId,
+            splitGroupId,
+            createdAt: txnDate,
+          },
+        });
+
+        // 2. Create Order
+        const order = await tx.order.create({
+          data: {
+            storeId,
+            type: "QUICK_BILLING",
+            status: "COMPLETED",
+            total: parseFloat(amount),
+            customerId: customerId || null,
+            staffId: staffId || null,
+            dailySessionId,
+            paymentId: payment.id,
+            splitGroupId,
+            createdAt: txnDate,
+            items: {
+              create: [
+                {
+                  remarks: description || "Quick Sale Item",
+                  quantity: 1,
+                  unitPrice: parseFloat(amount),
+                  totalPrice: parseFloat(amount),
+                  status: "COMPLETED",
+                },
+              ],
+            },
+          },
+        });
+
+        // 3. Customer Ledger
+        if (customerId) {
+          const pointsEarned = Math.floor(amount / 100);
+          await tx.customer.update({
+            where: { id: customerId, storeId },
+            data: { loyaltyPoints: { increment: pointsEarned } },
+          });
+
+          const lastLedger = await tx.customerLedger.findFirst({
+            where: { customerId, storeId },
+            orderBy: { createdAt: "desc" },
+          });
+
+          const currentBalance = lastLedger ? lastLedger.closingBalance : 0;
+          const newBalance = currentBalance + parseFloat(amount);
+
+          await tx.customerLedger.create({
+            data: {
+              customerId,
+              storeId,
+              txnNo: `SALE-${Date.now()}-QS`,
+              type: "SALE",
+              amount: parseFloat(amount),
+              closingBalance: newBalance,
+              referenceId: payment.id,
+              splitGroupId,
+              remarks: `Quick Sale Checkout (${paymentMethod})`,
+              createdAt: txnDate,
+            },
+          });
+
+          if (paymentStatus === "PAID") {
+            await tx.customerLedger.create({
+              data: {
+                customerId,
+                storeId,
+                txnNo: `PAY-${Date.now()}-QS`,
+                type: "PAYMENT_IN",
+                amount: parseFloat(amount),
+                closingBalance: newBalance - parseFloat(amount),
+                referenceId: payment.id,
+                splitGroupId,
+                remarks: `Payment for Quick Sale - ${paymentMethod}`,
+                createdAt: txnDate,
+              },
+            });
+          }
+        }
+
+        return { payment, order };
+      },
+      { timeout: 20000 },
+    );
+
+    return NextResponse.json({ success: true, data: result }, { status: 201 });
+  } catch (error) {
+    console.error("Quick Sale POST Error:", error);
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
       { status: 500 },
