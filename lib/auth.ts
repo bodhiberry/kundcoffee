@@ -46,7 +46,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -57,19 +57,31 @@ export const authOptions: NextAuthOptions = {
         token.trialEndsAt = user.trialEndsAt;
       }
 
-      // When frontend calls update(), re-fetch from DB This makes it impossible for a user to fake verification
+      // Always fetch the latest user role, permissions, and setup status from DB
+      // to ensure real-time privilege updates without requiring user logout.
+      const userId = (token.id as string) || (user?.id as string);
+      if (userId) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+              role: true,
+              permissions: true,
+              emailVerified: true,
+              isSetupComplete: true,
+              storeId: true,
+            },
+          });
 
-      if (trigger === "update") {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email as string },
-        });
-
-        if (dbUser) {
-          token.emailVerified = dbUser.emailVerified;
-          token.isSetupComplete = dbUser.isSetupComplete;
-          token.role = dbUser.role;
-          token.storeId = dbUser.storeId;
-          token.permissions = dbUser.permissions;
+          if (dbUser) {
+            token.role = dbUser.role;
+            token.permissions = dbUser.permissions;
+            token.emailVerified = dbUser.emailVerified;
+            token.isSetupComplete = dbUser.isSetupComplete;
+            token.storeId = dbUser.storeId;
+          }
+        } catch (error) {
+          console.error("Error fetching latest user details in JWT callback:", error);
         }
       }
 
