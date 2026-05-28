@@ -1,0 +1,226 @@
+[
+  {
+    "id": "186b82d1-1690-453e-91e7-c296f2d33ee1",
+    "key": "currency",
+    "value": "NPR",
+    "updatedAt": "2026-04-13T06:48:11.269Z",
+    "createdAt": "2026-04-13T06:48:11.269Z",
+    "storeId": "cmnwtzlj70001rzknw31i84kl"
+  },
+  {
+    "id": "7c2c7690-5455-4069-9022-764096bd413e",
+    "key": "currency",
+    "value": "NPR",
+    "updatedAt": "2026-04-04T12:00:47.249Z",
+    "createdAt": "2026-04-04T12:00:47.249Z",
+    "storeId": "cmnka6xqp0001emd4z20d0lds"
+  },
+  {
+    "id": "805aca8d-a583-45d4-94cb-215635b0c925",
+    "key": "logo",
+    "value": "https://res.cloudinary.com/dvvtvhgop/image/upload/v1775823933/settings/ogwuetenrccbnbkytrlm.png",
+    "updatedAt": "2026-04-10T12:25:33.967Z",
+    "createdAt": "2026-03-31T18:13:56.914Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "bd3ea34c-f3b9-4819-9b5d-653dfc8ac533",
+    "key": "logo",
+    "value": "https://res.cloudinary.com/dvvtvhgop/image/upload/v1774765874/settings/jamrluhpipsxdg1oidol.png",
+    "updatedAt": "2026-03-29T06:31:15.161Z",
+    "createdAt": "2026-03-29T06:00:02.079Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "119d4b3e-56f4-48fa-bf0b-0394427b4903",
+    "key": "currency",
+    "value": "NPR",
+    "updatedAt": "2026-03-29T07:16:11.717Z",
+    "createdAt": "2026-03-01T09:43:22.056Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "0410fae5-e5bd-4b61-a8ad-54bdd3f95b81",
+    "key": "panNumber",
+    "value": "622404879",
+    "updatedAt": "2026-03-29T07:16:11.746Z",
+    "createdAt": "2026-03-29T05:59:55.637Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "3eaac327-7d15-423b-8dff-2bef3bbd8679",
+    "key": "address",
+    "value": "Golfutar Height, Kathmnadu Nepal",
+    "updatedAt": "2026-03-29T07:16:11.763Z",
+    "createdAt": "2026-03-29T05:59:55.637Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "28aa2d65-c083-4e1a-9cce-a9e78bd7ee9c",
+    "key": "name",
+    "value": "Kund Coffee Private Limited",
+    "updatedAt": "2026-03-29T07:16:11.766Z",
+    "createdAt": "2026-03-29T05:59:55.637Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "8cfcf8a6-4a30-4570-9401-d6a83c235524",
+    "key": "phone",
+    "value": "9763681946",
+    "updatedAt": "2026-03-29T07:16:11.735Z",
+    "createdAt": "2026-03-29T05:59:55.637Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "2a5eed68-3593-464a-8383-32104d359beb",
+    "key": "email",
+    "value": "kundcoffee@gmail.com",
+    "updatedAt": "2026-03-29T07:16:12.018Z",
+    "createdAt": "2026-03-29T05:59:55.643Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "cc8fc955-043d-43e5-a59f-b19da9e1b7d2",
+    "key": "includeTaxByDefault",
+    "value": "false",
+    "updatedAt": "2026-03-29T07:18:06.147Z",
+    "createdAt": "2026-03-02T12:13:09.457Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "be9efbdc-18cb-4a5f-9d8c-f33fa838f000",
+    "key": "restaurantName",
+    "value": "A's Coffee Shop",
+    "updatedAt": "2026-03-31T17:12:35.405Z",
+    "createdAt": "2026-03-31T17:12:35.405Z",
+    "storeId": "store-a-id"
+  },
+  {
+    "id": "7acdcce5-d4f5-4b51-b174-980a6158c767",
+    "key": "restaurantName",
+    "value": "B's Bakery",
+    "updatedAt": "2026-03-31T17:12:36.513Z",
+    "createdAt": "2026-03-31T17:12:36.513Z",
+    "storeId": "store-b-id"
+  },
+  {
+    "id": "9b28ff0c-8b04-4238-ba9d-cbbb33c06072",
+    "key": "logo",
+    "value": "https://res.cloudinary.com/dvvtvhgop/image/upload/v1777377470/settings/mvplth9t0pnw0j3a55lh.jpg",
+    "updatedAt": "2026-04-28T11:57:51.229Z",
+    "createdAt": "2026-04-28T11:57:51.229Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "e4ec0c9b-994e-4760-a432-910e7e25a331",
+    "key": "currency",
+    "value": "Rs.",
+    "updatedAt": "2026-04-29T06:21:46.854Z",
+    "createdAt": "2026-03-31T18:13:45.272Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "a7fa3ec6-12b4-40f4-a545-3a875a8b6d13",
+    "key": "name",
+    "value": "Kund Coffee Private Limited",
+    "updatedAt": "2026-04-29T06:21:47.338Z",
+    "createdAt": "2026-03-31T18:13:45.272Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "627ca1ef-b919-4f6c-8363-1612b0cf9f45",
+    "key": "address",
+    "value": "Golfutar, Kathmandu, Nepal",
+    "updatedAt": "2026-04-29T06:21:47.642Z",
+    "createdAt": "2026-03-31T18:13:45.272Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "fe85e84a-4aec-4f46-a01d-83c3a03541dd",
+    "key": "phone",
+    "value": "9763681946",
+    "updatedAt": "2026-04-29T06:21:47.948Z",
+    "createdAt": "2026-03-31T18:13:45.272Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "43ae3188-e281-441d-9bb3-984aaf764be6",
+    "key": "panNumber",
+    "value": "622404879",
+    "updatedAt": "2026-04-29T06:21:48.266Z",
+    "createdAt": "2026-03-31T18:13:45.272Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "b7de4124-3872-47a0-94dc-6769c6fe34e3",
+    "key": "email",
+    "value": "kundcoffee@gmail.com",
+    "updatedAt": "2026-04-29T06:21:48.674Z",
+    "createdAt": "2026-03-31T18:13:45.272Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "e87cfcc1-7bda-4d54-9e59-36fdf635508e",
+    "key": "address",
+    "value": "",
+    "updatedAt": "2026-05-03T15:59:48.988Z",
+    "createdAt": "2026-04-05T06:26:37.345Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "06f7604d-0c45-42cd-a23e-427fba08a6d9",
+    "key": "panNumber",
+    "value": "",
+    "updatedAt": "2026-05-03T15:59:48.994Z",
+    "createdAt": "2026-04-05T06:26:37.347Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "ba1b2770-7856-4fb3-940c-9c244476458a",
+    "key": "includeTaxByDefault",
+    "value": "false",
+    "updatedAt": "2026-04-30T14:36:14.341Z",
+    "createdAt": "2026-04-30T14:36:08.919Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "68a0bb96-ed4c-46ec-bd79-ca1fdc530319",
+    "key": "includeServiceChargeByDefault",
+    "value": "false",
+    "updatedAt": "2026-04-30T14:36:15.715Z",
+    "createdAt": "2026-04-30T14:36:10.240Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "1a3176a6-9b92-4d95-8eda-c50b4a3afe97",
+    "key": "email",
+    "value": "",
+    "updatedAt": "2026-05-03T15:59:48.994Z",
+    "createdAt": "2026-04-05T06:26:37.349Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "87d178d2-b8d6-43cb-9f0d-6fde44e4b7ff",
+    "key": "currency",
+    "value": "NPR",
+    "updatedAt": "2026-05-03T15:59:49.005Z",
+    "createdAt": "2026-04-05T06:03:36.861Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "80eb8b11-e9c9-4cb4-bfdb-1eda4ee2fbe0",
+    "key": "name",
+    "value": "",
+    "updatedAt": "2026-05-03T15:59:49.011Z",
+    "createdAt": "2026-04-05T06:26:37.344Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "bb8641f3-a488-4c88-88b1-7fc51d6fc753",
+    "key": "phone",
+    "value": "",
+    "updatedAt": "2026-05-03T15:59:49.021Z",
+    "createdAt": "2026-04-05T06:26:37.346Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  }
+]

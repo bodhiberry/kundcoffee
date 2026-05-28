@@ -1,0 +1,299 @@
+[
+  {
+    "id": "9087ceea-5ed0-4183-83a0-6c8c271ca72f",
+    "name": "Coffee",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-02T12:03:08.111Z",
+    "sortOrder": 1,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "68096a4d-7aaf-4136-8a32-55d2a0dc32f2",
+    "name": "Test 1",
+    "image": "https://res.cloudinary.com/dvvtvhgop/image/upload/v1772798190/categories/yytnhsj5cwf6pgfu27vz.jpg",
+    "description": "",
+    "createdAt": "2026-03-01T09:43:45.525Z",
+    "sortOrder": 1,
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "b8609d64-e619-408e-967e-aef10aaf9da3",
+    "name": "Biryani",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-23T08:18:15.997Z",
+    "sortOrder": 2,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "a31194dc-1266-4e5e-8b78-4774c554a09f",
+    "name": "Cold Drinks",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:01:25.314Z",
+    "sortOrder": 3,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "9e6f6aec-5ccd-484b-aa4e-417936648652",
+    "name": "Iced/Blended Beverage",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:01:55.420Z",
+    "sortOrder": 4,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "fcae4a3d-2856-417d-aed8-20b6d5bc673f",
+    "name": "Breakfast - Extras",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:02:53.773Z",
+    "sortOrder": 5,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "490d44e0-8b21-4aac-8d94-ad5d9a54a237",
+    "name": "Snacks",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:06:42.526Z",
+    "sortOrder": 6,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "57e397f0-e32b-4f75-b191-7dd59cc17b66",
+    "name": "Non-Veg Snacks",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:10:38.468Z",
+    "sortOrder": 7,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "ab987602-7eb4-4319-943e-717693fa0c98",
+    "name": "Tea",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:13:11.839Z",
+    "sortOrder": 8,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "c18e0d05-e3c7-4309-a9ce-ece3df632153",
+    "name": "Momos",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:20:57.612Z",
+    "sortOrder": 9,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "05857179-5967-40bb-8f2e-9d51fb4bd07d",
+    "name": "All Day Breakfast",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:26:42.651Z",
+    "sortOrder": 10,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "1fbd4e52-b465-4551-b4d3-46cc6bc12f93",
+    "name": "Soups and Salads",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:29:08.837Z",
+    "sortOrder": 11,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "9d50bdc1-4cf6-45cc-b50a-69fa1f754065",
+    "name": "Noodles",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T03:32:50.332Z",
+    "sortOrder": 12,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "2e9ffa9d-50dc-4aa8-8f69-16c4e2aacbbb",
+    "name": "Burgers and Sandwiches",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T04:18:00.196Z",
+    "sortOrder": 13,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "5e468923-dc18-4114-af67-3c1b3ac735c9",
+    "name": "Bakery",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T04:21:38.584Z",
+    "sortOrder": 14,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "02e93a86-8dc1-4881-be50-c8bd90928bf9",
+    "name": "Veg Snacks",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T04:38:11.782Z",
+    "sortOrder": 15,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "30b4ae97-8712-430a-9ddd-943c144aa1e1",
+    "name": "Fried rice",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T04:42:00.415Z",
+    "sortOrder": 16,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "4e4d923a-8ca1-4395-b561-2b421f57a55f",
+    "name": "Books",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T04:45:56.975Z",
+    "sortOrder": 17,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "2627e01c-41f3-453f-8767-93ea4bd9f1b2",
+    "name": "Food",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T04:47:24.044Z",
+    "sortOrder": 18,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "e1ae26b7-6713-432e-9529-4c026538737f",
+    "name": "Coffee Beans",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T04:57:55.727Z",
+    "sortOrder": 19,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "119c3840-07b2-4b0b-9922-73c9ddf876c9",
+    "name": "Wrap",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-03-30T04:59:05.560Z",
+    "sortOrder": 20,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "a0a76873-13c4-4eb1-97ca-a149acbc0f89",
+    "name": "Hot Drinks",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-04-04T12:05:53.860Z",
+    "sortOrder": 1,
+    "storeId": "cmnka6xqp0001emd4z20d0lds"
+  },
+  {
+    "id": "3515c41e-90d5-4e08-8523-8da5384a482e",
+    "name": "Drinks ",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-04-05T06:04:07.329Z",
+    "sortOrder": 1,
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "5992a46d-9859-4224-a2b7-9ebf361b27ea",
+    "name": "Cigarette",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-04-15T11:59:07.240Z",
+    "sortOrder": 21,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "cefa0102-9070-4d9c-bf4f-f84f3ada2949",
+    "name": "Dinner Set",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-04-24T14:53:39.003Z",
+    "sortOrder": 22,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "a339ef16-f00e-489c-a813-54e770766891",
+    "name": "CERAMIC MUG",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-04-29T05:49:37.808Z",
+    "sortOrder": 23,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "a77cd88f-b10c-41c1-b4d1-40a2dabd6995",
+    "name": "flower",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-05-01T13:15:29.705Z",
+    "sortOrder": 24,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "2b9915df-dff0-44b6-8b7e-2c6c79da4005",
+    "name": "pasmina",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-05-09T13:56:44.184Z",
+    "sortOrder": 25,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "ff36e04b-4a99-4518-885f-9a2960c34d03",
+    "name": "Coffee Lab",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-05-17T06:32:49.478Z",
+    "sortOrder": 26,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "8d4c93d9-efc8-4642-b266-3a7c7f389ce7",
+    "name": "Drinks",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-05-17T12:03:44.201Z",
+    "sortOrder": 27,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "32fcbddf-b809-4e20-ad97-616a0af7a2d6",
+    "name": "paratha",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-05-19T08:08:57.802Z",
+    "sortOrder": 28,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "3d7d4640-04ea-459a-b648-3f6029962351",
+    "name": "curry",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-05-19T08:09:25.255Z",
+    "sortOrder": 29,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "9c2fc436-1870-4a3c-ac53-1bc9af7837d1",
+    "name": "khaja set",
+    "image": null,
+    "description": "",
+    "createdAt": "2026-05-19T08:09:51.707Z",
+    "sortOrder": 30,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  }
+]

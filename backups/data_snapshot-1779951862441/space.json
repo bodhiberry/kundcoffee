@@ -1,0 +1,66 @@
+[
+  {
+    "id": "5575fccf-fb8f-4141-ade6-00b51cf13a1e",
+    "name": "Garden",
+    "description": "",
+    "createdAt": "2026-03-01T09:44:39.608Z",
+    "sortOrder": 1,
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "bdc46d48-99f9-495b-9922-d7d62c2299ff",
+    "name": "Rooftop",
+    "description": "",
+    "createdAt": "2026-03-05T17:50:24.442Z",
+    "sortOrder": 0,
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "c83a4f26-ec30-4b0e-ac11-50e2405a3b95",
+    "name": "Dining",
+    "description": "",
+    "createdAt": "2026-03-02T11:59:19.200Z",
+    "sortOrder": 1,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "1528024f-cd91-477a-8219-444746bcf15b",
+    "name": "Outside",
+    "description": "",
+    "createdAt": "2026-03-22T02:00:41.794Z",
+    "sortOrder": 2,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "ec693543-8eb2-44bd-9990-3e8d70fc4db4",
+    "name": "Indoor",
+    "description": "",
+    "createdAt": "2026-04-04T12:03:37.063Z",
+    "sortOrder": 1,
+    "storeId": "cmnka6xqp0001emd4z20d0lds"
+  },
+  {
+    "id": "c4975df4-a95e-488d-844c-217670013ae4",
+    "name": "Main",
+    "description": "",
+    "createdAt": "2026-04-04T12:03:53.353Z",
+    "sortOrder": 2,
+    "storeId": "cmnka6xqp0001emd4z20d0lds"
+  },
+  {
+    "id": "ae9981f7-322a-4909-96ca-308175274d8b",
+    "name": "indoor",
+    "description": "",
+    "createdAt": "2026-04-05T06:05:00.132Z",
+    "sortOrder": 1,
+    "storeId": "cmnlcvfo70002lt8xmmgez07z"
+  },
+  {
+    "id": "41d00065-4571-4a42-b32f-6f68dcf1f444",
+    "name": "Cowork",
+    "description": "",
+    "createdAt": "2026-05-18T06:18:59.230Z",
+    "sortOrder": 4,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  }
+]

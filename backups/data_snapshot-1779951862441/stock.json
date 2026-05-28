@@ -1,0 +1,46 @@
+[
+  {
+    "id": "589125f0-7ba2-4caa-ab9c-bad0652a2e11",
+    "name": "Coffee Beans",
+    "quantity": 1,
+    "amount": 7200,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "groupId": null,
+    "unitId": "363ef4a3-2957-4c07-bb92-fe85fe3bcb0c",
+    "costPrice": 0,
+    "updatedAt": "2026-04-15T09:12:25.577Z"
+  },
+  {
+    "id": "b05556dc-ed5c-4cf2-b8e0-256ffe02da5d",
+    "name": "Chicken",
+    "quantity": 2,
+    "amount": 1360,
+    "storeId": "cmnlcvfo70002lt8xmmgez07z",
+    "groupId": null,
+    "unitId": "cacc8a3b-d781-4cec-82c7-86a038cf6526",
+    "costPrice": 340,
+    "updatedAt": "2026-05-06T10:11:56.810Z"
+  },
+  {
+    "id": "a0f3f6df-5171-4a82-887e-ce9818dd0dfa",
+    "name": "Puff Rice",
+    "quantity": 1,
+    "amount": 80,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "groupId": null,
+    "unitId": "1c33a071-20c6-41a1-94aa-495cefc87ac6",
+    "costPrice": 80,
+    "updatedAt": "2026-05-16T10:44:28.324Z"
+  },
+  {
+    "id": "a219d786-4ce2-4d74-96f4-27800f8f4513",
+    "name": "Milk",
+    "quantity": 11,
+    "amount": 495,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "groupId": null,
+    "unitId": "1fc18ddf-ff93-4e65-a47b-7347e933bf75",
+    "costPrice": 45,
+    "updatedAt": "2026-05-18T09:08:10.625Z"
+  }
+]

@@ -1,0 +1,650 @@
+[
+  {
+    "id": "10170968-0db1-4afe-b5a9-4990ed3f7aea",
+    "purchaseId": "787213fb-4a38-42e5-9441-c592d3d77023",
+    "itemName": "milk",
+    "quantity": 3,
+    "rate": 45,
+    "amount": 135,
+    "stockId": null
+  },
+  {
+    "id": "c9c98800-283a-4ceb-bfaa-6b1c6fae55b4",
+    "purchaseId": "fa6f1c77-5e43-4361-855b-f34c3734bf72",
+    "itemName": "surya red and light bread",
+    "quantity": 1,
+    "rate": 790,
+    "amount": 790,
+    "stockId": null
+  },
+  {
+    "id": "9e25be95-28aa-46c0-8971-2fca399f0e33",
+    "purchaseId": "a44b59c4-1231-4d19-9173-ef69e78cd1f0",
+    "itemName": "chicken",
+    "quantity": 1.894,
+    "rate": 425,
+    "amount": 804.9499999999999,
+    "stockId": null
+  },
+  {
+    "id": "acdd6976-099c-40a6-a979-266bc2be1120",
+    "purchaseId": "d500c56a-c778-45d1-a115-7795ddd6b494",
+    "itemName": "Banana",
+    "quantity": 6,
+    "rate": 20,
+    "amount": 120,
+    "stockId": null
+  },
+  {
+    "id": "e8d23253-53ea-45a7-b12e-01d9519530af",
+    "purchaseId": "bd209f09-6e9b-4e64-ba3c-c7a79f5e226a",
+    "itemName": "Milk",
+    "quantity": 2,
+    "rate": 45,
+    "amount": 90,
+    "stockId": "a219d786-4ce2-4d74-96f4-27800f8f4513"
+  },
+  {
+    "id": "88adfe84-0ef2-45dc-8692-138fcfb939e5",
+    "purchaseId": "bd209f09-6e9b-4e64-ba3c-c7a79f5e226a",
+    "itemName": "Yoghurt",
+    "quantity": 1,
+    "rate": 180,
+    "amount": 180,
+    "stockId": null
+  },
+  {
+    "id": "7521b734-f5a2-440d-8797-d7bd07c5523a",
+    "purchaseId": "444231a8-f61b-4582-adc6-f049b4d89d91",
+    "itemName": "dhup batti",
+    "quantity": 1,
+    "rate": 150,
+    "amount": 150,
+    "stockId": null
+  },
+  {
+    "id": "74273f8b-b42c-4f11-b1b1-264ad156a866",
+    "purchaseId": "15343d49-00c9-4d2f-8bff-1a8b6ea4eeeb",
+    "itemName": "Puff Rice",
+    "quantity": 1,
+    "rate": 80,
+    "amount": 80,
+    "stockId": "a0f3f6df-5171-4a82-887e-ce9818dd0dfa"
+  },
+  {
+    "id": "868e817b-0125-4bbe-b336-3561f2534607",
+    "purchaseId": "e2b985b2-4eed-47ed-b49f-6b202b6ae7d9",
+    "itemName": "Milk",
+    "quantity": 2,
+    "rate": 45,
+    "amount": 90,
+    "stockId": "a219d786-4ce2-4d74-96f4-27800f8f4513"
+  },
+  {
+    "id": "9c385bcf-80c2-4cb5-b3a5-50ba7a2f6fb6",
+    "purchaseId": "984ae425-7b5e-4dc1-b72d-d6b08349efaa",
+    "itemName": "white bread",
+    "quantity": 1,
+    "rate": 110,
+    "amount": 110,
+    "stockId": null
+  },
+  {
+    "id": "7fd494dd-8202-450a-8b9b-fde69e17653c",
+    "purchaseId": "ecccab22-4175-406b-8258-b8dba85180a3",
+    "itemName": "lemon",
+    "quantity": 10,
+    "rate": 10,
+    "amount": 100,
+    "stockId": null
+  },
+  {
+    "id": "fc5ff36e-b7aa-4667-8800-83be6453e5ad",
+    "purchaseId": "91f5e777-4351-44e1-b3dd-dc29c9ddafee",
+    "itemName": "Chairs",
+    "quantity": 3,
+    "rate": 1216.6666,
+    "amount": 3649.9998,
+    "stockId": null
+  },
+  {
+    "id": "38f59adb-6c42-4466-bf0a-be319cfbcc58",
+    "purchaseId": "e97de689-f6e6-4d05-9dd2-b785c47d03f4",
+    "itemName": "egg",
+    "quantity": 1,
+    "rate": 465,
+    "amount": 465,
+    "stockId": null
+  },
+  {
+    "id": "1756cffa-07fc-49f7-988d-09b832881d0d",
+    "purchaseId": "90c78e5a-4d6e-4d63-8e14-bbe7f3e46557",
+    "itemName": "milk",
+    "quantity": 3,
+    "rate": 45,
+    "amount": 135,
+    "stockId": null
+  },
+  {
+    "id": "e6cd5fd3-747a-40eb-9070-977393bab171",
+    "purchaseId": "bc57fe11-496d-4559-85e4-528604bceec3",
+    "itemName": "curd",
+    "quantity": 1,
+    "rate": 225,
+    "amount": 225,
+    "stockId": null
+  },
+  {
+    "id": "76194499-7039-4f0e-a587-67a459709202",
+    "purchaseId": "f003c425-0705-4228-90ac-b0f53cdde7ce",
+    "itemName": "gas",
+    "quantity": 1,
+    "rate": 1180,
+    "amount": 1180,
+    "stockId": null
+  },
+  {
+    "id": "adab6e13-cc65-4503-b096-fc2457dd4c0d",
+    "purchaseId": "94de973f-9d74-43b5-aa30-5d44da6af882",
+    "itemName": "Stand from Joogle",
+    "quantity": 10,
+    "rate": 350,
+    "amount": 3500,
+    "stockId": null
+  },
+  {
+    "id": "f6e6cb19-f50b-4b66-a751-bd6f3c9fa573",
+    "purchaseId": "42f25b04-3090-468a-b9d5-651dba989899",
+    "itemName": "water",
+    "quantity": 2,
+    "rate": 80,
+    "amount": 160,
+    "stockId": null
+  },
+  {
+    "id": "16620aae-5fbb-4024-91e5-3766fa842ef1",
+    "purchaseId": "965c9600-50f6-4994-b56f-7639660b877c",
+    "itemName": "water",
+    "quantity": 2,
+    "rate": 40,
+    "amount": 80,
+    "stockId": null
+  },
+  {
+    "id": "b954ddc9-cf4a-48ac-83cc-fe1fac691f0c",
+    "purchaseId": "a8743988-7bab-4153-903b-2e0875855c75",
+    "itemName": "chicken ",
+    "quantity": 2,
+    "rate": 475,
+    "amount": 950,
+    "stockId": null
+  },
+  {
+    "id": "cca31133-1ed9-4a47-8b73-4d3e59cb179d",
+    "purchaseId": "a8743988-7bab-4153-903b-2e0875855c75",
+    "itemName": "Bhatmas ",
+    "quantity": 1,
+    "rate": 50,
+    "amount": 50,
+    "stockId": null
+  },
+  {
+    "id": "80e869f6-c6a6-43cf-91b0-415bd708b9ac",
+    "purchaseId": "a8743988-7bab-4153-903b-2e0875855c75",
+    "itemName": "Oil",
+    "quantity": 1,
+    "rate": 290,
+    "amount": 290,
+    "stockId": null
+  },
+  {
+    "id": "fba1a2e0-8b08-47dd-aa35-e238653a757c",
+    "purchaseId": "8d537bed-562f-4938-b8e6-6b30fb2dc4c4",
+    "itemName": "Beer Carlsberg",
+    "quantity": 3,
+    "rate": 475,
+    "amount": 1425,
+    "stockId": null
+  },
+  {
+    "id": "b6943096-0440-45e6-b821-9ad53710967a",
+    "purchaseId": "8d537bed-562f-4938-b8e6-6b30fb2dc4c4",
+    "itemName": "8848 Vodka",
+    "quantity": 1,
+    "rate": 550,
+    "amount": 550,
+    "stockId": null
+  },
+  {
+    "id": "c5226c3f-67a3-400d-aa94-ef04b357fd5d",
+    "purchaseId": "c7cf9d45-0e98-4052-adf9-ece9107c723b",
+    "itemName": "sugar",
+    "quantity": 1,
+    "rate": 100,
+    "amount": 100,
+    "stockId": null
+  },
+  {
+    "id": "c02bfc7b-0130-42ea-bb89-d2083e18d7ce",
+    "purchaseId": "d6357283-a27f-4357-a195-035b3555c762",
+    "itemName": "Milk",
+    "quantity": 2,
+    "rate": 45,
+    "amount": 90,
+    "stockId": "a219d786-4ce2-4d74-96f4-27800f8f4513"
+  },
+  {
+    "id": "0c1ba64f-8a26-4efb-bed5-d152186a3499",
+    "purchaseId": "9ba0484a-d5a8-40e1-a0f5-8fdd9828a446",
+    "itemName": "lemon",
+    "quantity": 1,
+    "rate": 100,
+    "amount": 100,
+    "stockId": null
+  },
+  {
+    "id": "689bec9a-6275-496a-9860-02b3eafdb42a",
+    "purchaseId": "d5200cc3-d5ff-4108-97ee-bd3e598b7361",
+    "itemName": "noodles",
+    "quantity": 2,
+    "rate": 25,
+    "amount": 50,
+    "stockId": null
+  },
+  {
+    "id": "1b555228-d891-412a-8a64-71c34a5a673e",
+    "purchaseId": "b1b1ef28-8290-4910-9f97-631d0675f287",
+    "itemName": "Jar",
+    "quantity": 2,
+    "rate": 40,
+    "amount": 80,
+    "stockId": null
+  },
+  {
+    "id": "eb55bc49-e363-48c0-be39-694bafa1b561",
+    "purchaseId": "b89d3f12-6a16-40d3-8a23-3afd77f258f9",
+    "itemName": "oranges",
+    "quantity": 1,
+    "rate": 200,
+    "amount": 200,
+    "stockId": null
+  },
+  {
+    "id": "86d94485-96cb-4c0b-a463-7c80a6e4b292",
+    "purchaseId": "ce132cb8-89d4-473e-9e6e-e2b4f034a262",
+    "itemName": "Groceries",
+    "quantity": 1,
+    "rate": 1810,
+    "amount": 1810,
+    "stockId": null
+  },
+  {
+    "id": "122ed5f0-6267-4b85-97a6-7ee3201cec03",
+    "purchaseId": "40a032e4-cb27-4de9-a8b9-8aeeb30bf0c8",
+    "itemName": "all items from hygine ent",
+    "quantity": 1,
+    "rate": 4481,
+    "amount": 4481,
+    "stockId": null
+  },
+  {
+    "id": "38475026-64f2-4e04-9d9b-dc1e5242adbd",
+    "purchaseId": "62b64fee-4145-4ff7-8d6a-2ec93c67bac4",
+    "itemName": "milk",
+    "quantity": 2,
+    "rate": 45,
+    "amount": 90,
+    "stockId": null
+  },
+  {
+    "id": "c8db0049-e862-4275-867b-2c7eebc5a23a",
+    "purchaseId": "a4192ba3-831e-4906-af3e-33f2812c5423",
+    "itemName": "noodles",
+    "quantity": 5,
+    "rate": 25,
+    "amount": 125,
+    "stockId": null
+  },
+  {
+    "id": "f2f3d675-9d92-475d-87b3-b4de23b8e386",
+    "purchaseId": "df1f84ef-f010-4f7b-8909-5a13fae4cc04",
+    "itemName": "milk",
+    "quantity": 4,
+    "rate": 45,
+    "amount": 180,
+    "stockId": null
+  },
+  {
+    "id": "f3ebc951-57a3-4850-9106-1531a5f12418",
+    "purchaseId": "e5fb51c1-e11f-486e-b700-66ef8801448f",
+    "itemName": "water",
+    "quantity": 4,
+    "rate": 40,
+    "amount": 160,
+    "stockId": null
+  },
+  {
+    "id": "afba826d-8ff4-4397-b44d-80aeea74c1f3",
+    "purchaseId": "38dfc8ac-9f18-433e-927f-3ffbacca6475",
+    "itemName": "dahi and milk",
+    "quantity": 1,
+    "rate": 240,
+    "amount": 240,
+    "stockId": null
+  },
+  {
+    "id": "e8772ed3-b137-4df0-9b57-de44e4d0379a",
+    "purchaseId": "e8a79163-1def-40fa-a24e-79ba6f1fc344",
+    "itemName": "shikhar ice",
+    "quantity": 1,
+    "rate": 270,
+    "amount": 270,
+    "stockId": null
+  },
+  {
+    "id": "b87e3637-e3db-463a-ae5e-9eddc98bc995",
+    "purchaseId": "8ac8800c-0a53-41a5-a906-2b8de7de6340",
+    "itemName": "handiplast",
+    "quantity": 1,
+    "rate": 50,
+    "amount": 50,
+    "stockId": null
+  },
+  {
+    "id": "66e6366f-d238-43c4-ba75-d3355a219f76",
+    "purchaseId": "db748a19-3614-4239-82dd-310e2a4e7318",
+    "itemName": "water",
+    "quantity": 3,
+    "rate": 40,
+    "amount": 120,
+    "stockId": null
+  },
+  {
+    "id": "9fabfc54-1373-47d0-9dca-7a8843ae85b8",
+    "purchaseId": "1c52d9b7-210d-4252-a2d9-d0ebf9607dd4",
+    "itemName": "milk and bun",
+    "quantity": 1,
+    "rate": 160,
+    "amount": 160,
+    "stockId": null
+  },
+  {
+    "id": "4f01782c-3858-4fe7-abdb-cb4837d08acc",
+    "purchaseId": "9879f2aa-3274-46e9-a7a2-ebee2353a84d",
+    "itemName": "peach Iced Tea",
+    "quantity": 1,
+    "rate": 550,
+    "amount": 550,
+    "stockId": null
+  },
+  {
+    "id": "3ea909dc-d17f-43a6-8b18-70b6178ec44f",
+    "purchaseId": "d3e08c75-a6b2-4349-940b-8e6951310505",
+    "itemName": "milk",
+    "quantity": 3,
+    "rate": 45,
+    "amount": 135,
+    "stockId": null
+  },
+  {
+    "id": "fa4ce2c5-fe92-4f2c-b762-c7f36da20515",
+    "purchaseId": "339ca72b-c4ac-4f6e-af40-5e0948ae0b84",
+    "itemName": "lemon,bread,curd,arctic",
+    "quantity": 1,
+    "rate": 720,
+    "amount": 720,
+    "stockId": null
+  },
+  {
+    "id": "8ab26041-337d-4561-9939-0d86bdba212a",
+    "purchaseId": "fe73e1fc-c2cd-42bd-8a39-dddb87caeb43",
+    "itemName": "suger and milk",
+    "quantity": 1,
+    "rate": 200,
+    "amount": 200,
+    "stockId": null
+  },
+  {
+    "id": "ff552473-a8ff-4396-b013-fe8e6527cd76",
+    "purchaseId": "d8672520-2b71-47a3-a430-87eef279e7b0",
+    "itemName": "waiwai+ Oil",
+    "quantity": 1,
+    "rate": 410,
+    "amount": 410,
+    "stockId": null
+  },
+  {
+    "id": "2e6e5edb-9282-4f14-a0b4-2d2db2409548",
+    "purchaseId": "97f7f229-cde5-4d3f-9bff-b9309f688b43",
+    "itemName": "water",
+    "quantity": 4,
+    "rate": 40,
+    "amount": 160,
+    "stockId": null
+  },
+  {
+    "id": "ea8e29d8-2ee6-437f-bd1e-f5a893777edf",
+    "purchaseId": "3f76e3fc-b841-47b2-9721-ad41b9bccf31",
+    "itemName": "Lemon",
+    "quantity": 1,
+    "rate": 50,
+    "amount": 50,
+    "stockId": null
+  },
+  {
+    "id": "77e3a0a3-77fe-4604-87fa-f386870bb0aa",
+    "purchaseId": "3a2e5cff-d0a3-4dae-81e0-908080984432",
+    "itemName": "paneer",
+    "quantity": 1,
+    "rate": 190,
+    "amount": 190,
+    "stockId": null
+  },
+  {
+    "id": "195dc56f-6666-4f2e-8447-6b9ff4c40e3b",
+    "purchaseId": "c16101ac-c725-4150-b6ac-11393960e3a8",
+    "itemName": "iced cream and milk",
+    "quantity": 1,
+    "rate": 382,
+    "amount": 382,
+    "stockId": null
+  },
+  {
+    "id": "2e3f0d08-62aa-46cf-84ab-24a551371a68",
+    "purchaseId": "a977008b-5cbf-451c-abf5-490d4e22bf53",
+    "itemName": "bakery",
+    "quantity": 1,
+    "rate": 1766.25,
+    "amount": 1766.25,
+    "stockId": null
+  },
+  {
+    "id": "32169ba8-91fe-4314-846e-6c814ddb7d01",
+    "purchaseId": "f703df48-8c58-48d5-8d38-ff61139d2c93",
+    "itemName": "lemon,dahi,tomato,banana",
+    "quantity": 1,
+    "rate": 440,
+    "amount": 440,
+    "stockId": null
+  },
+  {
+    "id": "b8f58fac-cb62-4bca-ab83-344936034294",
+    "purchaseId": "5b4768b7-a6b6-476b-b689-78c99b041cef",
+    "itemName": "b to b  hospitality pvt.ltd",
+    "quantity": 1,
+    "rate": 12400,
+    "amount": 12400,
+    "stockId": null
+  },
+  {
+    "id": "343c9671-38bc-4706-b2a4-1b0ec08fffe4",
+    "purchaseId": "b59fd007-9e2d-4bfe-8efe-f7989ba4a2f3",
+    "itemName": "papad",
+    "quantity": 2,
+    "rate": 25,
+    "amount": 50,
+    "stockId": null
+  },
+  {
+    "id": "d5cfa564-ea38-4c52-8431-1e0aff5aedd4",
+    "purchaseId": "5eb09758-48c3-4529-ba2e-275815f6d4eb",
+    "itemName": "chura",
+    "quantity": 1,
+    "rate": 95,
+    "amount": 95,
+    "stockId": null
+  },
+  {
+    "id": "dbc9710f-1655-454c-bcc1-418c00e7878f",
+    "purchaseId": "abef989f-18c7-4535-98cb-5979c02505ef",
+    "itemName": "water",
+    "quantity": 1,
+    "rate": 40,
+    "amount": 40,
+    "stockId": null
+  },
+  {
+    "id": "d08590d0-b813-4540-a595-03d300834fc5",
+    "purchaseId": "033deae9-f14d-45c9-839e-10a190ddebb7",
+    "itemName": "sprite",
+    "quantity": 1,
+    "rate": 90,
+    "amount": 90,
+    "stockId": null
+  },
+  {
+    "id": "5d8caafa-2f98-44e5-aa0b-29dcce640d17",
+    "purchaseId": "7c0b0b22-7f76-48f8-a3dd-828288f51fea",
+    "itemName": "lemon",
+    "quantity": 1,
+    "rate": 100,
+    "amount": 100,
+    "stockId": null
+  },
+  {
+    "id": "307d63d6-fa9d-43f6-b020-ddc55529137a",
+    "purchaseId": "6790cb28-2a19-47e4-8a2d-15d28b5ca81f",
+    "itemName": "egg",
+    "quantity": 30,
+    "rate": 16,
+    "amount": 480,
+    "stockId": null
+  },
+  {
+    "id": "b8eacc20-e997-440a-b178-7c15308e6368",
+    "purchaseId": "6790cb28-2a19-47e4-8a2d-15d28b5ca81f",
+    "itemName": "milk",
+    "quantity": 3,
+    "rate": 50,
+    "amount": 150,
+    "stockId": null
+  },
+  {
+    "id": "e32ac834-d3a4-4c96-ad27-e3daab645974",
+    "purchaseId": "5cdab328-00b7-4244-aa70-c0e97cb86eb5",
+    "itemName": "noodles",
+    "quantity": 1,
+    "rate": 70,
+    "amount": 70,
+    "stockId": null
+  },
+  {
+    "id": "abbdb0b7-d631-4014-804a-c74be91c1574",
+    "purchaseId": "d174fdd4-6997-4eb9-87da-f60c77843295",
+    "itemName": "milk",
+    "quantity": 2,
+    "rate": 45,
+    "amount": 90,
+    "stockId": null
+  },
+  {
+    "id": "6bed4af6-20c8-4eab-9537-537715fb413f",
+    "purchaseId": "b9dca905-b0c8-4e35-8ff2-77292dfaa4ac",
+    "itemName": "curd",
+    "quantity": 1,
+    "rate": 150,
+    "amount": 150,
+    "stockId": null
+  },
+  {
+    "id": "fec60649-6898-443c-a958-d3cde17e5515",
+    "purchaseId": "ad1c2002-ca9c-48d0-9d20-b2325d510975",
+    "itemName": "milk",
+    "quantity": 2,
+    "rate": 45,
+    "amount": 90,
+    "stockId": null
+  },
+  {
+    "id": "41aa6eca-24b8-4132-8835-9322e8168016",
+    "purchaseId": "8fe574e3-f55a-4c6e-a3f6-98e59a80ddfd",
+    "itemName": "kema 2kg",
+    "quantity": 1,
+    "rate": 1300,
+    "amount": 1300,
+    "stockId": null
+  },
+  {
+    "id": "12be146b-5a13-43e7-9c06-76da76685150",
+    "purchaseId": "2c51e1ad-42e8-48e6-9dac-a7c2c496269d",
+    "itemName": "kema 2kg",
+    "quantity": 1,
+    "rate": 1300,
+    "amount": 1300,
+    "stockId": null
+  },
+  {
+    "id": "c75a8830-c99a-41c1-9519-22746bbc6f2a",
+    "purchaseId": "fae51e65-b2cd-4fa8-8cc7-c8dc714b7299",
+    "itemName": "vegitable and fruits",
+    "quantity": 1,
+    "rate": 1325,
+    "amount": 1325,
+    "stockId": null
+  },
+  {
+    "id": "913e43a8-582e-4d8d-81be-b6d72575cf45",
+    "purchaseId": "c1857177-31cb-4448-b915-9dc8ab8c7add",
+    "itemName": "Honey 1 Kg",
+    "quantity": 1,
+    "rate": 394,
+    "amount": 394,
+    "stockId": null
+  },
+  {
+    "id": "fcec01ce-a06d-41f8-8225-97e487f2c82d",
+    "purchaseId": "bcbc94f2-8e62-453b-85d1-e6186a6cd731",
+    "itemName": "Coke",
+    "quantity": 1,
+    "rate": 1100,
+    "amount": 1100,
+    "stockId": null
+  },
+  {
+    "id": "da5ec15f-c94b-4563-b28f-aaeeccc2afac",
+    "purchaseId": "94c56b53-e4b2-4cb6-9717-b668943d8bef",
+    "itemName": "water",
+    "quantity": 5,
+    "rate": 40,
+    "amount": 200,
+    "stockId": null
+  },
+  {
+    "id": "5d0e7e47-9598-42c3-9755-e984bbb60fdb",
+    "purchaseId": "7434ec09-c41b-429f-a157-36d719a3b945",
+    "itemName": "milk",
+    "quantity": 2,
+    "rate": 45,
+    "amount": 90,
+    "stockId": null
+  },
+  {
+    "id": "91f730dc-388b-4cf6-a3b0-5811a7d5df0f",
+    "purchaseId": "c26921db-5240-49c8-aeba-da6f38241abf",
+    "itemName": "oil",
+    "quantity": 1,
+    "rate": 285,
+    "amount": 285,
+    "stockId": null
+  }
+]

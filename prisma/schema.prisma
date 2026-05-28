@@ -746,39 +746,46 @@ model SystemSetting {
 }
 
 model Store {
-  id              String           @id @default(cuid())
-  name            String
-  ownerId         String           @unique
-  addOns          AddOn[]
-  categories      Category[]
-  combos          ComboOffer[]
-  customers       Customer[]
-  ledgers         CustomerLedger[]
-  dailySessions   DailySession[]
-  dishes          Dish[]
-  expenses        Expense[]
-  measuringUnits  MeasuringUnit[]
-  menus           Menu[]
-  menuSets        MenuSet[]
-  orders          Order[]
-  payments        Payment[]
-  purchases       Purchase[]
-  purchaseReturns PurchaseReturn[]
-  qrPayment       QrPayment[]
-  salesReturns    SalesReturn[]
-  spaces          Space[]
-  staff           Staff[]
-  staffRoles      StaffRole[]
-  stocks          Stock[]
-  stockGroups     StockGroup[]
-  subMenus        SubMenu[]
-  suppliers       Supplier[]
-  supplierLedgers SupplierLedger[]
-  settings        SystemSetting[]
-  tables          Table[]
-  tableSessions   TableSession[]
-  tableTypes      TableType[]
-  users           User[]
+  id                 String            @id @default(cuid())
+  name               String
+  ownerId            String            @unique
+  status             StoreStatus       @default(TRIAL)
+  trialEndsAt        DateTime?
+  subscriptionEndsAt DateTime?
+  subscriptionId     String?
+  subscription       SubscriptionPlan? @relation(fields: [subscriptionId], references: [id])
+  isSuspended        Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  addOns             AddOn[]
+  categories         Category[]
+  combos             ComboOffer[]
+  customers          Customer[]
+  ledgers            CustomerLedger[]
+  dailySessions      DailySession[]
+  dishes             Dish[]
+  expenses           Expense[]
+  measuringUnits     MeasuringUnit[]
+  menus              Menu[]
+  menuSets           MenuSet[]
+  orders             Order[]
+  payments           Payment[]
+  purchases          Purchase[]
+  purchaseReturns    PurchaseReturn[]
+  qrPayment          QrPayment[]
+  salesReturns       SalesReturn[]
+  spaces             Space[]
+  staff              Staff[]
+  staffRoles         StaffRole[]
+  stocks             Stock[]
+  stockGroups        StockGroup[]
+  subMenus           SubMenu[]
+  suppliers          Supplier[]
+  supplierLedgers    SupplierLedger[]
+  settings           SystemSetting[]
+  tables             Table[]
+  tableSessions      TableSession[]
+  tableTypes         TableType[]
+  users              User[]
 }
 
 model QrPayment {
@@ -956,4 +963,68 @@ enum Role {
   ADMIN
   MANAGER
   CASHIER
+}
+
+enum PlatformRole {
+  SUPER_ADMIN
+  SUPPORT_ADMIN
+  FINANCE_ADMIN
+}
+
+enum StoreStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+model PlatformUser {
+  id        String             @id @default(cuid())
+  name      String?
+  email     String             @unique
+  password  String
+  role      PlatformRole
+  isActive  Boolean            @default(true)
+  createdAt DateTime           @default(now())
+  sessions  PlatformSession[]
+  auditLogs PlatformAuditLog[]
+}
+
+model PlatformSession {
+  id           String       @id @default(cuid())
+  sessionToken String       @unique
+  userId       String
+  expires      DateTime
+  user         PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SubscriptionPlan {
+  id          String                @id @default(cuid())
+  name        String
+  price       Float
+  durationDay Int
+  stores      Store[]
+  features    SubscriptionFeature[]
+}
+
+model SubscriptionFeature {
+  id      String           @id @default(cuid())
+  planId  String
+  key     String
+  enabled Boolean          @default(true)
+  plan    SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, key])
+}
+
+model PlatformAuditLog {
+  id             String       @id @default(cuid())
+  platformUserId String
+  action         String
+  storeId        String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  platformUser   PlatformUser @relation(fields: [platformUserId], references: [id], onDelete: Cascade)
+
+  @@index([platformUserId])
 }
