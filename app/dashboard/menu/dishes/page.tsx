@@ -25,7 +25,7 @@ import {
   StockConsumptionForm,
 } from "@/components/menu/MenuForms";
 import { ImageUpload } from "@/components/ui/ImageUpload";
-import { Trash2, Edit2, Plus, Coffee, Utensils } from "lucide-react";
+import { Trash2, Edit2, Plus, Coffee, Utensils, X } from "lucide-react";
 
 export default function DishesPage() {
   const { settings } = useSettings();
@@ -33,6 +33,8 @@ export default function DishesPage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [filtered, setFiltered] = useState<Dish[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("ALL");
+  const [groupByCategory, setGroupByCategory] = useState(false);
   const [sortBy, setSortBy] = useState<
     "name" | "price" | "category" | "type" | "prep"
   >("name");
@@ -99,10 +101,15 @@ export default function DishesPage() {
     refresh();
   }, []);
 
-  // --- SORTING LOGIC ---
+  // --- SORTING & FILTERING LOGIC ---
   useEffect(() => {
     const lower = searchQuery.toLowerCase();
-    let f = dishes.filter((d) => d.name.toLowerCase().includes(lower));
+    let f = dishes.filter((d) => {
+      const matchesSearch = d.name.toLowerCase().includes(lower);
+      const matchesCategory =
+        selectedCategoryId === "ALL" || d.categoryId === selectedCategoryId;
+      return matchesSearch && matchesCategory;
+    });
 
     f = [...f].sort((a, b) => {
       // 1. Primary Sort: Sort Order (Always Ascending)
@@ -137,7 +144,7 @@ export default function DishesPage() {
       return mult * (Number(va) - Number(vb));
     });
     setFiltered(f);
-  }, [searchQuery, dishes, sortBy, sortDir, categories]);
+  }, [searchQuery, selectedCategoryId, dishes, sortBy, sortDir, categories]);
 
   // --- INLINE SORT HANDLERS ---
   const handleSortOrderClick = (dish: Dish, e: React.MouseEvent) => {
@@ -338,6 +345,93 @@ export default function DishesPage() {
         ).toFixed(2)
       : "0";
 
+  const renderRow = (d: Dish) => (
+    <tr
+      key={d.id}
+      onClick={() => openEdit(d)}
+      className="hover:bg-red-50/50 transition-colors cursor-pointer group"
+    >
+      {/* INLINE EDITING CELL */}
+      <td
+        className="px-6 py-4"
+        onClick={(e) => handleSortOrderClick(d, e)}
+      >
+        {editingRowId === d.id ? (
+          <input
+            type="number"
+            value={editingValue}
+            onChange={handleSortOrderChange}
+            onBlur={() => handleSortOrderBlur(d.id)}
+            onKeyDown={(e) => handleSortOrderKeyDown(e, d.id)}
+            className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="font-mono text-xs font-black text-gray-400 group-hover:text-red-600 transition-colors">
+            {(d as any).sortOrder ?? 0}
+          </span>
+        )}
+      </td>
+
+      <td className="px-6 py-4 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
+          {d.image && d.image[0] ? (
+            <img
+              src={d.image[0]}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 font-black bg-slate-100 uppercase">
+              {d.name?.substring(0, 2).toUpperCase() || "??"}
+            </div>
+          )}
+        </div>
+        <span className="font-black text-gray-900">{d.name}</span>
+      </td>
+      <td className="px-6 py-4 font-black font-mono text-gray-900">
+        {settings.currency} {d.price?.listedPrice || 0}
+      </td>
+      <td className="px-6 py-4 font-bold text-gray-500 uppercase text-[10px]">
+        {categories.find((c) => c.id === d.categoryId)?.name || "-"}
+      </td>
+      <td className="px-6 py-4">
+        <span
+          className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
+            d.type === "VEG"
+              ? "bg-green-50 text-green-700 border-green-200"
+              : d.type === "NON_VEG"
+                ? "bg-red-50 text-red-700 border-red-200"
+                : "bg-yellow-50 text-yellow-700 border-yellow-200"
+          }`}
+        >
+          {d.type?.replace("_", " ") || "N/A"}
+        </span>
+      </td>
+      <td className="px-6 py-4 font-mono font-black text-xs text-gray-400">
+        {d.preparationTime}m
+      </td>
+      <td className="px-6 py-4">
+        <span
+          className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${d.isAvailable ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-gray-100 text-gray-500 border-gray-200"}`}
+        >
+          {d.isAvailable ? "Available" : "Unavailable"}
+        </span>
+      </td>
+      <td className="px-6 py-4 text-right">
+        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => openEdit(d, e)}
+            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <Edit2 size={16} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -371,14 +465,81 @@ export default function DishesPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0 flex-wrap">
-          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">
-            Menu Item Register
-          </h3>
-          <div className="flex items-center gap-4">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm sticky top-0 z-10 flex-wrap">
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">
+              Menu Item Register
+            </h3>
             <span className="text-xs text-gray-400 font-medium">
               {filtered.length} items found
             </span>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search Input */}
+            <div className="relative group w-full sm:w-60">
+              <input
+                type="text"
+                placeholder="Search dishes..."
+                className="w-full pl-3 pr-8 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-red-500 transition-all font-medium text-gray-700 bg-gray-50/50"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Category Dropdown Filter */}
+            <select
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-xs font-semibold text-gray-600 focus:outline-none focus:border-red-500 cursor-pointer"
+            >
+              <option value="ALL">All Categories</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Sort Select */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-xs font-semibold text-gray-600 focus:outline-none focus:border-red-500 cursor-pointer"
+            >
+              <option value="name">Sort by Name</option>
+              <option value="price">Sort by Price</option>
+              <option value="category">Sort by Category</option>
+              <option value="type">Sort by Type</option>
+              <option value="prep">Sort by Prep Time</option>
+            </select>
+
+            {/* Sort Direction Toggle */}
+            <button
+              onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
+              className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-red-500 transition-colors"
+            >
+              {sortDir === "asc" ? "Asc ↑" : "Desc ↓"}
+            </button>
+
+            {/* Group by Category Toggle */}
+            <label className="flex items-center gap-2 border border-gray-200 bg-gray-50/50 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 cursor-pointer select-none hover:border-red-500 transition-colors">
+              <input
+                type="checkbox"
+                checked={groupByCategory}
+                onChange={(e) => setGroupByCategory(e.target.checked)}
+                className="rounded border-gray-300 text-red-600 focus:ring-red-500 h-3.5 w-3.5 cursor-pointer"
+              />
+              <span>Group by Category</span>
+            </label>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -411,104 +572,36 @@ export default function DishesPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filtered.map((d) => (
-                <tr
-                  key={d.id}
-                  onClick={() => openEdit(d)}
-                  className="hover:bg-red-50/50 transition-colors cursor-pointer group"
-                >
-                  {/* INLINE EDITING CELL */}
-                  <td
-                    className="px-6 py-4"
-                    onClick={(e) => handleSortOrderClick(d, e)}
-                  >
-                    {editingRowId === d.id ? (
-                      <input
-                        type="number"
-                        value={editingValue}
-                        onChange={handleSortOrderChange}
-                        onBlur={() => handleSortOrderBlur(d.id)}
-                        onKeyDown={(e) => handleSortOrderKeyDown(e, d.id)}
-                        className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    ) : (
-                      <span className="font-mono text-xs font-black text-gray-400 group-hover:text-red-600 transition-colors">
-                        {(d as any).sortOrder ?? 0}
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="px-6 py-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
-                      {d.image && d.image[0] ? (
-                        <img
-                          src={d.image[0]}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 font-black bg-slate-100 uppercase">
-                          {d.name?.substring(0, 2).toUpperCase() || "??"}
-                        </div>
-                      )}
-                    </div>
-                    <span className="font-black text-gray-900">{d.name}</span>
-                  </td>
-                  <td className="px-6 py-4 font-black font-mono text-gray-900">
-                    {settings.currency} {d.price?.listedPrice || 0}
-                  </td>
-                  <td className="px-6 py-4 font-bold text-gray-500 uppercase text-[10px]">
-                    {categories.find((c) => c.id === d.categoryId)?.name || "-"}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
-                        d.type === "VEG"
-                          ? "bg-green-50 text-green-700 border-green-200"
-                          : d.type === "NON_VEG"
-                            ? "bg-red-50 text-red-700 border-red-200"
-                            : "bg-yellow-50 text-yellow-700 border-yellow-200"
-                      }`}
-                    >
-                      {d.type?.replace("_", " ") || "N/A"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 font-mono font-black text-xs text-gray-400">
-                    {d.preparationTime}m
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${d.isAvailable ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-gray-100 text-gray-500 border-gray-200"}`}
-                    >
-                      {d.isAvailable ? "Available" : "Unavailable"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => openEdit(d, e)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-gray-400">
-                    <div className="flex flex-col items-center gap-2">
-                      <Utensils size={24} className="opacity-20" />
-                      <p>No dishes found.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
+            {groupByCategory ? (
+              categories.map((cat) => {
+                const catDishes = filtered.filter((d) => d.categoryId === cat.id);
+                if (catDishes.length === 0) return null;
+                return (
+                  <tbody key={cat.id} className="divide-y divide-gray-100">
+                    <tr className="bg-slate-100/70 border-y border-gray-200">
+                      <td colSpan={8} className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                        📁 {cat.name} ({catDishes.length})
+                      </td>
+                    </tr>
+                    {catDishes.map((d) => renderRow(d))}
+                  </tbody>
+                );
+              })
+            ) : (
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map((d) => renderRow(d))}
+                {filtered.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={8} className="text-center py-12 text-gray-400">
+                      <div className="flex flex-col items-center gap-2">
+                        <Utensils size={24} className="opacity-20" />
+                        <p>No dishes found.</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            )}
           </table>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Category, Dish, SubMenu, Table, OrderItem, AddOn } from "@/lib/types";
 import { getCategories, getDishes, getSubMenus } from "@/services/menu";
 import { Popover } from "@/components/ui/Popover";
@@ -50,6 +50,7 @@ export function TableOrderingSystem({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("ALL");
   const [selectedSubMenuId, setSelectedSubMenuId] = useState<string>("ALL");
+  const [groupByCategory, setGroupByCategory] = useState(true);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [guests, setGuests] = useState(1);
@@ -94,6 +95,27 @@ export function TableOrderingSystem({
       selectedSubMenuId === "ALL" || d.subMenuId === selectedSubMenuId;
     return matchesSearch && matchesCategory && matchesSubMenu;
   });
+
+  const dishesByCategory = useMemo(() => {
+    const groups: { category: Category; dishes: Dish[] }[] = [];
+    categories.forEach((cat) => {
+      const catDishes = filteredDishes.filter((d) => d.categoryId === cat.id);
+      if (catDishes.length > 0) {
+        groups.push({ category: cat, dishes: catDishes });
+      }
+    });
+    // Add any dishes that are uncategorized
+    const uncategorizedDishes = filteredDishes.filter(
+      (d) => !categories.some((c) => c.id === d.categoryId)
+    );
+    if (uncategorizedDishes.length > 0) {
+      groups.push({
+        category: { id: "uncategorized", name: "Uncategorized", storeId: "" } as Category,
+        dishes: uncategorizedDishes,
+      });
+    }
+    return groups;
+  }, [filteredDishes, categories]);
 
   // Existing function updated for better logic
   const addToCartDirectly = (dish: Dish) => {
@@ -287,6 +309,21 @@ export function TableOrderingSystem({
               ))}
             </div>
           </div>
+
+          <div className="pt-3 border-t border-zinc-200">
+            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2 px-1 block">
+              View Option
+            </label>
+            <label className="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-zinc-600 hover:bg-zinc-200/50 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={groupByCategory}
+                onChange={(e) => setGroupByCategory(e.target.checked)}
+                className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 h-3.5 w-3.5 cursor-pointer"
+              />
+              <span>Group by Category</span>
+            </label>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto bg-white p-4 custom-scrollbar">
@@ -302,83 +339,178 @@ export function TableOrderingSystem({
           ) : (
             <>
               {/*Middle part Food Item  */}
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
-  {filteredDishes.map((dish) => {
-    const cartItem = cart.find((item) => item.dishId === dish.id);
-    const qty = cartItem?.quantity || 0;
+              {groupByCategory ? (
+                <div className="space-y-6">
+                  {dishesByCategory.map(({ category, dishes: catDishes }) => (
+                    <div key={category.id} className="space-y-3">
+                      <div className="flex items-center gap-2 pb-1.5 border-b border-zinc-100">
+                        <span className="h-1.5 w-1.5 rounded-full bg-zinc-900" />
+                        <h3 className="text-[10px] font-black text-zinc-900 uppercase tracking-widest">
+                          {category.name}
+                        </h3>
+                        <span className="text-[9px] font-bold text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded-full">
+                          {catDishes.length}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
+                        {catDishes.map((dish) => {
+                          const cartItem = cart.find((item) => item.dishId === dish.id);
+                          const qty = cartItem?.quantity || 0;
 
-    const getInitials = (name: string) =>
-      name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+                          const getInitials = (name: string) =>
+                            name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-    return (
-      <div
-        key={dish.id}
-        className="group bg-white rounded border border-zinc-200 p-2.5 hover:border-zinc-900 transition-all flex flex-col justify-between h-32 active:scale-[0.98]"
-      >
-        {/* Top Section: Small Image + Title */}
-        <div className="flex gap-3">
-          {/* Small Fixed Image Box */}
-          <div className="w-10 h-10 shrink-0 bg-zinc-50 rounded border border-zinc-100 flex items-center justify-center overflow-hidden">
-            {dish.image && dish.image[0] ? (
-              <img
-                src={dish.image[0]}
-                alt={dish.name}
-                className="w-full h-full object-cover grayscale-[50%] group-hover:grayscale-0 transition-all"
-              />
-            ) : (
-              <span className="text-[10px] font-bold text-zinc-400">
-                {getInitials(dish.name)}
-              </span>
-            )}
-          </div>
+                          return (
+                            <div
+                              key={dish.id}
+                              className="group bg-white rounded border border-zinc-200 p-2.5 hover:border-zinc-900 transition-all flex flex-col justify-between h-32 active:scale-[0.98]"
+                            >
+                              {/* Top Section: Small Image + Title */}
+                              <div className="flex gap-3">
+                                {/* Small Fixed Image Box */}
+                                <div className="w-10 h-10 shrink-0 bg-zinc-50 rounded border border-zinc-100 flex items-center justify-center overflow-hidden">
+                                  {dish.image && dish.image[0] ? (
+                                    <img
+                                      src={dish.image[0]}
+                                      alt={dish.name}
+                                      className="w-full h-full object-cover grayscale-[50%] group-hover:grayscale-0 transition-all"
+                                    />
+                                  ) : (
+                                    <span className="text-[10px] font-bold text-zinc-400">
+                                      {getInitials(dish.name)}
+                                    </span>
+                                  )}
+                                </div>
 
-          <div className="min-w-0 flex-1">
-            <h4 className="text-[11px] font-bold text-zinc-900 leading-tight line-clamp-2 uppercase tracking-tight">
-              {dish.name}
-            </h4>
-            <div className="text-[10px] font-mono text-zinc-400 mt-0.5">
-              Rs.{dish.price?.listedPrice ?? 0}
-            </div>
-          </div>
-        </div>
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-[11px] font-bold text-zinc-900 leading-tight line-clamp-2 uppercase tracking-tight">
+                                    {dish.name}
+                                  </h4>
+                                  <div className="text-[10px] font-mono text-zinc-400 mt-0.5">
+                                    Rs.{dish.price?.listedPrice ?? 0}
+                                  </div>
+                                </div>
+                              </div>
 
-        {/* Bottom Section: Action Button */}
-        <div className="mt-auto">
-          <div className="h-7 w-full relative">
-            {qty === 0 ? (
-              <button
-                onClick={() => addToCartDirectly(dish)}
-                className="w-full h-full bg-white border border-zinc-200 text-zinc-600 text-[9px] font-bold rounded hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all uppercase tracking-wider"
-              >
-                + Add
-              </button>
-            ) : (
-              <div className="w-full h-full flex items-center justify-between bg-zinc-900 text-white rounded px-1 animate-in fade-in zoom-in duration-150">
-                <button
-                  onClick={() => removeFromCartDirectly(dish.id)}
-                  className="p-1 hover:text-zinc-400 transition-colors"
-                >
-                  <Minus size={10} strokeWidth={3} />
-                </button>
-                
-                <span className="text-[10px] font-bold font-mono">
-                  {qty}
-                </span>
-                
-                <button
-                  onClick={() => addToCartDirectly(dish)}
-                  className="p-1 hover:text-zinc-400 transition-colors"
-                >
-                  <Plus size={10} strokeWidth={3} />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
+                              {/* Bottom Section: Action Button */}
+                              <div className="mt-auto">
+                                <div className="h-7 w-full relative">
+                                  {qty === 0 ? (
+                                    <button
+                                      onClick={() => addToCartDirectly(dish)}
+                                      className="w-full h-full bg-white border border-zinc-200 text-zinc-600 text-[9px] font-bold rounded hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all uppercase tracking-wider"
+                                    >
+                                      + Add
+                                    </button>
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-between bg-zinc-900 text-white rounded px-1 animate-in fade-in zoom-in duration-150">
+                                      <button
+                                        onClick={() => removeFromCartDirectly(dish.id)}
+                                        className="p-1 hover:text-zinc-400 transition-colors"
+                                      >
+                                        <Minus size={10} strokeWidth={3} />
+                                      </button>
+                                      
+                                      <span className="text-[10px] font-bold font-mono">
+                                        {qty}
+                                      </span>
+                                      
+                                      <button
+                                        onClick={() => addToCartDirectly(dish)}
+                                        className="p-1 hover:text-zinc-400 transition-colors"
+                                      >
+                                        <Plus size={10} strokeWidth={3} />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
+                  {filteredDishes.map((dish) => {
+                    const cartItem = cart.find((item) => item.dishId === dish.id);
+                    const qty = cartItem?.quantity || 0;
+
+                    const getInitials = (name: string) =>
+                      name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+
+                    return (
+                      <div
+                        key={dish.id}
+                        className="group bg-white rounded border border-zinc-200 p-2.5 hover:border-zinc-900 transition-all flex flex-col justify-between h-32 active:scale-[0.98]"
+                      >
+                        {/* Top Section: Small Image + Title */}
+                        <div className="flex gap-3">
+                          {/* Small Fixed Image Box */}
+                          <div className="w-10 h-10 shrink-0 bg-zinc-50 rounded border border-zinc-100 flex items-center justify-center overflow-hidden">
+                            {dish.image && dish.image[0] ? (
+                              <img
+                                src={dish.image[0]}
+                                alt={dish.name}
+                                className="w-full h-full object-cover grayscale-[50%] group-hover:grayscale-0 transition-all"
+                              />
+                            ) : (
+                              <span className="text-[10px] font-bold text-zinc-400">
+                                {getInitials(dish.name)}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-[11px] font-bold text-zinc-900 leading-tight line-clamp-2 uppercase tracking-tight">
+                              {dish.name}
+                            </h4>
+                            <div className="text-[10px] font-mono text-zinc-400 mt-0.5">
+                              Rs.{dish.price?.listedPrice ?? 0}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bottom Section: Action Button */}
+                        <div className="mt-auto">
+                          <div className="h-7 w-full relative">
+                            {qty === 0 ? (
+                              <button
+                                onClick={() => addToCartDirectly(dish)}
+                                className="w-full h-full bg-white border border-zinc-200 text-zinc-600 text-[9px] font-bold rounded hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all uppercase tracking-wider"
+                              >
+                                + Add
+                              </button>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-between bg-zinc-900 text-white rounded px-1 animate-in fade-in zoom-in duration-150">
+                                <button
+                                  onClick={() => removeFromCartDirectly(dish.id)}
+                                  className="p-1 hover:text-zinc-400 transition-colors"
+                                >
+                                  <Minus size={10} strokeWidth={3} />
+                                </button>
+                                
+                                <span className="text-[10px] font-bold font-mono">
+                                  {qty}
+                                </span>
+                                
+                                <button
+                                  onClick={() => addToCartDirectly(dish)}
+                                  className="p-1 hover:text-zinc-400 transition-colors"
+                                >
+                                  <Plus size={10} strokeWidth={3} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {filteredDishes.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center py-20 text-zinc-300">
