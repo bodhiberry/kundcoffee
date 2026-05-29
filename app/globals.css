@@ -28,3 +28,12 @@
     @apply block text-xs font-medium text-zinc-500 mb-1;
   }
 }
+
+/* Hide scrollbar but keep scrollable */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

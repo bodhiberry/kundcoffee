@@ -245,22 +245,22 @@ export function OrderDetailView({
   return (
     <div className="flex flex-col m-auto h-[85vh] bg-white overflow-hidden rounded-xl border border-zinc-200 printable-area shadow-2xl">
       {/* HEADER */}
-      <div className="bg-white border-b border-zinc-200 p-6 flex items-center justify-between">
+      <div className="bg-white border-b border-zinc-200 p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-11 h-11 bg-zinc-950 rounded-xl flex items-center justify-center text-white shadow-md shadow-zinc-900/10">
+          <div className="w-11 h-11 bg-zinc-950 rounded-xl flex items-center justify-center text-white shadow-md shadow-zinc-900/10 shrink-0">
             <Package size={20} strokeWidth={2} />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-black text-zinc-900 tracking-tight uppercase">
+              <h2 className="text-sm sm:text-lg font-black text-zinc-900 tracking-tight uppercase">
                 Order #{order.id.slice(-6).toUpperCase()}
               </h2>
               <span className="text-[9px] font-black px-2.5 py-1 rounded bg-zinc-100 text-zinc-800 uppercase tracking-widest border border-zinc-200">
                 {order.type?.replace("_", " ")}
               </span>
             </div>
-            <div className="flex items-center gap-4 mt-1.5">
-              <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-widest">
+            <div className="flex items-center gap-4 mt-1.5 font-medium">
+              <span className="text-[11px] text-zinc-500 uppercase tracking-widest">
                 Table:{" "}
                 <span className="text-zinc-950 font-black">
                   {order.table?.name || "Direct"}
@@ -275,25 +275,25 @@ export function OrderDetailView({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 justify-end w-full sm:w-auto">
           {/* HIDE ADD ITEMS IF READ ONLY */}
           {!isReadOnly && (
             <Button
               onClick={() => onAddMore(order)}
               variant="secondary"
-              className="h-10 px-5 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-800 font-black flex items-center gap-2 uppercase text-[9px] tracking-widest bg-white rounded-xl transition-all"
+              className="h-10 px-3 sm:px-5 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-800 font-black flex items-center gap-2 uppercase text-[9px] tracking-widest bg-white rounded-xl transition-all flex-1 sm:flex-initial"
             >
-              <Plus size={14} strokeWidth={3} /> Add Items
+              <Plus size={14} strokeWidth={3} /> <span className="hidden sm:inline">Add Items</span><span className="sm:hidden">Add</span>
             </Button>
           )}
           <Button
             onClick={handleInternalPrint}
             variant="secondary"
-            className="h-10 px-5 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-800 font-black flex items-center gap-2 uppercase text-[9px] tracking-widest bg-white rounded-xl transition-all"
+            className="h-10 px-3 sm:px-5 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-800 font-black flex items-center gap-2 uppercase text-[9px] tracking-widest bg-white rounded-xl transition-all flex-1 sm:flex-initial"
           >
-            <Printer size={14} strokeWidth={2.5} /> Print Bill
+            <Printer size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Print Bill</span><span className="sm:hidden">Print</span>
           </Button>
-          <div className="h-6 w-px bg-zinc-200 mx-1" />
+          <div className="h-6 w-px bg-zinc-200 mx-1 hidden sm:block" />
           <button
             onClick={onClose}
             className="p-2 text-zinc-400 hover:text-zinc-950 hover:bg-zinc-50 rounded-xl transition-all"
@@ -303,9 +303,9 @@ export function OrderDetailView({
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* DISHES LIST */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar bg-white">
           {order.kotRemarks && (
             <div className="mb-6 p-4 bg-zinc-50 border border-zinc-200 rounded-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 p-2 opacity-[0.03] text-zinc-900">
@@ -424,7 +424,7 @@ export function OrderDetailView({
         </div>
 
         {/* SUMMARY SIDEBAR */}
-        <div className="w-80 border-l border-zinc-200 p-8 flex flex-col gap-8 bg-zinc-50/50">
+        <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-zinc-200 p-6 sm:p-8 flex flex-col gap-6 lg:gap-8 bg-zinc-50/50 overflow-y-auto lg:overflow-visible shrink-0">
           <div className="space-y-6">
             <h3 className="font-black text-zinc-400 text-[9px] uppercase tracking-[0.2em] border-b border-zinc-200 pb-4">
               Order Summary

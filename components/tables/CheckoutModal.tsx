@@ -1129,7 +1129,7 @@ export function CheckoutModal({
 
               <div className="shrink-0 z-10">
                 <Button
-                  onClick={() => window.print()}
+                  onClick={handlePrint}
                   className="w-full h-12 bg-white hover:bg-zinc-100 text-zinc-900 border-none uppercase tracking-widest font-bold text-[10px] shadow-sm flex items-center justify-center gap-2"
                 >
                   <Printer size={16} /> Print Receipt

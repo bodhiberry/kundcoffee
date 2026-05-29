@@ -158,7 +158,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 h-screen sticky top-0 bg-white border-r border-zinc-200 flex flex-col z-30">
+    <aside className="w-full lg:w-64 h-full lg:h-screen lg:sticky top-0 bg-white lg:border-r border-zinc-200 flex flex-col z-30">
       {/* Brand Header */}
       <Link href="/dashboard" className="h-20 flex items-center px-6 border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors cursor-pointer group/logo">
         <div className="flex items-center gap-3">

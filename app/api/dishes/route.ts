@@ -17,22 +17,15 @@ export async function GET() {
 
     const dishes = await prisma.dish.findMany({
       where: { storeId: storeId },
-      select: {
-        id: true,
-        name: true,
-        categoryId: true,
-        subMenuId: true,
-        sortOrder: true,
-        price: {
-          select: {
-            listedPrice: true,
-          },
-        },
+      include: {
+        price: true,
         category: {
           select: {
             name: true,
           },
         },
+        stocks: true,
+        addOns: true,
       },
       orderBy: { sortOrder: "asc" },
     });

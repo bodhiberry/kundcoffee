@@ -146,6 +146,18 @@ export async function deleteDish(id: string) {
   }
 }
 
+export async function duplicateDish(id: string): Promise<ApiResponse<Dish>> {
+  try {
+    const res = await fetch(`/api/dishes/${id}/duplicate`, {
+      method: "POST",
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Failed to duplicate dish:", error);
+    return { success: false, message: "Network error" };
+  }
+}
+
 // --- Sub Menus ---
 
 export async function getSubMenus(): Promise<SubMenu[]> {

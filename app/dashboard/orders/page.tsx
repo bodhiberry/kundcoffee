@@ -528,8 +528,8 @@ export default function OrdersPage() {
     <div className="p-8 space-y-8 bg-zinc-50 min-h-screen">
       {/* Header */}
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center justify-between md:justify-start gap-6">
             <h1 className="text-xl font-normal text-zinc-900 tracking-tight">
               Orders
             </h1>
@@ -549,8 +549,8 @@ export default function OrdersPage() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative group w-64">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative group w-full sm:w-64">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
                 size={14}
@@ -563,20 +563,22 @@ export default function OrdersPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Link href="/dashboard/orders/history">
+            <div className="flex items-center gap-2">
+              <Link href="/dashboard/orders/history" className="flex-1 sm:flex-initial">
+                <Button
+                  variant="secondary"
+                  className="w-full bg-white hover:bg-zinc-50 border-zinc-200 h-10 px-4 uppercase tracking-widest text-[10px]"
+                >
+                  <History size={14} className="mr-2" /> History
+                </Button>
+              </Link>
               <Button
-                variant="secondary"
-                className="bg-white hover:bg-zinc-50 border-zinc-200 h-10 px-4 uppercase tracking-widest text-[10px]"
+                onClick={() => setShowOrderTypeSelector(true)}
+                className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 uppercase tracking-widest text-[10px]"
               >
-                <History size={14} className="mr-2" /> History
+                <Plus size={14} className="mr-2" /> Add Order
               </Button>
-            </Link>
-            <Button
-              onClick={() => setShowOrderTypeSelector(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 uppercase tracking-widest text-[10px]"
-            >
-              <Plus size={14} className="mr-2" /> Add New Order
-            </Button>
+            </div>
           </div>
         </div>
       </div>

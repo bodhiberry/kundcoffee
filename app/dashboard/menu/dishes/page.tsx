@@ -6,6 +6,7 @@ import {
   addDish,
   updateDish,
   deleteDish,
+  duplicateDish,
   getCategories,
   getSubMenus,
   getAddOns,
@@ -25,7 +26,7 @@ import {
   StockConsumptionForm,
 } from "@/components/menu/MenuForms";
 import { ImageUpload } from "@/components/ui/ImageUpload";
-import { Trash2, Edit2, Plus, Coffee, Utensils, X } from "lucide-react";
+import { Trash2, Edit2, Plus, Coffee, Utensils, X, Copy } from "lucide-react";
 
 export default function DishesPage() {
   const { settings } = useSettings();
@@ -421,6 +422,28 @@ export default function DishesPage() {
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              const promise = duplicateDish(d.id);
+              toast.promise(promise, {
+                loading: "Duplicating dish...",
+                success: (res) => {
+                  if (res.success) {
+                    refresh();
+                    return "Dish duplicated successfully";
+                  } else {
+                    throw new Error(res.message || "Failed to duplicate");
+                  }
+                },
+                error: (err) => err.message || "Failed to duplicate dish",
+              });
+            }}
+            title="Duplicate Dish"
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <Copy size={16} />
+          </button>
           <button
             onClick={(e) => openEdit(d, e)}
             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
