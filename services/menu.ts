@@ -80,7 +80,7 @@ export async function updateCategory(data: Partial<Category> & { sortOrder?: num
 
 export async function deleteCategory(id: string) {
   try {
-    const res = await fetch(`/api/category?id=${id}`, {
+    const res = await fetch(`/api/category/${id}`, {
       method: "DELETE",
     });
     return await res.json();

@@ -171,7 +171,7 @@ export default function Sidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-black text-zinc-900 uppercase tracking-tighter leading-none">
-              {settings.name || "Bodhiberry"} ERP
+              {/* {settings.name || "Bodhiberry"} ERP */} ERP
             </span>
             <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-1">
               System Active

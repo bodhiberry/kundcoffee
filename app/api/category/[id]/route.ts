@@ -137,6 +137,46 @@ export async function DELETE(req: NextRequest, context: { params: Params }) {
         { status: 409 },
       );
     }
+
+    const subMenuCount = await prisma.subMenu.count({
+      where: { categoryId: id },
+    });
+    if (subMenuCount > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Category has sub-menus. Remove them first.",
+        },
+        { status: 409 },
+      );
+    }
+
+    const comboCount = await prisma.comboOffer.count({
+      where: { categoryId: id },
+    });
+    if (comboCount > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Category has combo offers. Remove them first.",
+        },
+        { status: 409 },
+      );
+    }
+
+    const addOnCount = await prisma.addOn.count({
+      where: { categoryId: id },
+    });
+    if (addOnCount > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Category has add-ons. Remove them first.",
+        },
+        { status: 409 },
+      );
+    }
+
     await prisma.category.delete({
       where: { id },
     });
