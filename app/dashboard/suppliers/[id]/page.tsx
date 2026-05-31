@@ -94,6 +94,11 @@ export default function SupplierProfile() {
   if (loading) return <div className="p-8">Loading...</div>;
   if (!supplier) return <div className="p-8">Supplier not found</div>;
 
+  const remainingPayable = (supplier as any).dueAmount ?? 0;
+  const purchaseReturn = (supplier as any).metrics?.totalReturns ?? 0;
+  const cashPayment = (supplier as any).metrics?.totalPaymentsOut ?? 0;
+  const originalPayable = remainingPayable + purchaseReturn + cashPayment;
+
   return (
     <div className="p-8 space-y-8 bg-zinc-50 min-h-screen">
       <div className="flex items-center gap-4">
@@ -110,28 +115,28 @@ export default function SupplierProfile() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <MetricCard
-          title="Total Purchases"
-          value={`Rs. ${(supplier as any).metrics?.totalPurchases?.toLocaleString() || 0}`}
+          title="Original Payable"
+          value={`Rs. ${originalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={FileText}
-          trend="Total Value"
+          trend="Initial Total"
         />
         <MetricCard
-          title="Total Returns"
-          value={`Rs. ${(supplier as any).metrics?.totalReturns?.toLocaleString() || 0}`}
+          title="Less Purchase Return"
+          value={`Rs. ${purchaseReturn.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={History}
-          trend="Returns"
+          trend="Subtracted"
         />
         <MetricCard
-          title="Payments Out"
-          value={`Rs. ${(supplier as any).metrics?.totalPaymentsOut?.toLocaleString() || 0}`}
+          title="Less: Cash Payment"
+          value={`Rs. ${cashPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={ArrowLeft}
-          trend="Money Paid"
+          trend="Paid Out"
         />
         <MetricCard
-          title="Payments In"
-          value={`Rs. ${(supplier as any).metrics?.totalPaymentsIn?.toLocaleString() || 0}`}
+          title="Remaining Payable"
+          value={`Rs. ${remainingPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={User}
-          trend="Refunds"
+          trend="Outstanding"
         />
       </div>
 

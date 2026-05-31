@@ -91,6 +91,12 @@ export async function GET() {
     const submenu = await prisma.subMenu.findMany({
       where: { storeId },
       orderBy: { sortOrder: "asc" },
+      include: {
+        dishes: true,
+        _count: {
+          select: { dishes: true },
+        },
+      },
     });
     if (!submenu)
       return NextResponse.json(
