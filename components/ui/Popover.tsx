@@ -4,9 +4,10 @@ import React, { FC, ReactNode, useEffect, useRef, useState } from "react";
 interface PopoverProps {
   trigger: ReactNode;
   content: ReactNode;
-  align?: "left" | "right";
+  align?: "left" | "right" | "center";
   isOpen?: boolean;
   setIsOpen?: (isOpen: boolean) => void;
+  className?: string;
 }
 
 export const Popover: FC<PopoverProps> = ({
@@ -15,6 +16,7 @@ export const Popover: FC<PopoverProps> = ({
   align = "left",
   isOpen: controlledIsOpen,
   setIsOpen: controlledSetIsOpen,
+  className = "",
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -49,7 +51,13 @@ export const Popover: FC<PopoverProps> = ({
 
       {isOpen && (
         <div
-          className={`absolute z-50 mt-2 w-78 origin-top-right rounded-xl bg-white p-4 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ${align === "right" ? "right-0" : "left-0"}`}
+          className={`absolute z-50 mt-2 w-72 rounded-xl bg-white p-4 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ${
+            align === "right"
+              ? "right-0 origin-top-right"
+              : align === "center"
+              ? "left-1/2 -translate-x-1/2 origin-top"
+              : "left-0 origin-top-left"
+          } ${className}`}
         >
           {content}
         </div>
