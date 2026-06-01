@@ -39,70 +39,78 @@ export function OrderCard({
 
   const totalDishes = order.items.reduce((acc, item) => acc + item.quantity, 0);
 
-  const handlePrint = (e: React.MouseEvent) => {
+  const handlePrintKOT = (e: React.MouseEvent) => {
     e.stopPropagation();
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     const itemsHtml = order.items.map((item: any) => `
-      <tr style="border-bottom: 0.5px solid #eee;">
-        <td style="padding: 5px 0; font-size: 11px;">
-          ${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}
+      <tr style="border-bottom: 0.5px dashed #999;">
+        <td style="padding: 6px 0; font-size: 13px; font-weight: bold;">
+          ${item.dish?.name || item.combo?.name || "Item"}
+          ${item.note ? `<div style="font-size: 10px; font-weight: normal; color: #555; margin-top: 2px;">Note: ${item.note}</div>` : ""}
         </td>
-        <td style="padding: 5px 0; font-size: 11px; text-align: right;">
-          ${settings.currency} ${(item.quantity * item.unitPrice).toFixed(2)}
+        <td style="padding: 6px 0; font-size: 15px; font-weight: bold; text-align: right;">
+          x${item.quantity}
         </td>
       </tr>
     `).join("");
 
+    const orderTime = new Date(order.createdAt);
+    const timeStr = orderTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const dateStr = orderTime.toLocaleDateString();
+
     printWindow.document.write(`
       <html>
         <head>
-          <title>Prov. Bill - ${order.table?.name || "Direct"}</title>
+          <title>KOT - ${order.table?.name || "Direct"}</title>
           <style>
             @page { size: 80mm auto; margin: 0; }
             body { 
-              font-family: Arial, Helvetica, sans-serif; 
+              font-family: 'Courier New', Courier, monospace; 
               width: 80mm; 
               margin: 0; 
               padding: 5mm; 
-              font-size: 11px;
+              font-size: 12px;
               color: #000;
               background: #fff;
             }
             .center { text-align: center; }
             .bold { font-weight: bold; }
-            .divider { border-top: 1px dashed #000; margin: 10px 0; }
+            .divider { border-top: 2px dashed #000; margin: 8px 0; }
+            .divider-thin { border-top: 1px dashed #999; margin: 6px 0; }
             table { width: 100%; border-collapse: collapse; }
-            .footer { margin-top: 20px; font-size: 9px; text-align: center; }
           </style>
         </head>
         <body>
-          <div class="center">
-            ${settings.logo ? `<img src="${settings.logo}" style="max-height: 40px; margin-bottom: 5px;" />` : ""}
-            <div class="center bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
-            <div class="center">${settings.address || "Kathmandu, Nepal"}</div>
-            <div class="center bold" style="margin-top: 5px; text-transform: uppercase;">Provisional Bill</div>
+          <div class="center bold" style="font-size: 18px; letter-spacing: 3px; padding: 5px 0;">
+            *** KOT ***
+          </div>
+          <div class="center" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">
+            Kitchen Order Ticket
           </div>
           
           <div class="divider"></div>
           
-          <div style="display: flex; justify-content: space-between;">
-            <span>Order: #${order.id.slice(-6).toUpperCase()}</span>
-            <span>Date: ${new Date(order.createdAt).toLocaleDateString()}</span>
+          <div style="display: flex; justify-content: space-between; font-size: 11px;">
+            <span class="bold">Order: #${order.id.slice(-6).toUpperCase()}</span>
+            <span>${dateStr}</span>
           </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>Table: ${order.table?.name || "N/A"}</span>
-            <span>Type: ${order.type || "DINE_IN"}</span>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 3px;">
+            <span class="bold" style="font-size: 14px;">TABLE: ${order.table?.name || "N/A"}</span>
+            <span class="bold">${timeStr}</span>
+          </div>
+          <div style="font-size: 11px; margin-top: 3px;">
+            <span>Type: ${order.type?.replace("_", " ") || "DINE IN"}</span>
           </div>
           
           <div class="divider"></div>
           
           <table>
             <thead>
-              <tr style="border-bottom: 1px solid #000;">
-                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
-                <th style="text-align: right; padding-bottom: 5px;">AMT</th>
+              <tr style="border-bottom: 1.5px solid #000;">
+                <th style="text-align: left; padding-bottom: 5px; font-size: 11px; text-transform: uppercase;">Item</th>
+                <th style="text-align: right; padding-bottom: 5px; font-size: 11px; text-transform: uppercase;">Qty</th>
               </tr>
             </thead>
             <tbody>
@@ -112,14 +120,14 @@ export function OrderCard({
           
           <div class="divider"></div>
           
-          <div style="display: flex; justify-content: space-between; font-size: 13px;" class="bold">
-            <span>TOTAL</span>
-            <span>${settings.currency} ${order.total.toFixed(2)}</span>
+          <div class="center" style="font-size: 11px;">
+            <span class="bold">Total Items: ${order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}</span>
           </div>
           
-          <div class="footer">
-            <p class="bold">THANK YOU!</p>
-            <p>POWERED BY ${settings.name || "BODHIBERRY"} ERP</p>
+          <div class="divider-thin"></div>
+          
+          <div class="center" style="font-size: 9px; color: #666; margin-top: 5px;">
+            Printed: ${new Date().toLocaleString()}
           </div>
           
           <script>
@@ -161,9 +169,9 @@ export function OrderCard({
               </button>
             )}
             <button
-              onClick={handlePrint}
-              className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all"
-              title="Print Provisional Bill"
+              onClick={handlePrintKOT}
+              className="p-1.5 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-all"
+              title="Print KOT"
             >
               <Printer size={14} />
             </button>
