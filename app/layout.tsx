@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { SettingsProvider } from "@/components/providers/SettingsProvider";
+import { PrinterProvider } from "@/components/providers/PrinterProvider";
 import AuthProvider from "@/components/providers/SessionProvider";
 
 const inter = Inter({
@@ -86,8 +87,10 @@ export default function RootLayout({
       >
         <AuthProvider>
           <SettingsProvider>
-            {children}
-            <Toaster position="top-right" richColors duration={2000} />
+            <PrinterProvider>
+              {children}
+              <Toaster position="top-right" richColors duration={2000} />
+            </PrinterProvider>
           </SettingsProvider>
         </AuthProvider>
       </body>

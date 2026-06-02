@@ -23,6 +23,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { usePrinter } from "@/components/providers/PrinterProvider";
 import { toast } from "sonner";
 
 interface OrderDetailViewProps {
@@ -49,6 +50,7 @@ export function OrderDetailView({
   onPrint,
 }: OrderDetailViewProps) {
   const { settings } = useSettings();
+  const printer = usePrinter();
   const [activeItemForPopover, setActiveItemForPopover] = useState<
     string | null
   >(null);
@@ -97,9 +99,17 @@ export function OrderDetailView({
   const taxAmount = includeTax ? order.total * 0.13 : 0;
   const grandTotal = order.total + taxAmount;
 
-  const handleInternalPrint = () => {
-    // If a custom onPrint is provided and we want to use it, we can.
-    // But we'll implement a robust default here.
+  const handleInternalPrint = async () => {
+    // Try Bluetooth first
+    try {
+      await printer.printBill(order, settings);
+      toast.success("Bill sent to printer");
+      return;
+    } catch (err) {
+      console.warn("Bluetooth bill print failed, falling back:", err);
+    }
+
+    // --- Fallback: Original window.print approach ---
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 

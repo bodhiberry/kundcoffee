@@ -424,3 +424,25 @@ export type PurchaseReturnItem = {
   amount: number;
   stockId?: string;
 };
+
+// --- Bluetooth Printer Types ---
+
+export type PrinterRole = "kitchen" | "bar" | "bill";
+
+export interface PrinterInfo {
+  deviceId: string | null;
+  name: string | null;
+  status: "connected" | "disconnected" | "not_paired";
+}
+
+export interface ReceiptTotals {
+  subtotal: number;
+  discount: number;
+  loyaltyDiscount: number;
+  tax: number;
+  serviceCharge: number;
+  grandTotal: number;
+  paymentMethod: string;
+  tenderAmount?: number;
+  customerName?: string;
+}

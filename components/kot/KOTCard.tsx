@@ -11,10 +11,13 @@ import {
   Download,
   Printer,
   CheckCircle2,
-  X
+  X,
+  Bluetooth,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Popover } from "@/components/ui/Popover";
+import { usePrinter } from "@/components/providers/PrinterProvider";
+import { toast } from "sonner";
 
 interface KOTCardProps {
   order: Order;
@@ -41,8 +44,21 @@ export function KOTCard({
     "SERVED",
   ];
 
-  const handlePrint = () => {
+  const printer = usePrinter();
+
+  const handlePrint = async () => {
     setShowOptionsModal(false); // Close modal when action is clicked
+
+    try {
+      await printer.printKOT(order, items, type);
+      toast.success("KOT sent to printer");
+      return;
+    } catch (err) {
+      // Bluetooth failed or not available — fall through to window.print
+      console.warn("Bluetooth print failed, falling back to browser print:", err);
+    }
+
+    // --- Fallback: Original window.print approach ---
     const WinPrint = window.open("", "_blank");
     if (!WinPrint) return;
 

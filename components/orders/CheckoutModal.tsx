@@ -24,6 +24,7 @@ import { useSettings } from "@/components/providers/SettingsProvider";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { hasPermission, PERMISSIONS } from "@/lib/rbac";
+import { usePrinter } from "@/components/providers/PrinterProvider";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export function CheckoutModal({
 }: CheckoutModalProps) {
   const { settings } = useSettings();
   const { data: session } = useSession();
+  const printer = usePrinter();
   const [step, setStep] = useState<"PREPARE" | "SUCCESS">("PREPARE");
   const [itemPrices, setItemPrices] = useState<Record<string, number>>({});
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -169,7 +171,37 @@ export function CheckoutModal({
     creditAmount,
   ]);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    let bluetoothSuccess = false;
+    try {
+      const totals = {
+        subtotal: calculatedSubtotal,
+        discount: manualDiscountAmount,
+        loyaltyDiscount: loyaltyDiscountAmount,
+        tax: taxAmount,
+        serviceCharge: serviceChargeAmount,
+        grandTotal: grandTotal,
+        paymentMethod: paymentMethod,
+        customerName: selectedCustomer?.fullName,
+        tenderAmount: tenderAmount || undefined,
+      };
+
+      const connectedCount =
+        printer.printers.bill.status === "connected" ||
+        printer.printers.kitchen.status === "connected" ||
+        printer.printers.bar.status === "connected";
+
+      if (connectedCount) {
+        await printer.printReceipt(order, settings as any, totals, activeItems);
+        bluetoothSuccess = true;
+        toast.success("Receipt sent to printer");
+      }
+    } catch (err) {
+      console.warn("Bluetooth print failed, falling back:", err);
+    }
+
+    if (bluetoothSuccess) return;
+
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 

@@ -17,9 +17,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { usePrinter } from "@/components/providers/PrinterProvider";
 
 export default function SettingsPage() {
   const { settings, updateSetting, loading } = useSettings();
+  const printer = usePrinter();
   const [currency, setCurrency] = useState(settings.currency);
   const [restaurantName, setRestaurantName] = useState(settings.name || "");
   const [address, setAddress] = useState(settings.address || "");
@@ -580,6 +582,96 @@ export default function SettingsPage() {
                   No roles defined yet.
                 </p>
               )}
+            </div>
+          </div>
+        </section>
+
+        {/* --- THERMAL PRINTERS SECTION --- */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
+          <div className="lg:pt-2">
+            <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-tight mb-1">
+              Thermal Printers
+            </h2>
+            <p className="text-xs text-zinc-500 leading-relaxed font-medium">
+              Configure Web Bluetooth connections for kitchen, bar, and billing thermal printers.
+            </p>
+            {!printer.isSupported && (
+              <p className="text-[10px] text-amber-600 font-bold uppercase mt-2 border border-amber-200 bg-amber-50 p-2 rounded-lg">
+                ⚠️ Web Bluetooth not supported in this browser. Use Chrome, Edge or Opera.
+              </p>
+            )}
+          </div>
+
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(["kitchen", "bar", "bill"] as const).map((role) => {
+                const info = printer.printers[role];
+                const isConnected = info.status === "connected";
+                const isNotPaired = info.status === "not_paired";
+
+                return (
+                  <div
+                    key={role}
+                    className="flex flex-col justify-between p-5 bg-zinc-50 border border-zinc-100 rounded-xl group hover:border-zinc-200 transition-all relative overflow-hidden"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                          {role} Printer
+                        </span>
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            isConnected
+                              ? "bg-emerald-500 animate-pulse"
+                              : isNotPaired
+                              ? "bg-zinc-300"
+                              : "bg-red-500"
+                          }`}
+                        />
+                      </div>
+
+                      <h3 className="text-sm font-bold text-zinc-800 truncate mb-1">
+                        {info.name || "Not Paired"}
+                      </h3>
+                      <p className="text-[9px] text-zinc-400 font-medium truncate mb-4">
+                        {info.deviceId ? `ID: ${info.deviceId.substring(0, 12)}...` : "Bluetooth printer disconnected"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t border-zinc-100">
+                      {isNotPaired ? (
+                        <Button
+                          disabled={!printer.isSupported}
+                          onClick={() => printer.pairPrinter(role)}
+                          className="w-full h-9 bg-zinc-900 text-white hover:bg-black rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                        >
+                          Pair Printer
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => printer.disconnectPrinter(role)}
+                            variant="secondary"
+                            className="flex-1 h-9 border-zinc-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                          >
+                            Unpair
+                          </Button>
+                          {isConnected && (
+                            <Button
+                              onClick={() => printer.testPrint(role)}
+                              variant="secondary"
+                              className="h-9 px-3 border-zinc-200 text-zinc-700 hover:bg-zinc-100 rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                              title="Test Print"
+                            >
+                              Test
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>

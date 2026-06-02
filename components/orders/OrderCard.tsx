@@ -3,7 +3,9 @@
 import { Order, OrderStatus } from "@/lib/types";
 import { Plus, Printer, Copy, Zap, Clock, Utensils, Edit } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { usePrinter } from "@/components/providers/PrinterProvider";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface OrderCardProps {
   order: Order;
@@ -24,6 +26,7 @@ export function OrderCard({
 }: OrderCardProps) {
   const { settings } = useSettings();
   const { data: session } = useSession();
+  const printer = usePrinter();
 
   const userRole = session?.user?.role as string | undefined;
   const userPermissions = (session?.user?.permissions as string[]) || [];
@@ -39,8 +42,38 @@ export function OrderCard({
 
   const totalDishes = order.items.reduce((acc, item) => acc + item.quantity, 0);
 
-  const handlePrintKOT = (e: React.MouseEvent) => {
+  const handlePrintKOT = async (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Split items by kotType and print to the correct Bluetooth printer
+    const kitchenItems = order.items.filter((i) => i.dish?.kotType === "KITCHEN");
+    const barItems = order.items.filter((i) => i.dish?.kotType === "BAR");
+
+    let bluetoothSuccess = false;
+    try {
+      const promises: Promise<void>[] = [];
+      if (kitchenItems.length > 0) {
+        promises.push(printer.printKOT(order, kitchenItems, "KITCHEN"));
+      }
+      if (barItems.length > 0) {
+        promises.push(printer.printKOT(order, barItems, "BAR"));
+      }
+      // If no items matched kotType, print all items as KITCHEN
+      if (kitchenItems.length === 0 && barItems.length === 0 && order.items.length > 0) {
+        promises.push(printer.printKOT(order, order.items, "KITCHEN"));
+      }
+      if (promises.length > 0) {
+        await Promise.all(promises);
+        bluetoothSuccess = true;
+        toast.success("KOT sent to printer");
+      }
+    } catch (err) {
+      console.warn("Bluetooth print failed, falling back:", err);
+    }
+
+    if (bluetoothSuccess) return;
+
+    // --- Fallback: Original window.print approach ---
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 

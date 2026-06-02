@@ -47,14 +47,17 @@ export const updateOrderItemStatus = async (
   return data.success;
 };
 
-export const createOrder = async (orderData: any): Promise<boolean> => {
+export const createOrder = async (orderData: any): Promise<{ success: boolean; order?: any }> => {
   const res = await fetch("/api/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(orderData),
   });
   const data = await res.json();
-  return res.ok || data.success;
+  if (res.ok && data.id) {
+    return { success: true, order: data };
+  }
+  return { success: false };
 };
 
 export const updateOrderItems = async (

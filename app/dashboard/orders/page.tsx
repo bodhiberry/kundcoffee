@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { usePrinter } from "@/components/providers/PrinterProvider";
 import { useRouter } from "next/navigation";
 import {
   Order,
@@ -34,7 +35,7 @@ import { KOTCard } from "@/components/kot/KOTCard";
 import { Button } from "@/components/ui/Button";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { Modal } from "@/components/ui/Modal";
-import { History, Search, Plus, Settings, FileText, Slash, WifiOff, CalendarDays, Users, ChefHat, Wine, X, Package, CreditCard, GripVertical } from "lucide-react";
+import { History, Search, Plus, Settings, FileText, Slash, WifiOff, CalendarDays, Users, ChefHat, Wine, X, Package, CreditCard, GripVertical, Printer } from "lucide-react";
 import { Popover } from "@/components/ui/Popover";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -204,6 +205,7 @@ function SortableSpaceSection({
 
 export default function OrdersPage() {
   const router = useRouter();
+  const printer = usePrinter();
   const [activeTab, setActiveTab] = useState<ActiveTab>("TABLES");
   const [orders, setOrders] = useState<Order[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -230,6 +232,8 @@ export default function OrdersPage() {
   const [showOrderTypeSelector, setShowOrderTypeSelector] = useState(false);
   const [pendingTable, setPendingTable] = useState<Table | null>(null);
   const [quickMenuTable, setQuickMenuTable] = useState<Table | null>(null);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [newlyCreatedOrder, setNewlyCreatedOrder] = useState<Order | null>(null);
 
   // DnD Sensors configuration (Distance: 4 for better responsiveness)
   const sensors = useSensors(
@@ -410,9 +414,11 @@ export default function OrdersPage() {
       kotRemarks,
       staffId,
     };
-    const success = await createOrder(orderData);
-    if (success) {
+    const result = await createOrder(orderData);
+    if (result.success && result.order) {
       setActiveTable(null);
+      setNewlyCreatedOrder(result.order);
+      setShowPrintModal(true);
       fetchData();
     }
   };
@@ -1025,6 +1031,98 @@ export default function OrdersPage() {
               </span>
             </button>
           ))}
+        </div>
+      </Modal>
+
+      {/* Print KOT Confirmation Modal */}
+      <Modal
+        isOpen={showPrintModal}
+        onClose={() => {
+          setShowPrintModal(false);
+          setNewlyCreatedOrder(null);
+        }}
+        size="md"
+        title="Print KOT"
+      >
+        <div className="p-6 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <Printer size={28} className="text-emerald-600" />
+            </div>
+            <h3 className="text-lg font-bold text-zinc-900">Order Created!</h3>
+            <p className="text-sm text-zinc-500">
+              Order #{newlyCreatedOrder?.id.slice(-6).toUpperCase()} for{" "}
+              {newlyCreatedOrder?.table?.name || "Direct Order"} has been created.
+            </p>
+            <p className="text-xs text-zinc-400">
+              Would you like to print the KOT now?
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowPrintModal(false);
+                setNewlyCreatedOrder(null);
+              }}
+              className="flex-1"
+            >
+              Skip
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!newlyCreatedOrder) return;
+                
+                const kitchenItems = newlyCreatedOrder.items.filter(
+                  (i) => i.dish?.kotType === "KITCHEN"
+                );
+                const barItems = newlyCreatedOrder.items.filter(
+                  (i) => i.dish?.kotType === "BAR"
+                );
+
+                try {
+                  const promises: Promise<void>[] = [];
+                  if (kitchenItems.length > 0) {
+                    promises.push(
+                      printer.printKOT(newlyCreatedOrder, kitchenItems, "KITCHEN")
+                    );
+                  }
+                  if (barItems.length > 0) {
+                    promises.push(
+                      printer.printKOT(newlyCreatedOrder, barItems, "BAR")
+                    );
+                  }
+                  if (
+                    kitchenItems.length === 0 &&
+                    barItems.length === 0 &&
+                    newlyCreatedOrder.items.length > 0
+                  ) {
+                    promises.push(
+                      printer.printKOT(
+                        newlyCreatedOrder,
+                        newlyCreatedOrder.items,
+                        "KITCHEN"
+                      )
+                    );
+                  }
+                  if (promises.length > 0) {
+                    await Promise.all(promises);
+                    toast.success("KOT sent to printer");
+                  }
+                } catch (err) {
+                  console.warn("Bluetooth print failed:", err);
+                  toast.error("Failed to print KOT");
+                }
+
+                setShowPrintModal(false);
+                setNewlyCreatedOrder(null);
+              }}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            >
+              Print KOT
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>
