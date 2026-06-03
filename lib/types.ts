@@ -425,14 +425,18 @@ export type PurchaseReturnItem = {
   stockId?: string;
 };
 
-// --- Bluetooth Printer Types ---
+// --- Bluetooth & Network Printer Types ---
 
 export type PrinterRole = "kitchen" | "bar" | "bill";
+export type PrinterConnectionMethod = "bluetooth" | "network";
 
 export interface PrinterInfo {
+  connectionMethod?: PrinterConnectionMethod;
   deviceId: string | null;
   name: string | null;
   status: "connected" | "disconnected" | "not_paired";
+  ipAddress?: string | null;
+  port?: number | null;
 }
 
 export interface ReceiptTotals {

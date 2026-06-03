@@ -132,6 +132,7 @@ export async function POST(req: NextRequest) {
         sessionId: activeSessionId,
       },
       include: {
+        table: true,
         items: {
           include: {
             selectedAddOns: true,

@@ -335,14 +335,14 @@ export function OrderDetailView({
               return (
               <div
                 key={item.id}
-                className={`bg-white rounded-xl border p-5 transition-all group flex items-center justify-between gap-6 shadow-sm ${
+                className={`bg-white rounded-xl border p-4 sm:p-5 transition-all group flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 shadow-sm ${
                   isCancelled
                     ? "border-red-200 bg-red-50/30 opacity-60"
                     : "border-zinc-200 hover:border-zinc-950"
                 }`}
               >
-                <div className="flex items-center gap-5 flex-1">
-                  <div className="w-14 h-14 bg-zinc-50 rounded-xl flex items-center justify-center overflow-hidden border border-zinc-200 flex-shrink-0">
+                <div className="flex items-center gap-4 sm:gap-5 flex-1">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-zinc-50 rounded-xl flex items-center justify-center overflow-hidden border border-zinc-200 flex-shrink-0">
                     {item.dish?.image?.[0] ? (
                       <img
                         src={item.dish.image[0]}
@@ -354,7 +354,7 @@ export function OrderDetailView({
                   </div>
  
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                       <h4 className={`font-black text-[13px] uppercase tracking-tight leading-none ${isCancelled ? "line-through text-zinc-400" : "text-zinc-900"}`}>
                         {item.dish?.name || "Dish Item"}
                       </h4>
@@ -375,9 +375,9 @@ export function OrderDetailView({
                   </div>
                 </div>
  
-                <div className="flex items-center gap-6">
+                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-4 sm:gap-6 w-full sm:w-auto pt-3 sm:pt-0 border-t border-zinc-100 sm:border-t-0">
                   {/* Status Dropdown */}
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-1">
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block ml-0.5">
                       Status
                     </span>
@@ -401,10 +401,10 @@ export function OrderDetailView({
                       </select>
                     )}
                   </div>
-
+ 
                   {/* Modify Button - hide for cancelled items */}
                   {!isReadOnly && !isCancelled && (
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1">
                       <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block ml-0.5">
                         Action
                       </span>
@@ -416,9 +416,9 @@ export function OrderDetailView({
                       </button>
                     </div>
                   )}
-
+ 
                   {/* Subtotal */}
-                  <div className="min-w-[80px] text-right flex flex-col gap-1.5">
+                  <div className="min-w-[80px] text-right flex flex-col gap-1">
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
                       Subtotal
                     </span>

@@ -339,7 +339,7 @@ export default function CategoriesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex justify-end">
+                    <div className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex justify-end">
                       <Button
                         variant="none"
                         size="sm"

@@ -204,7 +204,7 @@ export default function StaffPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                <div className="flex gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-all">
                   <Link
                     href={`/dashboard/staff/${s.id}`}
                     className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-xl text-zinc-400 hover:text-zinc-900 transition-colors"

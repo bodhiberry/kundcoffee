@@ -111,8 +111,13 @@ const CMD = {
 const encoder = new TextEncoder();
 
 interface StoredPrinter {
-  deviceId: string;
-  name: string;
+  connectionMethod?: "bluetooth" | "network";
+  // bluetooth
+  deviceId?: string;
+  name?: string;
+  // network
+  ipAddress?: string;
+  port?: number;
 }
 
 type StoredPrinters = Partial<Record<PrinterRole, StoredPrinter>>;
@@ -181,7 +186,11 @@ class BluetoothPrinterService {
 
     // Persist
     const stored = this.getStoredPrinters();
-    stored[role] = { deviceId: device.id, name: device.name || "Thermal Printer" };
+    stored[role] = {
+      connectionMethod: "bluetooth",
+      deviceId: device.id,
+      name: device.name || "Thermal Printer"
+    };
     this.setStoredPrinters(stored);
 
     // Listen for disconnections
@@ -194,11 +203,27 @@ class BluetoothPrinterService {
     return device.name || "Thermal Printer";
   }
 
+  /** Save a network printer configuration for a given role. */
+  saveNetworkPrinter(role: PrinterRole, ipAddress: string, port: number) {
+    const stored = this.getStoredPrinters();
+    stored[role] = {
+      connectionMethod: "network",
+      ipAddress,
+      port,
+    };
+    this.setStoredPrinters(stored);
+    this._onStatusChange?.();
+  }
+
   /** Attempt to reconnect to a previously paired device for a given role. */
   async reconnectPrinter(role: PrinterRole): Promise<boolean> {
     const stored = this.getStoredPrinters();
     const info = stored[role];
     if (!info) return false;
+
+    if (info.connectionMethod === "network") {
+      return true;
+    }
 
     try {
       // getDevices() returns previously-permitted devices (Chrome 85+)
@@ -252,26 +277,57 @@ class BluetoothPrinterService {
       return { deviceId: null, name: null, status: "not_paired" };
     }
 
+    const method = info.connectionMethod || "bluetooth";
+
+    if (method === "network") {
+      return {
+        connectionMethod: "network",
+        deviceId: null,
+        name: info.ipAddress ? `Network (${info.ipAddress})` : "Network Printer",
+        status: info.ipAddress ? "connected" : "not_paired",
+        ipAddress: info.ipAddress || null,
+        port: info.port || 9100,
+      };
+    }
+
     return {
-      deviceId: info.deviceId,
-      name: info.name,
+      connectionMethod: "bluetooth",
+      deviceId: info.deviceId || null,
+      name: info.name || null,
       status: conn ? "connected" : "disconnected",
     };
   }
 
   /** Get the number of currently connected printers. */
   getConnectedCount(): number {
-    return Object.keys(this.connections).length;
+    const stored = this.getStoredPrinters();
+    let count = 0;
+    
+    // Count active Bluetooth connections
+    count += Object.keys(this.connections).length;
+
+    // Count configured Network printers
+    for (const role of ["kitchen", "bar", "bill"] as PrinterRole[]) {
+      const info = stored[role];
+      if (info && info.connectionMethod === "network" && info.ipAddress) {
+        count++;
+      }
+    }
+    return count;
   }
 
   /** Get any single connected role (for fallback routing). */
   getAnyConnectedRole(): PrinterRole | null {
     const roles: PrinterRole[] = ["kitchen", "bar", "bill"];
-    return roles.find((r) => !!this.connections[r]) || null;
+    return roles.find((r) => this.isConnected(r)) || null;
   }
 
   /** Check if a specific role has an active connection. */
   isConnected(role: PrinterRole): boolean {
+    const info = this.getPrinterInfo(role);
+    if (info.connectionMethod === "network") {
+      return info.status === "connected";
+    }
     return !!this.connections[role];
   }
 
@@ -344,8 +400,31 @@ class BluetoothPrinterService {
   // Data Transmission
   // -----------------------------------------------------------
 
-  /** Send raw bytes to a printer, chunked for BLE reliability. */
+  /** Send raw bytes to a printer, chunked for BLE reliability or POSTed to network printer. */
   async sendData(role: PrinterRole, data: Uint8Array): Promise<void> {
+    const info = this.getPrinterInfo(role);
+
+    if (info.connectionMethod === "network") {
+      if (!info.ipAddress) throw new Error(`Network printer for role "${role}" has no IP address configured.`);
+
+      const base64Data = this.uint8ArrayToBase64(data);
+      const response = await fetch("/api/print", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ipAddress: info.ipAddress,
+          port: info.port || 9100,
+          base64Data,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to print to network printer at ${info.ipAddress}`);
+      }
+      return;
+    }
+
     const conn = this.connections[role];
     if (!conn) throw new Error(`Printer for role "${role}" is not connected.`);
 
@@ -368,6 +447,15 @@ class BluetoothPrinterService {
         await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
       }
     }
+  }
+
+  private uint8ArrayToBase64(arr: Uint8Array): string {
+    let binary = "";
+    const len = arr.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(arr[i]);
+    }
+    return window.btoa(binary);
   }
 
   // -----------------------------------------------------------

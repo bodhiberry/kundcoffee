@@ -286,7 +286,7 @@ export default function SpacesPage() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <MetricCard title="Total Spaces" value={spaces.length} />
         <MetricCard
           title="With Tables"
@@ -295,7 +295,7 @@ export default function SpacesPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
-        <div className="p-4 border-b border-zinc-100 flex items-center gap-4 bg-white">
+        <div className="p-4 border-b border-zinc-100 flex flex-wrap items-center gap-4 bg-white">
           <span className="text-xs font-medium text-zinc-500">Sort by:</span>
           <select
             value={sortBy}
@@ -315,76 +315,78 @@ export default function SpacesPage() {
             <option value="desc">Z → A</option>
           </select>
         </div>
-        <table className="w-full text-left text-sm text-zinc-600">
-          <thead className="bg-zinc-50 border-b border-zinc-200">
-            <tr>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest w-24">
-                Row #
-              </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
-                Name
-              </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
-                Description
-              </th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
-                Tables
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredSpaces.map((s) => (
-              <tr
-                key={s.id}
-                onClick={(e) => openEdit(s, e)}
-                className="hover:bg-zinc-50 transition-colors cursor-pointer group"
-              >
-                <td
-                  className="px-6 py-4"
-                  onClick={(e) =>
-                    handleSortOrderClick(
-                      s as spaceType & { sortOrder?: number },
-                      e,
-                    )
-                  }
-                >
-                  {editingRowId === s.id ? (
-                    <input
-                      type="number"
-                      value={editingValue}
-                      onChange={handleSortOrderChange}
-                      onBlur={() => handleSortOrderBlur(s.id)}
-                      onKeyDown={(e) => handleSortOrderKeyDown(e, s.id)}
-                      className="w-16 px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
-                      autoFocus
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span className="text-zinc-500 font-mono text-sm hover:text-zinc-900 cursor-text">
-                      {(s as spaceType & { sortOrder?: number }).sortOrder ?? 0}
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 font-medium text-zinc-900">
-                  {s.name}
-                </td>
-                <td className="px-6 py-4 text-zinc-600 font-medium">
-                  {s.description || "-"}
-                </td>
-                <td className="px-6 py-4 text-zinc-900 font-bold">
-                  {s.tables?.length || 0}
-                </td>
-              </tr>
-            ))}
-            {filteredSpaces.length === 0 && (
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-sm text-zinc-600">
+            <thead className="bg-zinc-50 border-b border-zinc-200">
               <tr>
-                <td colSpan={4} className="text-center py-8 text-gray-500">
-                  No spaces found.
-                </td>
+                <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest w-24">
+                  Row #
+                </th>
+                <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                  Name
+                </th>
+                <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                  Description
+                </th>
+                <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                  Tables
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredSpaces.map((s) => (
+                <tr
+                  key={s.id}
+                  onClick={(e) => openEdit(s, e)}
+                  className="hover:bg-zinc-50 transition-colors cursor-pointer group"
+                >
+                  <td
+                    className="px-6 py-4"
+                    onClick={(e) =>
+                      handleSortOrderClick(
+                        s as spaceType & { sortOrder?: number },
+                        e,
+                      )
+                    }
+                  >
+                    {editingRowId === s.id ? (
+                      <input
+                        type="number"
+                        value={editingValue}
+                        onChange={handleSortOrderChange}
+                        onBlur={() => handleSortOrderBlur(s.id)}
+                        onKeyDown={(e) => handleSortOrderKeyDown(e, s.id)}
+                        className="w-16 px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <span className="text-zinc-500 font-mono text-sm hover:text-zinc-900 cursor-text">
+                        {(s as spaceType & { sortOrder?: number }).sortOrder ?? 0}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-zinc-900">
+                    {s.name}
+                  </td>
+                  <td className="px-6 py-4 text-zinc-600 font-medium">
+                    {s.description || "-"}
+                  </td>
+                  <td className="px-6 py-4 text-zinc-900 font-bold">
+                    {s.tables?.length || 0}
+                  </td>
+                </tr>
+              ))}
+              {filteredSpaces.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center py-8 text-gray-500">
+                    No spaces found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <SidePanel

@@ -38,6 +38,43 @@ export default function SettingsPage() {
   const [newRoleName, setNewRoleName] = useState("");
   const [qrId, setQrId] = useState<string | null>(null);
 
+  const [networkIps, setNetworkIps] = useState<Record<string, string>>({
+    kitchen: "",
+    bar: "",
+    bill: "",
+  });
+  const [networkPorts, setNetworkPorts] = useState<Record<string, string>>({
+    kitchen: "9100",
+    bar: "9100",
+    bill: "9100",
+  });
+  const [selectedMethods, setSelectedMethods] = useState<Record<string, "bluetooth" | "network">>({
+    kitchen: "bluetooth",
+    bar: "bluetooth",
+    bill: "bluetooth",
+  });
+
+  // Sync printer config from printerService on mount or change
+  useEffect(() => {
+    if (printer.printers) {
+      setNetworkIps({
+        kitchen: printer.printers.kitchen.ipAddress || "",
+        bar: printer.printers.bar.ipAddress || "",
+        bill: printer.printers.bill.ipAddress || "",
+      });
+      setNetworkPorts({
+        kitchen: String(printer.printers.kitchen.port || 9100),
+        bar: String(printer.printers.bar.port || 9100),
+        bill: String(printer.printers.bill.port || 9100),
+      });
+      setSelectedMethods({
+        kitchen: printer.printers.kitchen.connectionMethod || "bluetooth",
+        bar: printer.printers.bar.connectionMethod || "bluetooth",
+        bill: printer.printers.bill.connectionMethod || "bluetooth",
+      });
+    }
+  }, [printer.printers]);
+
   // Generate preview for File objects
   useEffect(() => {
     if (logoFile instanceof File) {
@@ -593,11 +630,11 @@ export default function SettingsPage() {
               Thermal Printers
             </h2>
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Configure Web Bluetooth connections for kitchen, bar, and billing thermal printers.
+              Configure Web Bluetooth or Network TCP/IP connections for kitchen, bar, and billing thermal printers.
             </p>
             {!printer.isSupported && (
-              <p className="text-[10px] text-amber-600 font-bold uppercase mt-2 border border-amber-200 bg-amber-50 p-2 rounded-lg">
-                ⚠️ Web Bluetooth not supported in this browser. Use Chrome, Edge or Opera.
+              <p className="text-[10px] text-amber-600 font-bold uppercase mt-2 border border-amber-200 bg-amber-50 p-2 rounded-lg leading-relaxed">
+                ⚠️ Web Bluetooth not supported in this browser. Bluetooth printing is disabled, but Network printing is still fully functional.
               </p>
             )}
           </div>
@@ -606,6 +643,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {(["kitchen", "bar", "bill"] as const).map((role) => {
                 const info = printer.printers[role];
+                const selectedMethod = selectedMethods[role] || "bluetooth";
                 const isConnected = info.status === "connected";
                 const isNotPaired = info.status === "not_paired";
 
@@ -630,33 +668,88 @@ export default function SettingsPage() {
                         />
                       </div>
 
-                      <h3 className="text-sm font-bold text-zinc-800 truncate mb-1">
-                        {info.name || "Not Paired"}
-                      </h3>
-                      <p className="text-[9px] text-zinc-400 font-medium truncate mb-4">
-                        {info.deviceId ? `ID: ${info.deviceId.substring(0, 12)}...` : "Bluetooth printer disconnected"}
-                      </p>
+                      {/* Connection Method Tabs */}
+                      <div className="flex bg-zinc-200/50 p-0.5 rounded-lg mb-4">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMethods(prev => ({ ...prev, [role]: "bluetooth" }))}
+                          className={`flex-1 text-[9px] font-bold uppercase tracking-wider py-1.5 rounded-md transition-all ${
+                            selectedMethod === "bluetooth"
+                              ? "bg-white text-zinc-950 shadow-sm"
+                              : "text-zinc-500 hover:text-zinc-900"
+                          }`}
+                        >
+                          Bluetooth
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMethods(prev => ({ ...prev, [role]: "network" }))}
+                          className={`flex-1 text-[9px] font-bold uppercase tracking-wider py-1.5 rounded-md transition-all ${
+                            selectedMethod === "network"
+                              ? "bg-white text-zinc-950 shadow-sm"
+                              : "text-zinc-500 hover:text-zinc-900"
+                          }`}
+                        >
+                          Network
+                        </button>
+                      </div>
+
+                      {selectedMethod === "bluetooth" ? (
+                        <div className="min-h-[90px]">
+                          <h3 className="text-sm font-bold text-zinc-800 truncate mb-1">
+                            {info.connectionMethod === "bluetooth" && info.name ? info.name : "Not Paired"}
+                          </h3>
+                          <p className="text-[9px] text-zinc-400 font-medium truncate mb-4">
+                            {info.connectionMethod === "bluetooth" && info.deviceId
+                              ? `ID: ${info.deviceId.substring(0, 12)}...`
+                              : "Bluetooth printer disconnected"}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 mb-4 min-h-[90px]">
+                          <div className="space-y-1">
+                            <label className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest block">
+                              IP Address
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="192.168.1.100"
+                              value={networkIps[role] || ""}
+                              onChange={(e) =>
+                                setNetworkIps((prev) => ({ ...prev, [role]: e.target.value }))
+                              }
+                              className="w-full h-8 px-2 bg-white border border-zinc-200 rounded-lg text-xs font-semibold focus:border-zinc-900 outline-none transition-all"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest block">
+                              Port
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="9100"
+                              value={networkPorts[role] || ""}
+                              onChange={(e) =>
+                                setNetworkPorts((prev) => ({ ...prev, [role]: e.target.value }))
+                              }
+                              className="w-full h-8 px-2 bg-white border border-zinc-200 rounded-lg text-xs font-semibold focus:border-zinc-900 outline-none transition-all"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2 pt-2 border-t border-zinc-100">
-                      {isNotPaired ? (
-                        <Button
-                          disabled={!printer.isSupported}
-                          onClick={() => printer.pairPrinter(role)}
-                          className="w-full h-9 bg-zinc-900 text-white hover:bg-black rounded-lg font-bold text-[9px] uppercase tracking-widest"
-                        >
-                          Pair Printer
-                        </Button>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => printer.disconnectPrinter(role)}
-                            variant="secondary"
-                            className="flex-1 h-9 border-zinc-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg font-bold text-[9px] uppercase tracking-widest"
-                          >
-                            Unpair
-                          </Button>
-                          {isConnected && (
+                      {selectedMethod === "bluetooth" ? (
+                        info.connectionMethod === "bluetooth" && isConnected ? (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => printer.disconnectPrinter(role)}
+                              variant="secondary"
+                              className="flex-1 h-9 border-zinc-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                            >
+                              Unpair
+                            </Button>
                             <Button
                               onClick={() => printer.testPrint(role)}
                               variant="secondary"
@@ -665,6 +758,56 @@ export default function SettingsPage() {
                             >
                               Test
                             </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            disabled={!printer.isSupported}
+                            onClick={() => printer.pairPrinter(role)}
+                            className="w-full h-9 bg-zinc-900 text-white hover:bg-black rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                          >
+                            Pair Printer
+                          </Button>
+                        )
+                      ) : (
+                        <div className="space-y-2 w-full">
+                          <Button
+                            onClick={() => {
+                              const ip = networkIps[role];
+                              const port = networkPorts[role] ? parseInt(networkPorts[role], 10) : 9100;
+                              if (!ip) {
+                                toast.error("Please enter an IP address");
+                                return;
+                              }
+                              printer.saveNetworkPrinter(role, ip, port);
+                              toast.success(`Saved network printer for ${role}`);
+                            }}
+                            className="w-full h-9 bg-zinc-900 text-white hover:bg-black rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                          >
+                            Save Config
+                          </Button>
+                          {info.connectionMethod === "network" && isConnected && (
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => {
+                                  printer.disconnectPrinter(role);
+                                  setNetworkIps((prev) => ({ ...prev, [role]: "" }));
+                                  setNetworkPorts((prev) => ({ ...prev, [role]: "9100" }));
+                                  toast.success(`Removed network printer for ${role}`);
+                                }}
+                                variant="secondary"
+                                className="flex-1 h-9 border-zinc-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                              >
+                                Remove
+                              </Button>
+                              <Button
+                                onClick={() => printer.testPrint(role)}
+                                variant="secondary"
+                                className="h-9 px-3 border-zinc-200 text-zinc-700 hover:bg-zinc-100 rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                                title="Test Print"
+                              >
+                                Test
+                              </Button>
+                            </div>
                           )}
                         </div>
                       )}

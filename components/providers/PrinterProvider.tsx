@@ -24,6 +24,8 @@ interface PrinterContextType {
   pairPrinter: (role: PrinterRole) => Promise<void>;
   /** Disconnect and forget a printer for a role. */
   disconnectPrinter: (role: PrinterRole) => void;
+  /** Save a network printer configuration. */
+  saveNetworkPrinter: (role: PrinterRole, ipAddress: string, port: number) => void;
   /**
    * Print a KOT ticket.
    * Routes to the correct printer based on type, or falls back.
@@ -174,22 +176,22 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
     // Initial status read
     refreshStatus();
 
-    // Attempt to reconnect previously paired printers
-    if (supported) {
-      const roles: PrinterRole[] = ["kitchen", "bar", "bill"];
-      roles.forEach(async (role) => {
-        try {
-          await printerService.reconnectPrinter(role);
-        } catch {
-          // Silent fail — user will need to re-pair
-        }
-      });
-    }
+    // Attempt to reconnect previously paired/configured printers
+    const roles: PrinterRole[] = ["kitchen", "bar", "bill"];
+    roles.forEach(async (role) => {
+      try {
+        await printerService.reconnectPrinter(role);
+      } catch {
+        // Silent fail
+      }
+    });
 
     return () => {
       printerService.onStatusChange = undefined;
     };
   }, [refreshStatus]);
+
+
 
   // -----------------------------------------------------------
   // Actions
@@ -202,6 +204,11 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const disconnectPrinter = (role: PrinterRole) => {
     printerService.disconnectPrinter(role);
+    refreshStatus();
+  };
+
+  const saveNetworkPrinter = (role: PrinterRole, ipAddress: string, port: number) => {
+    printerService.saveNetworkPrinter(role, ipAddress, port);
     refreshStatus();
   };
 
@@ -365,6 +372,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
         isSupported,
         pairPrinter,
         disconnectPrinter,
+        saveNetworkPrinter,
         printKOT,
         printBill,
         printReceipt,

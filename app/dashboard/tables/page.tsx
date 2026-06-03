@@ -403,7 +403,7 @@ export default function TablesPage() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <MetricCard title="Total Tables" value={totalTables} />
         <MetricCard title="Active Tables" value={activeTables} />
         <MetricCard title="Occupied Tables" value={occupiedTables} />
@@ -535,7 +535,7 @@ export default function TablesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="none"
                           size="sm"

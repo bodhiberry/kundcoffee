@@ -431,7 +431,7 @@ export default function CombosPage() {
                     {settings.currency} {c.price?.listedPrice || 0}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                       <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
                         <Edit2 size={16} />
                       </button>

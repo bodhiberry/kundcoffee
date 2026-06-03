@@ -174,8 +174,8 @@ export function OrderCard({
 
   return (
     <div
-      className="group bg-white rounded-xl border border-zinc-200 shadow-sm hover:border-emerald-500 transition-all duration-200 cursor-pointer flex flex-col overflow-hidden"
-      // onClick={() => onClick(order)}
+      className="group bg-white rounded-xl border border-zinc-200 shadow-sm hover:border-emerald-500 transition-all duration-200 cursor-pointer flex flex-col overflow-hidden animate-in fade-in-50 duration-200"
+      onClick={() => onClick(order)}
     >
       {/* 1. TOP HEADER: Table Name and Meta */}
       <div className="p-5 border-b border-zinc-100 bg-white flex flex-col gap-1">

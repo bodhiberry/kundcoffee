@@ -25,9 +25,9 @@ export const PageHeaderAction: FC<PageHeaderActionProps> = ({
         {description && <p className="text-sm text-gray-500">{description}</p>}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
         {onSearch && (
-          <div className="relative group">
+          <div className="relative group flex-1 sm:flex-initial w-full sm:w-auto">
             <input
               type="text"
               placeholder="Search..."
@@ -35,7 +35,7 @@ export const PageHeaderAction: FC<PageHeaderActionProps> = ({
               onChange={(e) => onSearch(e.target.value)}
             />
             <svg
-              className="absolute left-3.5 top-3 h-4 w-4 text-gray-400 group-focus-within:text-red-500 transition-colors"
+              className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400 group-focus-within:text-red-500 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -54,7 +54,7 @@ export const PageHeaderAction: FC<PageHeaderActionProps> = ({
           <Button
             variant="secondary"
             onClick={onExport}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-1 sm:flex-initial justify-center"
           >
             <svg
               className="w-4 h-4"
@@ -73,7 +73,11 @@ export const PageHeaderAction: FC<PageHeaderActionProps> = ({
           </Button>
         )}
 
-        {actionButton}
+        {actionButton && (
+          <div className="flex-1 sm:flex-initial [&>button]:w-full">
+            {actionButton}
+          </div>
+        )}
       </div>
     </div>
   );
