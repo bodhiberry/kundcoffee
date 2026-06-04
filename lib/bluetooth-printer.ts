@@ -400,12 +400,43 @@ class BluetoothPrinterService {
   // Data Transmission
   // -----------------------------------------------------------
 
+  private isPrivateIp(ip: string): boolean {
+    if (!ip) return false;
+    const parts = ip.split(".").map(Number);
+    if (parts.length !== 4) return false;
+    return (
+      parts[0] === 10 ||
+      (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+      (parts[0] === 192 && parts[1] === 168) ||
+      parts[0] === 127
+    );
+  }
+
+  private isCloudDeployment(): boolean {
+    if (typeof window === "undefined") return false;
+    const hostname = window.location.hostname;
+    return (
+      hostname !== "localhost" &&
+      hostname !== "127.0.0.1" &&
+      !hostname.startsWith("192.168.") &&
+      !hostname.startsWith("10.") &&
+      !hostname.endsWith(".local")
+    );
+  }
+
   /** Send raw bytes to a printer, chunked for BLE reliability or POSTed to network printer. */
   async sendData(role: PrinterRole, data: Uint8Array): Promise<void> {
     const info = this.getPrinterInfo(role);
 
     if (info.connectionMethod === "network") {
       if (!info.ipAddress) throw new Error(`Network printer for role "${role}" has no IP address configured.`);
+
+      // Direct check: if running on a public cloud server, it cannot reach private IPs on LAN
+      if (this.isCloudDeployment() && this.isPrivateIp(info.ipAddress)) {
+        throw new Error(
+          `Cloud server cannot connect to local private IP ${info.ipAddress}. Falling back to browser print.`
+        );
+      }
 
       const base64Data = this.uint8ArrayToBase64(data);
       const response = await fetch("/api/print", {
