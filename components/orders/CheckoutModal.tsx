@@ -49,7 +49,7 @@ export function CheckoutModal({
   );
   const [paymentMethod, setPaymentMethod] = useState<
     "CASH" | "QR" | "CREDIT" | "SPLIT"
-  >("CASH");
+  >("QR");
   const [qrData, setQrData] = useState<any>(null);
   const [cashAmount, setCashAmount] = useState<string>("");
   const [qrAmount, setQrAmount] = useState<string>("");

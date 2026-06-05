@@ -25,7 +25,7 @@ export default function SaleModal({
   const [formData, setFormData] = useState({
     customerId: "",
     amount: "",
-    paymentMethod: "CASH",
+    paymentMethod: "QR",
     description: "Quick Sale",
     staffId: "",
     date: new Date().toISOString().split("T")[0],
@@ -37,7 +37,7 @@ export default function SaleModal({
       setFormData({
         customerId: "",
         amount: "",
-        paymentMethod: "CASH",
+        paymentMethod: "QR",
         description: "Quick Sale",
         staffId: "",
         date: new Date().toISOString().split("T")[0],
