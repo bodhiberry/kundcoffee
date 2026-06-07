@@ -4,7 +4,7 @@
   "private": true,
 "scripts": {
   "dev": "next dev",
-  "build": "npm install && npx prisma generate && next build",
+  "build": "npm install --include=dev --legacy-peer-deps && npx prisma generate && next build",
   "start": "next start",
   "lint": "eslint",
   "db:backup": "bash scripts/backup-db.sh"
