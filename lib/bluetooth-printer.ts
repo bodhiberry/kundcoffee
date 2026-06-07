@@ -9,7 +9,7 @@
  * can be attempted across page reloads.
  */
 
-import { Order, OrderItem, KOTType, PrinterRole, PrinterInfo, ReceiptTotals } from "./types";
+import { Order, OrderItem, KOTType, PrinterRole, PrinterInfo, ReceiptTotals, PrinterConnectionMethod } from "./types";
 import { Capacitor } from '@capacitor/core';
 
 // --- Web Bluetooth Typings for compiler support ---
@@ -108,7 +108,7 @@ const CMD = {
 const encoder = new TextEncoder();
 
 interface StoredPrinter {
-  connectionMethod?: "bluetooth" | "network";
+  connectionMethod?: PrinterConnectionMethod;
   deviceId?: string;
   name?: string;
   ipAddress?: string;
@@ -206,6 +206,17 @@ class BluetoothPrinterService {
     this._onStatusChange?.();
   }
 
+  saveRawBTPrinter(role: PrinterRole) {
+    const stored = this.getStoredPrinters();
+    stored[role] = {
+      connectionMethod: "rawbt",
+      deviceId: "rawbt-intent",
+      name: "RawBT Printer"
+    };
+    this.setStoredPrinters(stored);
+    this._onStatusChange?.();
+  }
+
   async reconnectPrinter(role: PrinterRole): Promise<boolean> {
     const stored = this.getStoredPrinters();
     const info = stored[role];
@@ -287,6 +298,15 @@ class BluetoothPrinterService {
       };
     }
 
+    if (method === "rawbt") {
+      return {
+        connectionMethod: "rawbt",
+        deviceId: "rawbt-intent",
+        name: "RawBT Printer",
+        status: "connected",
+      };
+    }
+
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
       return {
         connectionMethod: "bluetooth",
@@ -328,6 +348,9 @@ class BluetoothPrinterService {
     const info = this.getPrinterInfo(role);
     if (info.connectionMethod === "network") {
       return info.status === "connected";
+    }
+    if (info.connectionMethod === "rawbt") {
+      return true;
     }
     return !!this.connections[role];
   }
@@ -431,6 +454,14 @@ class BluetoothPrinterService {
       } catch (nativeError) {
         console.error("Native WebView Print engine failed:", nativeError);
       }
+    }
+
+    // --- RawBT Intent Path ---
+    if (info.connectionMethod === "rawbt") {
+      const base64Data = this.uint8ArrayToBase64(data);
+      const intentUrl = `intent:#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.base64=${base64Data};end`;
+      window.location.href = intentUrl;
+      return;
     }
 
     // --- Network TCP/IP path ---

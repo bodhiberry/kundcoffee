@@ -34,6 +34,8 @@ interface PrinterContextType {
   disconnectPrinter: (role: PrinterRole) => void;
   /** Save a network printer configuration. */
   saveNetworkPrinter: (role: PrinterRole, ipAddress: string, port: number) => void;
+  /** Save a RawBT printer configuration. */
+  saveRawBTPrinter: (role: PrinterRole) => void;
   /** Start scanning for native Bluetooth printers (Capacitor only). */
   scanNativePrinters: () => Promise<void>;
   /** Stop scanning for native Bluetooth printers. */
@@ -257,6 +259,11 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
     refreshStatus();
   };
 
+  const saveRawBTPrinter = (role: PrinterRole) => {
+    printerService.saveRawBTPrinter(role);
+    refreshStatus();
+  };
+
   // --- Native Capacitor scanning ---
   const scanNativePrinters = async () => {
     if (!isNative) return;
@@ -459,6 +466,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
         pairPrinter,
         disconnectPrinter,
         saveNetworkPrinter,
+        saveRawBTPrinter,
         scanNativePrinters,
         stopNativeScan,
         connectNativePrinter,

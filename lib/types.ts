@@ -428,7 +428,7 @@ export type PurchaseReturnItem = {
 // --- Bluetooth & Network Printer Types ---
 
 export type PrinterRole = "kitchen" | "bar" | "bill";
-export type PrinterConnectionMethod = "bluetooth" | "network";
+export type PrinterConnectionMethod = "bluetooth" | "network" | "rawbt";
 
 export interface PrinterInfo {
   connectionMethod?: PrinterConnectionMethod;

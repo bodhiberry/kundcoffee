@@ -48,7 +48,7 @@ export default function SettingsPage() {
     bar: "9100",
     bill: "9100",
   });
-  const [selectedMethods, setSelectedMethods] = useState<Record<string, "bluetooth" | "network">>({
+  const [selectedMethods, setSelectedMethods] = useState<Record<string, "bluetooth" | "network" | "rawbt">>({
     kitchen: "bluetooth",
     bar: "bluetooth",
     bill: "bluetooth",
@@ -692,6 +692,17 @@ export default function SettingsPage() {
                         >
                           Network
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMethods(prev => ({ ...prev, [role]: "rawbt" }))}
+                          className={`flex-1 text-[9px] font-bold uppercase tracking-wider py-1.5 rounded-md transition-all ${
+                            selectedMethod === "rawbt"
+                              ? "bg-white text-zinc-950 shadow-sm"
+                              : "text-zinc-500 hover:text-zinc-900"
+                          }`}
+                        >
+                          RawBT
+                        </button>
                       </div>
 
                       {selectedMethod === "bluetooth" ? (
@@ -705,7 +716,7 @@ export default function SettingsPage() {
                               : "Bluetooth printer disconnected"}
                           </p>
                         </div>
-                      ) : (
+                      ) : selectedMethod === "network" ? (
                         <div className="space-y-3 mb-4 min-h-[90px]">
                           <div className="space-y-1">
                             <label className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest block">
@@ -735,6 +746,15 @@ export default function SettingsPage() {
                               className="w-full h-8 px-2 bg-white border border-zinc-200 rounded-lg text-xs font-semibold focus:border-zinc-900 outline-none transition-all"
                             />
                           </div>
+                        </div>
+                      ) : (
+                        <div className="min-h-[90px]">
+                          <h3 className="text-sm font-bold text-zinc-800 truncate mb-1">
+                            Android RawBT
+                          </h3>
+                          <p className="text-[9px] text-zinc-400 font-medium leading-relaxed mb-4">
+                            Uses RawBT app intent to bypass Android Spooler. Make sure RawBT is installed on this device.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -811,7 +831,7 @@ export default function SettingsPage() {
                             Pair Printer
                           </Button>
                         )
-                      ) : (
+                      ) : selectedMethod === "network" ? (
                         <div className="space-y-2 w-full">
                           <Button
                             onClick={() => {
@@ -851,6 +871,28 @@ export default function SettingsPage() {
                                 Test
                               </Button>
                             </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-2 w-full">
+                          <Button
+                            onClick={() => {
+                              printer.saveRawBTPrinter(role);
+                              toast.success(`Saved RawBT printer for ${role}`);
+                            }}
+                            className="w-full h-9 bg-zinc-900 text-white hover:bg-black rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                          >
+                            Save Config
+                          </Button>
+                          {info.connectionMethod === "rawbt" && (
+                            <Button
+                              onClick={() => printer.testPrint(role)}
+                              variant="secondary"
+                              className="w-full h-9 border-zinc-200 text-zinc-700 hover:bg-zinc-100 rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                              title="Test Print"
+                            >
+                              Test
+                            </Button>
                           )}
                         </div>
                       )}
