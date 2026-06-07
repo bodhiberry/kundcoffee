@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "npx prisma generate && next build",
-    "start": "next start",
-    "lint": "eslint",
-    "db:backup": "bash scripts/backup-db.sh"
+"dev": "next dev",
+  "build": "npm install --legacy-peer-deps && npx prisma generate && next build",
+  "start": "next start",
+  "lint": "eslint",
+  "db:backup": "bash scripts/backup-db.sh"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -23,7 +23,6 @@
     "@react-google-maps/api": "^2.20.8",
     "@types/nodemailer": "^7.0.11",
     "bcrypt": "^6.0.0",
-    "capacitor-thermal-printer": "^0.2.5",
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
