@@ -78,14 +78,30 @@ const defaultPrinterInfo: PrinterInfo = {
 const PrinterContext = createContext<PrinterContextType | undefined>(undefined);
 
 // -----------------------------------------------------------
-// Fallback: open a window and print via browser dialog
+// Fallback: open a window and print via browser dialog or native printHtml
 // -----------------------------------------------------------
 
-function fallbackWindowPrint(htmlContent: string) {
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) return;
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
+async function fallbackWindowPrint(htmlContent: string, docName: string = "Document") {
+  const isNativeApp = typeof window !== 'undefined' && (window as any).Capacitor;
+
+  if (isNativeApp) {
+    console.log("Confirmed: Running inside native mobile app wrapper. Using Capgo Printer.");
+    try {
+      const { Printer } = await import('@capgo/capacitor-printer');
+      await Printer.printHtml({
+        name: docName,
+        html: htmlContent
+      });
+    } catch (error) {
+      console.error("Native system printer failed:", error);
+    }
+  } else {
+    console.log("Running on a standard desktop/laptop browser.");
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  }
 }
 
 function buildKOTHtmlFallback(
@@ -299,7 +315,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
       await printerService.sendData(targetRole, data);
     } else {
       // Fallback to browser print
-      fallbackWindowPrint(buildKOTHtmlFallback(order, items, type));
+      fallbackWindowPrint(buildKOTHtmlFallback(order, items, type), `KOT-${type}-${order.id.slice(-6).toUpperCase()}`);
     }
   };
 
@@ -394,7 +410,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             <script>window.onload = function() { window.print(); window.close(); }</script>
           </body>
         </html>
-      `);
+      `, `Bill-${order.table?.name || "Direct"}-${order.id.slice(-6).toUpperCase()}`);
     }
   };
 
