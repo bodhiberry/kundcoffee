@@ -420,7 +420,8 @@ class BluetoothPrinterService {
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
       try {
         // Dynamic import shields Vercel from encountering standard build failures
-        const { Printer } = await import('@capgo/capacitor-printer');
+        const pluginName = '@capgo/capacitor-printer';
+        const { Printer } = await import(pluginName);
         
         // Triggers the device's native PrintManager system layout box inside your app shell
         await Printer.printWebView({

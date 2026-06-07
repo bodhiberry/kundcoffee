@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { printerService } from "@/lib/bluetooth-printer";
 import { Capacitor } from '@capacitor/core';
-import { CapacitorThermalPrinter } from 'capacitor-thermal-printer';
 import {
   Order,
   OrderItem,
@@ -87,7 +86,8 @@ async function fallbackWindowPrint(htmlContent: string, docName: string = "Docum
   if (isNativeApp) {
     console.log("Confirmed: Running inside native mobile app wrapper. Using Capgo Printer.");
     try {
-      const { Printer } = await import('@capgo/capacitor-printer');
+      const pluginName = '@capgo/capacitor-printer';
+      const { Printer } = await import(pluginName);
       await Printer.printHtml({
         name: docName,
         html: htmlContent
@@ -263,6 +263,9 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
     setNativeDevices([]);
     setIsScanning(true);
 
+    const pluginName = 'capacitor-thermal-printer';
+    const { CapacitorThermalPrinter } = await import(pluginName);
+
     await CapacitorThermalPrinter.addListener('discoverDevices', (data: { devices: NativeBluetoothDevice[] }) => {
       setNativeDevices(data.devices);
     });
@@ -276,11 +279,15 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const stopNativeScan = async () => {
     if (!isNative) return;
+    const pluginName = 'capacitor-thermal-printer';
+    const { CapacitorThermalPrinter } = await import(pluginName);
     await CapacitorThermalPrinter.stopScan();
     setIsScanning(false);
   };
 
   const connectNativePrinter = async (role: PrinterRole, device: NativeBluetoothDevice) => {
+    const pluginName = 'capacitor-thermal-printer';
+    const { CapacitorThermalPrinter } = await import(pluginName);
     const result = await CapacitorThermalPrinter.connect({ address: device.address });
     if (!result) {
       throw new Error(`Failed to connect to ${device.name || device.address}`);
