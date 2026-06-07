@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">bodhiberry</string>
+    <string name="title_activity_main">bodhiberry</string>
+    <string name="package_name">com.bodhiberry.pos</string>
+    <string name="custom_url_scheme">com.bodhiberry.pos</string>
+</resources>
