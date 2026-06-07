@@ -10,6 +10,8 @@
  */
 
 import { Order, OrderItem, KOTType, PrinterRole, PrinterInfo, ReceiptTotals } from "./types";
+import { Capacitor } from '@capacitor/core';
+import { CapacitorThermalPrinter } from 'capacitor-thermal-printer';
 
 // --- Web Bluetooth Typings for compiler support ---
 declare global {
@@ -164,11 +166,17 @@ class BluetoothPrinterService {
 
   /** Check if Web Bluetooth is available in the current browser. */
   isSupported(): boolean {
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      return true;
+    }
     return typeof navigator !== "undefined" && !!navigator.bluetooth;
   }
 
   /** Open the browser Bluetooth picker, pair a device, and assign it to a role. */
   async pairPrinter(role: PrinterRole): Promise<string> {
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      throw new Error("Use native picker for Capacitor platform");
+    }
     if (!this.isSupported()) throw new Error("Web Bluetooth is not supported in this browser.");
 
     // Request device with known thermal-printer services
@@ -203,6 +211,18 @@ class BluetoothPrinterService {
     return device.name || "Thermal Printer";
   }
 
+  /** Save a Capacitor Bluetooth printer configuration for a given role. */
+  saveCapacitorPrinter(role: PrinterRole, name: string, address: string) {
+    const stored = this.getStoredPrinters();
+    stored[role] = {
+      connectionMethod: "bluetooth",
+      deviceId: address,
+      name: name || "Thermal Printer"
+    };
+    this.setStoredPrinters(stored);
+    this._onStatusChange?.();
+  }
+
   /** Save a network printer configuration for a given role. */
   saveNetworkPrinter(role: PrinterRole, ipAddress: string, port: number) {
     const stored = this.getStoredPrinters();
@@ -222,6 +242,10 @@ class BluetoothPrinterService {
     if (!info) return false;
 
     if (info.connectionMethod === "network") {
+      return true;
+    }
+
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
       return true;
     }
 
@@ -249,6 +273,14 @@ class BluetoothPrinterService {
 
   /** Disconnect a printer by role. */
   disconnectPrinter(role: PrinterRole) {
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      const stored = this.getStoredPrinters();
+      delete stored[role];
+      this.setStoredPrinters(stored);
+      this._onStatusChange?.();
+      return;
+    }
+
     const conn = this.connections[role];
     if (conn) {
       try {
@@ -287,6 +319,15 @@ class BluetoothPrinterService {
         status: info.ipAddress ? "connected" : "not_paired",
         ipAddress: info.ipAddress || null,
         port: info.port || 9100,
+      };
+    }
+
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      return {
+        connectionMethod: "bluetooth",
+        deviceId: info.deviceId || null,
+        name: info.name || null,
+        status: info.deviceId ? "connected" : "disconnected",
       };
     }
 
@@ -428,6 +469,24 @@ class BluetoothPrinterService {
   async sendData(role: PrinterRole, data: Uint8Array): Promise<void> {
     const info = this.getPrinterInfo(role);
 
+    // --- Capacitor Native Bluetooth path ---
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      if (info.connectionMethod === "bluetooth" && info.deviceId) {
+        // Connect to the printer via the native SDK
+        const device = await CapacitorThermalPrinter.connect({ address: info.deviceId });
+        if (!device) {
+          throw new Error(`Failed to connect to native printer at ${info.deviceId}`);
+        }
+        // Send raw ESC/POS bytes via the native plugin
+        await CapacitorThermalPrinter.begin()
+          .raw(Array.from(data))
+          .write();
+        return;
+      }
+      // Fall through to network path if configured as network
+    }
+
+    // --- Network TCP/IP path ---
     if (info.connectionMethod === "network") {
       if (!info.ipAddress) throw new Error(`Network printer for role "${role}" has no IP address configured.`);
 
@@ -456,6 +515,7 @@ class BluetoothPrinterService {
       return;
     }
 
+    // --- Web Bluetooth path (browser) ---
     const conn = this.connections[role];
     if (!conn) throw new Error(`Printer for role "${role}" is not connected.`);
 

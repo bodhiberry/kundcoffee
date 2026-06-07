@@ -759,6 +759,49 @@ export default function SettingsPage() {
                               Test
                             </Button>
                           </div>
+                        ) : printer.isNative ? (
+                          /* --- Native Capacitor Bluetooth scanning UI --- */
+                          <div className="space-y-2">
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  await printer.scanNativePrinters();
+                                } catch (err: any) {
+                                  toast.error(err?.message || "Failed to scan");
+                                }
+                              }}
+                              disabled={printer.isScanning}
+                              className="w-full h-9 bg-zinc-900 text-white hover:bg-black rounded-lg font-bold text-[9px] uppercase tracking-widest"
+                            >
+                              {printer.isScanning ? "Scanning..." : "Scan Printers"}
+                            </Button>
+                            {printer.nativeDevices.length > 0 && (
+                              <div className="max-h-32 overflow-y-auto space-y-1">
+                                {printer.nativeDevices.map((dev) => (
+                                  <button
+                                    key={dev.address}
+                                    onClick={async () => {
+                                      try {
+                                        await printer.connectNativePrinter(role, dev);
+                                        toast.success(`Connected to ${dev.name || dev.address}`);
+                                        await printer.stopNativeScan();
+                                      } catch (err: any) {
+                                        toast.error(err?.message || "Connection failed");
+                                      }
+                                    }}
+                                    className="w-full flex items-center justify-between p-2 bg-white border border-zinc-200 rounded-lg hover:border-zinc-900 transition-all text-left"
+                                  >
+                                    <span className="text-[10px] font-bold text-zinc-800 truncate">
+                                      {dev.name || "Unknown Device"}
+                                    </span>
+                                    <span className="text-[8px] text-zinc-400 font-mono shrink-0 ml-2">
+                                      {dev.address}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <Button
                             disabled={!printer.isSupported}

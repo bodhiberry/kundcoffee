@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { printerService } from "@/lib/bluetooth-printer";
+import { Capacitor } from '@capacitor/core';
+import { CapacitorThermalPrinter } from 'capacitor-thermal-printer';
 import {
   Order,
   OrderItem,
@@ -10,6 +12,11 @@ import {
   PrinterInfo,
   ReceiptTotals,
 } from "@/lib/types";
+
+interface NativeBluetoothDevice {
+  name: string;
+  address: string;
+}
 
 // -----------------------------------------------------------
 // Context Type
@@ -20,12 +27,24 @@ interface PrinterContextType {
   printers: Record<PrinterRole, PrinterInfo>;
   /** Whether the Web Bluetooth API is available. */
   isSupported: boolean;
+  /** Whether running on a native Capacitor platform. */
+  isNative: boolean;
   /** Open the browser Bluetooth picker and assign a device to a role. */
   pairPrinter: (role: PrinterRole) => Promise<void>;
   /** Disconnect and forget a printer for a role. */
   disconnectPrinter: (role: PrinterRole) => void;
   /** Save a network printer configuration. */
   saveNetworkPrinter: (role: PrinterRole, ipAddress: string, port: number) => void;
+  /** Start scanning for native Bluetooth printers (Capacitor only). */
+  scanNativePrinters: () => Promise<void>;
+  /** Stop scanning for native Bluetooth printers. */
+  stopNativeScan: () => Promise<void>;
+  /** Connect a discovered native device to a printer role. */
+  connectNativePrinter: (role: PrinterRole, device: NativeBluetoothDevice) => Promise<void>;
+  /** List of discovered native Bluetooth devices. */
+  nativeDevices: NativeBluetoothDevice[];
+  /** Whether native scanning is in progress. */
+  isScanning: boolean;
   /**
    * Print a KOT ticket.
    * Routes to the correct printer based on type, or falls back.
@@ -154,6 +173,9 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
     bill: { ...defaultPrinterInfo },
   });
   const [isSupported, setIsSupported] = useState(false);
+  const [isNative, setIsNative] = useState(false);
+  const [nativeDevices, setNativeDevices] = useState<NativeBluetoothDevice[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
 
   // Refresh status from the service
   const refreshStatus = useCallback(() => {
@@ -169,6 +191,9 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const supported = printerService.isSupported();
     setIsSupported(supported);
+
+    const native = typeof window !== "undefined" && Capacitor.isNativePlatform();
+    setIsNative(native);
 
     // Register status-change callback
     printerService.onStatusChange = refreshStatus;
@@ -198,6 +223,10 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
   // -----------------------------------------------------------
 
   const pairPrinter = async (role: PrinterRole) => {
+    if (isNative) {
+      // On native, start scanning if not already and let the user pick from nativeDevices
+      throw new Error("On native platform, use scanNativePrinters + connectNativePrinter instead.");
+    }
     await printerService.pairPrinter(role);
     refreshStatus();
   };
@@ -209,6 +238,39 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const saveNetworkPrinter = (role: PrinterRole, ipAddress: string, port: number) => {
     printerService.saveNetworkPrinter(role, ipAddress, port);
+    refreshStatus();
+  };
+
+  // --- Native Capacitor scanning ---
+  const scanNativePrinters = async () => {
+    if (!isNative) return;
+    setNativeDevices([]);
+    setIsScanning(true);
+
+    await CapacitorThermalPrinter.addListener('discoverDevices', (data: { devices: NativeBluetoothDevice[] }) => {
+      setNativeDevices(data.devices);
+    });
+
+    await CapacitorThermalPrinter.addListener('discoveryFinish', () => {
+      setIsScanning(false);
+    });
+
+    await CapacitorThermalPrinter.startScan();
+  };
+
+  const stopNativeScan = async () => {
+    if (!isNative) return;
+    await CapacitorThermalPrinter.stopScan();
+    setIsScanning(false);
+  };
+
+  const connectNativePrinter = async (role: PrinterRole, device: NativeBluetoothDevice) => {
+    const result = await CapacitorThermalPrinter.connect({ address: device.address });
+    if (!result) {
+      throw new Error(`Failed to connect to ${device.name || device.address}`);
+    }
+    // Save to storage so sendData knows the address for this role
+    printerService.saveCapacitorPrinter(role, device.name, device.address);
     refreshStatus();
   };
 
@@ -370,9 +432,15 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         printers,
         isSupported,
+        isNative,
         pairPrinter,
         disconnectPrinter,
         saveNetworkPrinter,
+        scanNativePrinters,
+        stopNativeScan,
+        connectNativePrinter,
+        nativeDevices,
+        isScanning,
         printKOT,
         printBill,
         printReceipt,

@@ -22,6 +22,7 @@
     "@react-google-maps/api": "^2.20.8",
     "@types/nodemailer": "^7.0.11",
     "bcrypt": "^6.0.0",
+    "capacitor-thermal-printer": "^0.2.5",
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -35,6 +36,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
+    "react-is": "^19.2.7",
     "react-leaflet": "^5.0.0",
     "react-qr-code": "^2.0.18",
     "recharts": "^3.7.0",
@@ -45,6 +47,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@prisma/client": "^5.22.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
