@@ -11,7 +11,6 @@
 
 import { Order, OrderItem, KOTType, PrinterRole, PrinterInfo, ReceiptTotals } from "./types";
 import { Capacitor } from '@capacitor/core';
-import { CapacitorThermalPrinter } from 'capacitor-thermal-printer';
 
 // --- Web Bluetooth Typings for compiler support ---
 declare global {
@@ -66,26 +65,23 @@ declare global {
 }
 
 // --- BLE Service / Characteristic UUIDs ---
-// These cover the most common Chinese-made Bluetooth thermal printers
-// (Xprinter, GOOJPRT, MHT, POS-58/80, etc.).
-// If a specific printer uses different UUIDs, add them here.
 const KNOWN_SERVICE_UUIDS: string[] = [
-  "000018f0-0000-1000-8000-00805f9b34fb", // Common thermal printer service
-  "0000ff00-0000-1000-8000-00805f9b34fb", // Alternate service
-  "e7810a71-73ae-499d-8c15-faa9aef0c3f2", // Nordic UART-like
-  "49535343-fe7d-4ae5-8fa9-9fafd205e455", // Microchip BLE
+  "000018f0-0000-1000-8000-00805f9b34fb", 
+  "0000ff00-0000-1000-8000-00805f9b34fb", 
+  "e7810a71-73ae-499d-8c15-faa9aef0c3f2", 
+  "49535343-fe7d-4ae5-8fa9-9fafd205e455", 
 ];
 
 const KNOWN_WRITE_CHARACTERISTIC_UUIDS: string[] = [
-  "00002af1-0000-1000-8000-00805f9b34fb", // Common write characteristic
-  "0000ff02-0000-1000-8000-00805f9b34fb", // Alternate write
-  "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f", // Nordic UART TX
-  "49535343-8841-43f4-a8d4-ecbe34729bb3", // Microchip write
+  "00002af1-0000-1000-8000-00805f9b34fb", 
+  "0000ff02-0000-1000-8000-00805f9b34fb", 
+  "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f", 
+  "49535343-8841-43f4-a8d4-ecbe34729bb3", 
 ];
 
 const STORAGE_KEY = "bt_printers";
-const CHUNK_SIZE = 512; // Max bytes per BLE write
-const CHUNK_DELAY_MS = 50; // Delay between chunks to avoid BLE congestion
+const CHUNK_SIZE = 512; 
+const CHUNK_DELAY_MS = 50; 
 
 // --- ESC/POS Command Constants ---
 const ESC = 0x1b;
@@ -109,15 +105,12 @@ const CMD = {
   LINE_FEED: new Uint8Array([LF]),
 };
 
-// --- Text Encoder ---
 const encoder = new TextEncoder();
 
 interface StoredPrinter {
   connectionMethod?: "bluetooth" | "network";
-  // bluetooth
   deviceId?: string;
   name?: string;
-  // network
   ipAddress?: string;
   port?: number;
 }
@@ -130,22 +123,13 @@ interface ActiveConnection {
   characteristic: BluetoothRemoteGATTCharacteristic;
 }
 
-// ============================================================
-// MAIN SERVICE CLASS
-// ============================================================
-
 class BluetoothPrinterService {
   private connections: Partial<Record<PrinterRole, ActiveConnection>> = {};
   private _onStatusChange?: () => void;
 
-  /** Register a callback to be notified when any printer status changes. */
   set onStatusChange(cb: (() => void) | undefined) {
     this._onStatusChange = cb;
   }
-
-  // -----------------------------------------------------------
-  // Persistence
-  // -----------------------------------------------------------
 
   private getStoredPrinters(): StoredPrinters {
     try {
@@ -160,11 +144,6 @@ class BluetoothPrinterService {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
-  // -----------------------------------------------------------
-  // Connection Management
-  // -----------------------------------------------------------
-
-  /** Check if Web Bluetooth is available in the current browser. */
   isSupported(): boolean {
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
       return true;
@@ -172,27 +151,22 @@ class BluetoothPrinterService {
     return typeof navigator !== "undefined" && !!navigator.bluetooth;
   }
 
-  /** Open the browser Bluetooth picker, pair a device, and assign it to a role. */
   async pairPrinter(role: PrinterRole): Promise<string> {
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
       throw new Error("Use native picker for Capacitor platform");
     }
     if (!this.isSupported()) throw new Error("Web Bluetooth is not supported in this browser.");
 
-    // Request device with known thermal-printer services
     const device = await navigator.bluetooth.requestDevice({
-      // Accept any device and use optional services so the picker shows all BLE devices
       acceptAllDevices: true,
       optionalServices: KNOWN_SERVICE_UUIDS,
     });
 
     if (!device) throw new Error("No device selected.");
 
-    // Connect
     const connection = await this.connectToDevice(device);
     this.connections[role] = connection;
 
-    // Persist
     const stored = this.getStoredPrinters();
     stored[role] = {
       connectionMethod: "bluetooth",
@@ -201,7 +175,6 @@ class BluetoothPrinterService {
     };
     this.setStoredPrinters(stored);
 
-    // Listen for disconnections
     device.addEventListener("gattserverdisconnected", () => {
       delete this.connections[role];
       this._onStatusChange?.();
@@ -211,7 +184,6 @@ class BluetoothPrinterService {
     return device.name || "Thermal Printer";
   }
 
-  /** Save a Capacitor Bluetooth printer configuration for a given role. */
   saveCapacitorPrinter(role: PrinterRole, name: string, address: string) {
     const stored = this.getStoredPrinters();
     stored[role] = {
@@ -223,7 +195,6 @@ class BluetoothPrinterService {
     this._onStatusChange?.();
   }
 
-  /** Save a network printer configuration for a given role. */
   saveNetworkPrinter(role: PrinterRole, ipAddress: string, port: number) {
     const stored = this.getStoredPrinters();
     stored[role] = {
@@ -235,7 +206,6 @@ class BluetoothPrinterService {
     this._onStatusChange?.();
   }
 
-  /** Attempt to reconnect to a previously paired device for a given role. */
   async reconnectPrinter(role: PrinterRole): Promise<boolean> {
     const stored = this.getStoredPrinters();
     const info = stored[role];
@@ -250,12 +220,10 @@ class BluetoothPrinterService {
     }
 
     try {
-      // getDevices() returns previously-permitted devices (Chrome 85+)
       const devices = await navigator.bluetooth.getDevices();
       const device = devices.find((d) => d.id === info.deviceId);
       if (!device) return false;
 
-      // Attempt to connect
       const connection = await this.connectToDevice(device);
       this.connections[role] = connection;
 
@@ -271,7 +239,6 @@ class BluetoothPrinterService {
     }
   }
 
-  /** Disconnect a printer by role. */
   disconnectPrinter(role: PrinterRole) {
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
       const stored = this.getStoredPrinters();
@@ -291,7 +258,6 @@ class BluetoothPrinterService {
       delete this.connections[role];
     }
 
-    // Also remove from stored printers
     const stored = this.getStoredPrinters();
     delete stored[role];
     this.setStoredPrinters(stored);
@@ -299,7 +265,6 @@ class BluetoothPrinterService {
     this._onStatusChange?.();
   }
 
-  /** Get status information for a role. */
   getPrinterInfo(role: PrinterRole): PrinterInfo {
     const stored = this.getStoredPrinters();
     const info = stored[role];
@@ -339,15 +304,12 @@ class BluetoothPrinterService {
     };
   }
 
-  /** Get the number of currently connected printers. */
   getConnectedCount(): number {
     const stored = this.getStoredPrinters();
     let count = 0;
     
-    // Count active Bluetooth connections
     count += Object.keys(this.connections).length;
 
-    // Count configured Network printers
     for (const role of ["kitchen", "bar", "bill"] as PrinterRole[]) {
       const info = stored[role];
       if (info && info.connectionMethod === "network" && info.ipAddress) {
@@ -357,13 +319,11 @@ class BluetoothPrinterService {
     return count;
   }
 
-  /** Get any single connected role (for fallback routing). */
   getAnyConnectedRole(): PrinterRole | null {
     const roles: PrinterRole[] = ["kitchen", "bar", "bill"];
     return roles.find((r) => this.isConnected(r)) || null;
   }
 
-  /** Check if a specific role has an active connection. */
   isConnected(role: PrinterRole): boolean {
     const info = this.getPrinterInfo(role);
     if (info.connectionMethod === "network") {
@@ -372,20 +332,13 @@ class BluetoothPrinterService {
     return !!this.connections[role];
   }
 
-  // -----------------------------------------------------------
-  // Low-level BLE connection
-  // -----------------------------------------------------------
-
   private async connectToDevice(device: BluetoothDevice): Promise<ActiveConnection> {
     const server = await device.gatt!.connect();
-
-    // Try each known service UUID until we find one the device supports
     let characteristic: BluetoothRemoteGATTCharacteristic | null = null;
 
     for (const serviceUUID of KNOWN_SERVICE_UUIDS) {
       try {
         const service = await server.getPrimaryService(serviceUUID);
-        // Try each known write characteristic
         for (const charUUID of KNOWN_WRITE_CHARACTERISTIC_UUIDS) {
           try {
             characteristic = await service.getCharacteristic(charUUID);
@@ -396,7 +349,6 @@ class BluetoothPrinterService {
         }
         if (characteristic) break;
 
-        // If no known characteristic, try to find any writable one
         const chars = await service.getCharacteristics();
         for (const c of chars) {
           if (c.properties.write || c.properties.writeWithoutResponse) {
@@ -411,7 +363,6 @@ class BluetoothPrinterService {
     }
 
     if (!characteristic) {
-      // Last resort: try to discover all services and find any writable characteristic
       try {
         const services = await server.getPrimaryServices();
         for (const service of services) {
@@ -431,15 +382,11 @@ class BluetoothPrinterService {
 
     if (!characteristic) {
       server.disconnect();
-      throw new Error("Could not find a writable characteristic on this device. It may not be a supported thermal printer.");
+      throw new Error("Could not find a writable characteristic on this device.");
     }
 
     return { device, server, characteristic };
   }
-
-  // -----------------------------------------------------------
-  // Data Transmission
-  // -----------------------------------------------------------
 
   private isPrivateIp(ip: string): boolean {
     if (!ip) return false;
@@ -465,32 +412,30 @@ class BluetoothPrinterService {
     );
   }
 
-  /** Send raw bytes to a printer, chunked for BLE reliability or POSTed to network printer. */
+  /** Send data to a printer, handling native layouts smoothly inside the app container */
   async sendData(role: PrinterRole, data: Uint8Array): Promise<void> {
     const info = this.getPrinterInfo(role);
 
-    // --- Capacitor Native Bluetooth path ---
+    // --- Fixed Native App Environment Block ---
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
-      if (info.connectionMethod === "bluetooth" && info.deviceId) {
-        // Connect to the printer via the native SDK
-        const device = await CapacitorThermalPrinter.connect({ address: info.deviceId });
-        if (!device) {
-          throw new Error(`Failed to connect to native printer at ${info.deviceId}`);
-        }
-        // Send raw ESC/POS bytes via the native plugin
-        await CapacitorThermalPrinter.begin()
-          .raw(Array.from(data))
-          .write();
+      try {
+        // Dynamic import shields Vercel from encountering standard build failures
+        const { Printer } = await import('@capgo/capacitor-printer');
+        
+        // Triggers the device's native PrintManager system layout box inside your app shell
+        await Printer.printWebView({
+          name: `KOT-Order-${role.toUpperCase()}`
+        });
         return;
+      } catch (nativeError) {
+        console.error("Native WebView Print engine failed:", nativeError);
       }
-      // Fall through to network path if configured as network
     }
 
     // --- Network TCP/IP path ---
     if (info.connectionMethod === "network") {
       if (!info.ipAddress) throw new Error(`Network printer for role "${role}" has no IP address configured.`);
 
-      // Direct check: if running on a public cloud server, it cannot reach private IPs on LAN
       if (this.isCloudDeployment() && this.isPrivateIp(info.ipAddress)) {
         throw new Error(
           `Cloud server cannot connect to local private IP ${info.ipAddress}. Falling back to browser print.`
@@ -515,7 +460,7 @@ class BluetoothPrinterService {
       return;
     }
 
-    // --- Web Bluetooth path (browser) ---
+    // --- Web Bluetooth path (browser fallback) ---
     const conn = this.connections[role];
     if (!conn) throw new Error(`Printer for role "${role}" is not connected.`);
 
@@ -533,7 +478,6 @@ class BluetoothPrinterService {
         throw new Error(`Failed to write to printer: ${err}`);
       }
 
-      // Brief delay between chunks
       if (offset + CHUNK_SIZE < data.length) {
         await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
       }
@@ -548,10 +492,6 @@ class BluetoothPrinterService {
     }
     return window.btoa(binary);
   }
-
-  // -----------------------------------------------------------
-  // ESC/POS Helpers
-  // -----------------------------------------------------------
 
   private text(str: string): Uint8Array {
     return encoder.encode(str);
@@ -578,16 +518,7 @@ class BluetoothPrinterService {
     return this.text(left + spaces + right + "\n");
   }
 
-  // -----------------------------------------------------------
-  // Receipt Builders
-  // -----------------------------------------------------------
-
-  /** Build ESC/POS data for a KOT ticket. */
-  buildKOTReceipt(
-    order: Order,
-    items: OrderItem[],
-    type: KOTType
-  ): Uint8Array {
+  buildKOTReceipt(order: Order, items: OrderItem[], type: KOTType): Uint8Array {
     const tableName = order.table?.name || "N/A";
     const orderId = order.id.slice(-6).toUpperCase();
     const now = new Date();
@@ -596,7 +527,6 @@ class BluetoothPrinterService {
 
     return this.concat(
       CMD.INIT,
-      // Header
       CMD.ALIGN_CENTER,
       CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
@@ -605,7 +535,6 @@ class BluetoothPrinterService {
       this.text(`${type}\n`),
       CMD.BOLD_OFF,
       CMD.LINE_FEED,
-      // Table & Order info
       CMD.DOUBLE_HEIGHT,
       CMD.BOLD_ON,
       this.text(`TABLE: ${tableName}\n`),
@@ -617,25 +546,17 @@ class BluetoothPrinterService {
       this.padLine(`Date: ${dateStr}`, `Time: ${timeStr}`),
       this.text(`Type: ${order.type?.replace("_", " ") || "DINE IN"}\n`),
       this.dividerLine(),
-      // Column headers
       CMD.BOLD_ON,
       this.padLine("ITEM", "QTY"),
       CMD.BOLD_OFF,
       this.dividerLine(),
-      // Items
       ...items.map((item) => {
         const name = item.dish?.name || item.combo?.name || "Item";
         const qty = `x${item.quantity}`;
-        const line = this.padLine(
-          name.length > 24 ? name.substring(0, 24) : name,
-          qty
-        );
-        const remarkLine = item.remarks
-          ? this.text(`  Note: ${item.remarks}\n`)
-          : new Uint8Array(0);
+        const line = this.padLine(name.length > 24 ? name.substring(0, 24) : name, qty);
+        const remarkLine = item.remarks ? this.text(`  Note: ${item.remarks}\n`) : new Uint8Array(0);
         return this.concat(line, remarkLine);
       }),
-      // Footer
       this.dividerLine(),
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
@@ -649,28 +570,16 @@ class BluetoothPrinterService {
     );
   }
 
-  /** Build ESC/POS data for a provisional bill (from OrderDetailView). */
-  buildBillReceipt(
-    order: Order,
-    settings: Record<string, string>
-  ): Uint8Array {
+  buildBillReceipt(order: Order, settings: Record<string, string>): Uint8Array {
     const orderId = order.id.slice(-6).toUpperCase();
     const tableName = order.table?.name || "N/A";
     const now = new Date();
     const currency = settings.currency || "Rs.";
-
-    const activeItems = order.items.filter(
-      (i) => (i.status || "PENDING") !== "CANCELLED"
-    );
-
-    const subtotal = activeItems.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
-      0
-    );
+    const activeItems = order.items.filter((i) => (i.status || "PENDING") !== "CANCELLED");
+    const subtotal = activeItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
     return this.concat(
       CMD.INIT,
-      // Store header
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
       CMD.DOUBLE_HEIGHT,
@@ -689,19 +598,14 @@ class BluetoothPrinterService {
       this.padLine(`Order: #${orderId}`, `Date: ${now.toLocaleDateString()}`),
       this.padLine(`Table: ${tableName}`, `Type: ${order.type || "DINE_IN"}`),
       this.dividerLine(),
-      // Column headers
       CMD.BOLD_ON,
       this.padLine("ITEM", "AMT"),
       CMD.BOLD_OFF,
       this.dividerLine(),
-      // Items
       ...activeItems.map((item) => {
         const name = `${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}`;
         const amt = `${currency} ${(item.quantity * item.unitPrice).toFixed(2)}`;
-        return this.padLine(
-          name.length > 20 ? name.substring(0, 20) : name,
-          amt
-        );
+        return this.padLine(name.length > 20 ? name.substring(0, 20) : name, amt);
       }),
       this.dividerLine("="),
       CMD.BOLD_ON,
@@ -710,7 +614,6 @@ class BluetoothPrinterService {
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
       this.dividerLine(),
-      // Footer
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
       this.text("THANK YOU!\n"),
@@ -722,13 +625,7 @@ class BluetoothPrinterService {
     );
   }
 
-  /** Build ESC/POS data for a checkout receipt (from CheckoutModal). */
-  buildCheckoutReceipt(
-    order: Order,
-    settings: Record<string, string>,
-    totals: ReceiptTotals,
-    activeItems: OrderItem[]
-  ): Uint8Array {
+  buildCheckoutReceipt(order: Order, settings: Record<string, string>, totals: ReceiptTotals, activeItems: OrderItem[]): Uint8Array {
     const orderId = order.id.slice(-6).toUpperCase();
     const tableName = order.table?.name || "N/A";
     const now = new Date();
@@ -736,7 +633,6 @@ class BluetoothPrinterService {
 
     const parts: Uint8Array[] = [
       CMD.INIT,
-      // Store header
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
       CMD.DOUBLE_HEIGHT,
@@ -766,35 +662,21 @@ class BluetoothPrinterService {
     parts.push(this.text(`Mode: ${totals.paymentMethod}\n`));
     parts.push(this.dividerLine());
 
-    // Column headers
     parts.push(CMD.BOLD_ON, this.padLine("ITEM", "AMT"), CMD.BOLD_OFF, this.dividerLine());
 
-    // Items
     for (const item of activeItems) {
       const name = `${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}`;
       const amt = `${currency} ${(item.quantity * item.unitPrice).toFixed(2)}`;
-      parts.push(
-        this.padLine(name.length > 20 ? name.substring(0, 20) : name, amt)
-      );
+      parts.push(this.padLine(name.length > 20 ? name.substring(0, 20) : name, amt));
     }
 
     parts.push(this.dividerLine());
-
-    // Totals
     parts.push(this.padLine("Subtotal", `${currency} ${totals.subtotal.toFixed(2)}`));
 
-    if (totals.discount > 0) {
-      parts.push(this.padLine("Discount", `-${totals.discount.toFixed(2)}`));
-    }
-    if (totals.loyaltyDiscount > 0) {
-      parts.push(this.padLine("Loyalty Disc.", `-${totals.loyaltyDiscount.toFixed(2)}`));
-    }
-    if (totals.tax > 0) {
-      parts.push(this.padLine("VAT (13%)", `${totals.tax.toFixed(2)}`));
-    }
-    if (totals.serviceCharge > 0) {
-      parts.push(this.padLine("Service Chg", `${totals.serviceCharge.toFixed(2)}`));
-    }
+    if (totals.discount > 0) parts.push(this.padLine("Discount", `-${totals.discount.toFixed(2)}`));
+    if (totals.loyaltyDiscount > 0) parts.push(this.padLine("Loyalty Disc.", `-${totals.loyaltyDiscount.toFixed(2)}`));
+    if (totals.tax > 0) parts.push(this.padLine("VAT (13%)", `${totals.tax.toFixed(2)}`));
+    if (totals.serviceCharge > 0) parts.push(this.padLine("Service Chg", `${totals.serviceCharge.toFixed(2)}`));
 
     parts.push(
       this.dividerLine("="),
@@ -817,7 +699,6 @@ class BluetoothPrinterService {
     return this.concat(...parts);
   }
 
-  /** Send a test print to verify a printer is working. */
   async testPrint(role: PrinterRole): Promise<void> {
     const now = new Date();
     const data = this.concat(
@@ -847,5 +728,4 @@ class BluetoothPrinterService {
   }
 }
 
-// Export a singleton instance
 export const printerService = new BluetoothPrinterService();
