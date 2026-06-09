@@ -352,6 +352,9 @@ class BluetoothPrinterService {
     if (info.connectionMethod === "rawbt") {
       return true;
     }
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      return info.status === "connected";
+    }
     return !!this.connections[role];
   }
 
@@ -441,6 +444,24 @@ class BluetoothPrinterService {
 
     // --- Fixed Native App Environment Block ---
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      if (info.connectionMethod === "bluetooth" && info.deviceId) {
+        try {
+          const pluginName = 'capacitor-thermal-printer';
+          const { CapacitorThermalPrinter } = await import(pluginName);
+          const connected = await CapacitorThermalPrinter.isConnected();
+          if (!connected) {
+            const connectResult = await CapacitorThermalPrinter.connect({ address: info.deviceId });
+            if (!connectResult) {
+              throw new Error(`Failed to connect to native bluetooth printer: ${info.deviceId}`);
+            }
+          }
+          await CapacitorThermalPrinter.begin().raw(data).write();
+          return;
+        } catch (thermalError) {
+          console.error("CapacitorThermalPrinter failed, falling back to Web View Print:", thermalError);
+        }
+      }
+
       try {
         // Dynamic import shields Vercel from encountering standard build failures
         const pluginName = '@capgo/capacitor-printer';
@@ -697,9 +718,20 @@ class BluetoothPrinterService {
     parts.push(CMD.BOLD_ON, this.padLine("ITEM", "AMT"), CMD.BOLD_OFF, this.dividerLine());
 
     for (const item of activeItems) {
+      const compQty = totals.complimentaryItems?.[item.id] || 0;
+      const paidQty = Math.max(0, item.quantity - compQty);
+      const unitPrice = totals.itemPrices?.[item.id] ?? item.unitPrice;
+      const cost = (paidQty * unitPrice).toFixed(2);
+
       const name = `${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}`;
-      const amt = `${currency} ${(item.quantity * item.unitPrice).toFixed(2)}`;
-      parts.push(this.padLine(name.length > 20 ? name.substring(0, 20) : name, amt));
+      const amt = `${currency} ${cost}`;
+
+      let itemLine = this.padLine(name.length > 20 ? name.substring(0, 20) : name, amt);
+      if (compQty > 0) {
+        const compLine = this.text(`  (FREE: ${compQty})\n`);
+        itemLine = this.concat(itemLine, compLine);
+      }
+      parts.push(itemLine);
     }
 
     parts.push(this.dividerLine());

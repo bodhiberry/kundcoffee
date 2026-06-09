@@ -449,4 +449,6 @@ export interface ReceiptTotals {
   paymentMethod: string;
   tenderAmount?: number;
   customerName?: string;
+  complimentaryItems?: Record<string, number>;
+  itemPrices?: Record<string, number>;
 }

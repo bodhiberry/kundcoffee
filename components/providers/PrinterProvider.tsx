@@ -338,14 +338,19 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
     settings: Record<string, string>
   ) => {
     const targetRole = resolveRole("bill");
+    let printed = false;
 
     if (targetRole) {
-      const data = printerService.buildBillReceipt(order, settings);
-      await printerService.sendData(targetRole, data);
-    } else {
-      // Fallback: the calling component's existing HTML print handles this
-      // We signal the fallback by throwing so the caller can use its own HTML.
-      // Actually, let's build a simple fallback here instead.
+      try {
+        const data = printerService.buildBillReceipt(order, settings);
+        await printerService.sendData(targetRole, data);
+        printed = true;
+      } catch (err) {
+        console.warn("Direct network/bluetooth print failed, trying HTML fallback:", err);
+      }
+    }
+
+    if (!printed) {
       const activeItems = order.items.filter(
         (i) => (i.status || "PENDING") !== "CANCELLED"
       );
@@ -369,7 +374,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
         )
         .join("");
 
-      fallbackWindowPrint(`
+      await fallbackWindowPrint(`
         <html>
           <head>
             <title>Bill - ${order.table?.name || "Direct"}</title>
@@ -435,21 +440,136 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
     activeItems: OrderItem[]
   ) => {
     const targetRole = resolveRole("bill");
+    let printed = false;
 
     if (targetRole) {
-      const data = printerService.buildCheckoutReceipt(
-        order,
-        settings,
-        totals,
-        activeItems
-      );
-      await printerService.sendData(targetRole, data);
-    } else {
-      // Fallback: let the calling component use its own window.print approach
-      // The CheckoutModal already has a full HTML receipt builder.
-      // We return without doing anything — the component will detect no BT and use its own.
-      // To support this, we'll check `printerService.getConnectedCount()` in the component.
-      return;
+      try {
+        const data = printerService.buildCheckoutReceipt(
+          order,
+          settings,
+          totals,
+          activeItems
+        );
+        await printerService.sendData(targetRole, data);
+        printed = true;
+      } catch (err) {
+        console.warn("Direct network/bluetooth print failed, trying HTML fallback:", err);
+      }
+    }
+
+    if (!printed) {
+      const currency = settings.currency || "Rs.";
+      const itemsHtml = activeItems
+        .map(
+          (item) => {
+            const compQty = totals.complimentaryItems?.[item.id] || 0;
+            const paidQty = Math.max(0, item.quantity - compQty);
+            const unitPrice = totals.itemPrices?.[item.id] ?? item.unitPrice;
+            const cost = (paidQty * unitPrice).toFixed(2);
+            return `
+            <tr style="border-bottom: 0.5px solid #eee;">
+              <td style="padding: 5px 0; font-size: 11px;">
+                ${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}
+                ${compQty > 0 ? `<br/><small style="font-weight: bold;">(FREE: ${compQty})</small>` : ""}
+              </td>
+              <td style="padding: 5px 0; font-size: 11px; text-align: right;">
+                ${currency} ${cost}
+              </td>
+            </tr>`;
+          }
+        )
+        .join("");
+
+      await fallbackWindowPrint(`
+        <html>
+          <head>
+            <title>Receipt - Order ${order.id.slice(-6).toUpperCase()}</title>
+            <style>
+              @page { size: 80mm auto; margin: 0; }
+              * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+              html, body { margin: 0; padding: 0; width: 80mm; background: #fff; }
+              body { font-family: Arial, sans-serif; padding: 5mm; font-size: 11px; color: #000; line-height: 1.4; }
+              .center { text-align: center; }
+              .right { text-align: right; }
+              .bold { font-weight: bold; }
+              .divider { border-top: 1px dashed #000; margin: 8px 0; width: 100%; }
+              table { width: 100%; border-collapse: collapse; margin: 5px 0; }
+              .footer { margin-top: 15px; font-size: 10px; padding-bottom: 10mm; }
+              @media print { body { margin: 0; } .no-print { display: none; } }
+            </style>
+          </head>
+          <body>
+            <div class="center">
+              <div class="bold" style="font-size: 15px;">${settings.name || "RESTAURANT"}</div>
+              <div style="font-size: 10px;">${settings.address || ""}</div>
+              <div style="font-size: 10px;">Tel: ${settings.phone || ""}</div>
+              ${settings.panNumber ? `<div style="font-size: 10px;">PAN/VAT: ${settings.panNumber}</div>` : ""}
+              <div class="bold" style="margin-top: 10px; font-size: 12px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">ESTIMATE INVOICE</div>
+            </div>
+            <div class="divider"></div>
+            <table style="font-size: 10px;">
+              <tr>
+                <td>INV: <span class="bold">#${order.id.slice(-6).toUpperCase()}</span></td>
+                <td class="right">DATE: ${new Date().toLocaleDateString()}</td>
+              </tr>
+              <tr>
+                <td>TABLE: <span class="bold">${order.table?.name || "N/A"}</span></td>
+                <td class="right">TIME: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+              </tr>
+              ${totals.customerName ? `<tr><td colspan="2">CUST: ${totals.customerName}</td></tr>` : ""}
+              <tr>
+                <td colspan="2">MODE: <span class="bold">${totals.paymentMethod}</span></td>
+              </tr>
+            </table>
+            <div class="divider"></div>
+            <table>
+              <thead><tr style="border-bottom: 1px solid #000;"><th style="text-align: left;">ITEM</th><th style="text-align: right;">AMT</th></tr></thead>
+              <tbody>${itemsHtml}</tbody>
+            </table>
+            <div class="divider"></div>
+            <table style="font-size: 11px;">
+              <tr>
+                <td>Subtotal</td>
+                <td class="right">${currency} ${totals.subtotal.toFixed(2)}</td>
+              </tr>
+              ${totals.discount > 0 ? `
+              <tr>
+                <td>Discount</td>
+                <td class="right">-${totals.discount.toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              ${totals.loyaltyDiscount > 0 ? `
+              <tr>
+                <td>Loyalty Disc.</td>
+                <td class="right">-${totals.loyaltyDiscount.toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              ${totals.tax > 0 ? `
+              <tr>
+                <td>VAT (13%)</td>
+                <td class="right">${totals.tax.toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              ${totals.serviceCharge > 0 ? `
+              <tr>
+                <td>Service Charge</td>
+                <td class="right">${totals.serviceCharge.toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              <tr class="bold" style="font-size: 13px;">
+                <td style="padding-top: 5px;">GRAND TOTAL</td>
+                <td class="right" style="padding-top: 5px;">${currency} ${totals.grandTotal.toFixed(2)}</td>
+              </tr>
+            </table>
+            <div class="divider"></div>
+            <div class="footer center">
+              <div class="bold">THANK YOU FOR YOUR VISIT!</div>
+              <div style="font-size: 8px;">${new Date().toLocaleString()}</div>
+            </div>
+            <script>window.onload = function() { window.print(); window.close(); }</script>
+          </body>
+        </html>
+      `, `Receipt-${order.id.slice(-6).toUpperCase()}`);
     }
   };
 
