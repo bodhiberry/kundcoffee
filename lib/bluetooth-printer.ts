@@ -438,11 +438,9 @@ class BluetoothPrinterService {
     );
   }
 
-  /** Send data to a printer, handling native layouts smoothly inside the app container */
   async sendData(role: PrinterRole, data: Uint8Array): Promise<void> {
     const info = this.getPrinterInfo(role);
 
-    // --- Fixed Native App Environment Block ---
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
       if (info.connectionMethod === "bluetooth" && info.deviceId) {
         try {
@@ -463,21 +461,15 @@ class BluetoothPrinterService {
       }
 
       try {
-        // Dynamic import shields Vercel from encountering standard build failures
         const pluginName = '@capgo/capacitor-printer';
         const { Printer } = await import(pluginName);
-        
-        // Triggers the device's native PrintManager system layout box inside your app shell
-        await Printer.printWebView({
-          name: `KOT-Order-${role.toUpperCase()}`
-        });
+        await Printer.printWebView({ name: `KOT-Order-${role.toUpperCase()}` });
         return;
       } catch (nativeError) {
         console.error("Native WebView Print engine failed:", nativeError);
       }
     }
 
-    // --- RawBT Intent Path ---
     if (info.connectionMethod === "rawbt") {
       const base64Data = this.uint8ArrayToBase64(data);
       const intentUrl = `intent:#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.base64=${base64Data};end`;
@@ -485,7 +477,6 @@ class BluetoothPrinterService {
       return;
     }
 
-    // --- Network TCP/IP path ---
     if (info.connectionMethod === "network") {
       if (!info.ipAddress) throw new Error(`Network printer for role "${role}" has no IP address configured.`);
 
@@ -513,7 +504,6 @@ class BluetoothPrinterService {
       return;
     }
 
-    // --- Web Bluetooth path (browser fallback) ---
     const conn = this.connections[role];
     if (!conn) throw new Error(`Printer for role "${role}" is not connected.`);
 
@@ -571,6 +561,40 @@ class BluetoothPrinterService {
     return this.text(left + spaces + right + "\n");
   }
 
+  /**
+   * Helper to format an item line specifically:
+   * 2x  Item Name
+   */
+  private formatItemLine(qty: number, name: string, width = 32): Uint8Array {
+    const qtyStr = `${qty}x  `;
+    const maxNameLen = width - qtyStr.length;
+    const cleanName = name.length > maxNameLen ? name.substring(0, maxNameLen) : name;
+    return this.text(qtyStr + cleanName + "\n");
+  }
+
+  /**
+   * Helper to format a bill line specifically:
+   * 2x Item Name          250.00
+   */
+  private formatBillLine(qty: number, name: string, amt: string, width = 32): Uint8Array {
+    const qtyStr = `${qty}x `;
+    const amtStr = ` ${amt}`;
+    const maxNameLen = width - qtyStr.length - amtStr.length;
+    
+    let cleanName = name;
+    if (cleanName.length > maxNameLen) {
+      cleanName = cleanName.substring(0, maxNameLen);
+    } else {
+      cleanName = cleanName.padEnd(maxNameLen, " ");
+    }
+    
+    return this.text(qtyStr + cleanName + amtStr + "\n");
+  }
+
+  // ============================================================================
+  // TEMPLATES
+  // ============================================================================
+
   buildKOTReceipt(order: Order, items: OrderItem[], type: KOTType): Uint8Array {
     const tableName = order.table?.name || "N/A";
     const orderId = order.id.slice(-6).toUpperCase();
@@ -578,14 +602,17 @@ class BluetoothPrinterService {
     const dateStr = now.toLocaleDateString();
     const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-    return this.concat(
+    const parts: Uint8Array[] = [];
+
+    // Header (Center)
+    parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
+      CMD.FEED_LINES(1), // Top margin
       CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
-      this.text(`*** KOT ***\n`),
+      this.text(`[ KOT: ${type} ]\n`),
       CMD.NORMAL_SIZE,
-      this.text(`${type}\n`),
       CMD.BOLD_OFF,
       CMD.LINE_FEED,
       CMD.DOUBLE_HEIGHT,
@@ -593,34 +620,46 @@ class BluetoothPrinterService {
       this.text(`TABLE: ${tableName}\n`),
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
-      this.text(`Order: #${orderId}\n`),
+      this.text(`ID: #${orderId}\n`)
+    );
+
+    // Metadata (Left Align)
+    parts.push(
       CMD.ALIGN_LEFT,
-      this.dividerLine("="),
-      this.padLine(`Date: ${dateStr}`, `Time: ${timeStr}`),
-      this.text(`Type: ${order.type?.replace("_", " ") || "DINE IN"}\n`),
-      this.dividerLine(),
-      CMD.BOLD_ON,
-      this.padLine("ITEM", "QTY"),
-      CMD.BOLD_OFF,
-      this.dividerLine(),
-      ...items.map((item) => {
-        const name = item.dish?.name || item.combo?.name || "Item";
-        const qty = `x${item.quantity}`;
-        const line = this.padLine(name.length > 24 ? name.substring(0, 24) : name, qty);
-        const remarkLine = item.remarks ? this.text(`  Note: ${item.remarks}\n`) : new Uint8Array(0);
-        return this.concat(line, remarkLine);
-      }),
-      this.dividerLine(),
+      this.dividerLine("-"),
+      this.padLine(`DATE: ${dateStr}`, `TIME: ${timeStr}`),
+      this.dividerLine("-")
+    );
+
+    // Items List
+    for (const item of items) {
+      const name = item.dish?.name || item.combo?.name || "Item";
+      parts.push(CMD.BOLD_ON, this.formatItemLine(item.quantity, name), CMD.BOLD_OFF);
+      
+      // Remarks logic: Check for remarks, and indent them
+      if (item.remarks) {
+        // Maximum length for remark line before wrapping is approx 26 chars due to indent
+        let rmk = `    Note: ${item.remarks}`;
+        if (rmk.length > 32) rmk = rmk.substring(0, 32); 
+        parts.push(this.text(rmk + "\n"));
+      }
+      
+      // Small gap between items for readability
+      parts.push(this.text("\n"));
+    }
+
+    // Footer (Center)
+    parts.push(
+      this.dividerLine("-"),
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
-      this.text(`Total Items: ${items.reduce((s, i) => s + i.quantity, 0)}\n`),
+      this.text("*** END OF KOT ***\n"),
       CMD.BOLD_OFF,
-      this.dividerLine("-"),
-      this.text(`Printed: ${now.toLocaleString()}\n`),
-      CMD.LINE_FEED,
-      CMD.FEED_LINES(3),
+      CMD.FEED_LINES(6), // IMPORTANT: Extra margin at bottom for easy tearing!
       CMD.PARTIAL_CUT
     );
+
+    return this.concat(...parts);
   }
 
   buildBillReceipt(order: Order, settings: Record<string, string>): Uint8Array {
@@ -631,51 +670,74 @@ class BluetoothPrinterService {
     const activeItems = order.items.filter((i) => (i.status || "PENDING") !== "CANCELLED");
     const subtotal = activeItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
-    return this.concat(
+    const parts: Uint8Array[] = [];
+
+    // Header
+    parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
+      CMD.FEED_LINES(1),
+      CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
-      CMD.DOUBLE_HEIGHT,
       this.text(`${settings.name || "RESTAURANT"}\n`),
       CMD.NORMAL_SIZE,
-      CMD.BOLD_OFF,
-      settings.address ? this.text(`${settings.address}\n`) : new Uint8Array(0),
-      settings.phone ? this.text(`Tel: ${settings.phone}\n`) : new Uint8Array(0),
-      settings.panNumber ? this.text(`PAN: ${settings.panNumber}\n`) : new Uint8Array(0),
+      CMD.BOLD_OFF
+    );
+
+    if (settings.address) parts.push(this.text(`${settings.address}\n`));
+    if (settings.phone) parts.push(this.text(`Tel: ${settings.phone}\n`));
+    if (settings.panNumber) parts.push(this.text(`PAN: ${settings.panNumber}\n`));
+
+    parts.push(
       CMD.LINE_FEED,
+      CMD.DOUBLE_HEIGHT,
       CMD.BOLD_ON,
-      this.text(`PROVISIONAL BILL\n`),
+      this.text(`[ PROVISIONAL BILL ]\n`),
+      CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
+      CMD.LINE_FEED
+    );
+
+    // Metadata
+    parts.push(
       CMD.ALIGN_LEFT,
-      this.dividerLine("="),
-      this.padLine(`Order: #${orderId}`, `Date: ${now.toLocaleDateString()}`),
-      this.padLine(`Table: ${tableName}`, `Type: ${order.type || "DINE_IN"}`),
-      this.dividerLine(),
-      CMD.BOLD_ON,
-      this.padLine("ITEM", "AMT"),
-      CMD.BOLD_OFF,
-      this.dividerLine(),
-      ...activeItems.map((item) => {
-        const name = `${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}`;
-        const amt = `${currency} ${(item.quantity * item.unitPrice).toFixed(2)}`;
-        return this.padLine(name.length > 20 ? name.substring(0, 20) : name, amt);
-      }),
-      this.dividerLine("="),
+      this.dividerLine("-"),
+      this.padLine(`ORD: #${orderId}`, `DATE: ${now.toLocaleDateString()}`),
+      this.padLine(`TBL: ${tableName}`, `TIME: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`),
+      this.dividerLine("-")
+    );
+
+    // Items
+    for (const item of activeItems) {
+      const name = item.dish?.name || item.combo?.name || "Item";
+      const amt = `${currency} ${(item.quantity * item.unitPrice).toFixed(2)}`;
+      parts.push(this.formatBillLine(item.quantity, name, amt));
+    }
+
+    // Totals
+    parts.push(
+      this.dividerLine("-"),
       CMD.BOLD_ON,
       CMD.DOUBLE_HEIGHT,
       this.padLine("TOTAL", `${currency} ${subtotal.toFixed(2)}`),
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
-      this.dividerLine(),
+      this.dividerLine("-")
+    );
+
+    // Footer
+    parts.push(
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
-      this.text("THANK YOU!\n"),
+      this.text("*** THANK YOU ***\n"),
       CMD.BOLD_OFF,
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
       this.text(`${now.toLocaleString()}\n`),
-      CMD.FEED_LINES(3),
+      CMD.FEED_LINES(6), // IMPORTANT: Extra bottom margin for tearing!
       CMD.PARTIAL_CUT
     );
+
+    return this.concat(...parts);
   }
 
   buildCheckoutReceipt(order: Order, settings: Record<string, string>, totals: ReceiptTotals, activeItems: OrderItem[]): Uint8Array {
@@ -684,15 +746,19 @@ class BluetoothPrinterService {
     const now = new Date();
     const currency = settings.currency || "Rs.";
 
-    const parts: Uint8Array[] = [
+    const parts: Uint8Array[] = [];
+
+    // Header
+    parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
+      CMD.FEED_LINES(1),
+      CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
-      CMD.DOUBLE_HEIGHT,
       this.text(`${settings.name || "RESTAURANT"}\n`),
       CMD.NORMAL_SIZE,
-      CMD.BOLD_OFF,
-    ];
+      CMD.BOLD_OFF
+    );
 
     if (settings.address) parts.push(this.text(`${settings.address}\n`));
     if (settings.phone) parts.push(this.text(`Tel: ${settings.phone}\n`));
@@ -700,41 +766,44 @@ class BluetoothPrinterService {
 
     parts.push(
       CMD.LINE_FEED,
+      CMD.DOUBLE_HEIGHT,
       CMD.BOLD_ON,
-      this.text("ESTIMATE INVOICE\n"),
+      this.text(`[ INVOICE ]\n`),
+      CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
-      CMD.ALIGN_LEFT,
-      this.dividerLine("="),
-      this.padLine(`INV: #${orderId}`, `Date: ${now.toLocaleDateString()}`),
-      this.padLine(`Table: ${tableName}`, `Time: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`),
+      CMD.LINE_FEED
     );
 
-    if (totals.customerName) {
-      parts.push(this.text(`Customer: ${totals.customerName}\n`));
-    }
-    parts.push(this.text(`Mode: ${totals.paymentMethod}\n`));
-    parts.push(this.dividerLine());
+    // Metadata
+    parts.push(
+      CMD.ALIGN_LEFT,
+      this.dividerLine("-"),
+      this.padLine(`INV: #${orderId}`, `DATE: ${now.toLocaleDateString()}`),
+      this.padLine(`TBL: ${tableName}`, `TIME: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`)
+    );
 
-    parts.push(CMD.BOLD_ON, this.padLine("ITEM", "AMT"), CMD.BOLD_OFF, this.dividerLine());
+    if (totals.customerName) parts.push(this.text(`CUST: ${totals.customerName}\n`));
+    parts.push(this.text(`MODE: ${totals.paymentMethod}\n`));
+    parts.push(this.dividerLine("-"));
 
+    // Items
     for (const item of activeItems) {
       const compQty = totals.complimentaryItems?.[item.id] || 0;
       const paidQty = Math.max(0, item.quantity - compQty);
       const unitPrice = totals.itemPrices?.[item.id] ?? item.unitPrice;
       const cost = (paidQty * unitPrice).toFixed(2);
-
-      const name = `${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}`;
+      const name = item.dish?.name || item.combo?.name || "Item";
       const amt = `${currency} ${cost}`;
 
-      let itemLine = this.padLine(name.length > 20 ? name.substring(0, 20) : name, amt);
+      parts.push(this.formatBillLine(item.quantity, name, amt));
+      
       if (compQty > 0) {
-        const compLine = this.text(`  (FREE: ${compQty})\n`);
-        itemLine = this.concat(itemLine, compLine);
+        parts.push(this.text(`    (FREE: ${compQty})\n`));
       }
-      parts.push(itemLine);
     }
 
-    parts.push(this.dividerLine());
+    // Totals Block
+    parts.push(this.dividerLine("-"));
     parts.push(this.padLine("Subtotal", `${currency} ${totals.subtotal.toFixed(2)}`));
 
     if (totals.discount > 0) parts.push(this.padLine("Discount", `-${totals.discount.toFixed(2)}`));
@@ -749,14 +818,18 @@ class BluetoothPrinterService {
       this.padLine("GRAND TOTAL", `${currency} ${totals.grandTotal.toFixed(2)}`),
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
-      this.dividerLine(),
+      this.dividerLine("-")
+    );
+
+    // Footer
+    parts.push(
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
-      this.text("THANK YOU FOR YOUR VISIT!\n"),
+      this.text("*** THANK YOU ***\n"),
       CMD.BOLD_OFF,
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
       this.text(`${now.toLocaleString()}\n`),
-      CMD.FEED_LINES(3),
+      CMD.FEED_LINES(6), // IMPORTANT: Extra bottom margin for tearing!
       CMD.PARTIAL_CUT
     );
 
@@ -774,10 +847,10 @@ class BluetoothPrinterService {
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
       CMD.LINE_FEED,
-      this.dividerLine("="),
+      this.dividerLine("-"),
       this.text(`Role: ${role.toUpperCase()}\n`),
       this.text(`Time: ${now.toLocaleString()}\n`),
-      this.dividerLine(),
+      this.dividerLine("-"),
       this.text("If you can read this,\n"),
       this.text("the printer is working!\n"),
       this.dividerLine("="),
@@ -785,7 +858,7 @@ class BluetoothPrinterService {
       CMD.BOLD_ON,
       this.text("*** TEST COMPLETE ***\n"),
       CMD.BOLD_OFF,
-      CMD.FEED_LINES(3),
+      CMD.FEED_LINES(6),
       CMD.PARTIAL_CUT
     );
     await this.sendData(role, data);

@@ -93,7 +93,6 @@ function SortableTableCard({ table, occupiedTable, handleTableClick }: any) {
           : "bg-zinc-100 border-zinc-200 text-zinc-400 hover:border-emerald-500 hover:bg-white"
       }`}
     >
-      {/* Table Drag Handle */}
       <div
         {...attributes}
         {...listeners}
@@ -154,7 +153,6 @@ function SortableSpaceSection({
     <div ref={setNodeRef} style={style} className="space-y-4">
       <div className="flex items-center justify-between border-b-2 border-zinc-100 pb-2">
         <div className="flex items-center gap-3">
-          {/* Area Drag Handle */}
           <div
             {...attributes}
             {...listeners}
@@ -235,7 +233,6 @@ export default function OrdersPage() {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [newlyCreatedOrder, setNewlyCreatedOrder] = useState<Order | null>(null);
 
-  // DnD Sensors configuration (Distance: 4 for better responsiveness)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
@@ -259,7 +256,6 @@ export default function OrdersPage() {
     setSpaces(sData || []);
     setTableTypes(ttData || []);
 
-    // Instantly refresh the selectedOrder state in real-time to avoid requiring a manual page reload!
     setSelectedOrder((prevSelectedOrder) => {
       if (!prevSelectedOrder) return null;
       const refreshed = freshOrdersList.find((o) => o.id === prevSelectedOrder.id);
@@ -270,8 +266,6 @@ export default function OrdersPage() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  // --- Reordering Logic ---
 
   const handleSpaceDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -324,7 +318,6 @@ export default function OrdersPage() {
             t.name.toLowerCase().includes(searchQuery.toLowerCase()),
         );
 
-        // Sort tables within the space
         const sortedTables = [...spaceTables].sort((a, b) => {
           if (spaceSortOrder === "alphabetical") {
             return a.name.localeCompare(b.name, undefined, {
@@ -342,7 +335,6 @@ export default function OrdersPage() {
       })
       .filter((s) => s.tables.length > 0);
 
-    // Sort spaces themselves
     if (spaceSortOrder === "alphabetical")
       return [...groups].sort((a, b) => a.name.localeCompare(b.name));
     if (spaceSortOrder === "tableCount")
@@ -353,7 +345,6 @@ export default function OrdersPage() {
     );
   }, [spaces, tables, searchQuery, spaceSortOrder]);
 
-  // --- Order Handlers ---
   const handleCopyOrder = () => toast.info("Copied to clipboard");
 
   const handleUpdateStatus = async (orderId: string, status: OrderStatus) => {
@@ -468,7 +459,6 @@ export default function OrdersPage() {
     if (session) {
       setQuickMenuTable(table);
     } else {
-      // Safety check: sometimes local state might lag, but we should be safe here
       setPendingTable(table);
       setShowOrderTypeSelector(true);
     }
@@ -516,14 +506,8 @@ export default function OrdersPage() {
     order: Order,
   ) => {
     try {
-      // 1. Update all selected items in parallel
       await Promise.all(itemIds.map((id) => updateOrderItemStatus(id, status)));
-
-      // 2. Refresh data
       await fetchData();
-
-      // 3. Optional: Add logic here to check if the whole order
-      // is now finished to update the main Table status.
       toast.success(`Updated to ${status}`);
     } catch (error) {
       toast.error("Failed to update status");
@@ -540,15 +524,18 @@ export default function OrdersPage() {
               Orders
             </h1>
             <div className="bg-zinc-100 p-1 rounded-lg flex items-center gap-1">
+              {/* NOTE: KOT and ORDERS tabs are hidden on mobile screens (hidden sm:block). Only TABLES is visible on mobile. */}
               {["TABLES", "KOT", "ORDERS"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as ActiveTab)}
-                  className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
-                    activeTab === tab
-                      ? "bg-white text-zinc-900 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-700"
-                  }`}
+                  className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all 
+                    ${tab !== "TABLES" ? "hidden sm:block" : ""} 
+                    ${
+                      activeTab === tab
+                        ? "bg-white text-zinc-900 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700"
+                    }`}
                 >
                   {tab}
                 </button>
@@ -715,7 +702,7 @@ export default function OrdersPage() {
                   .filter((k) => k.type === "KITCHEN")
                   .map((kot, i) => (
                     <KOTCard
-                      key={kot.order.id + kot.type} // Better key than just 'i'
+                      key={kot.order.id + kot.type}
                       order={kot.order}
                       items={kot.items}
                       type={kot.type}
@@ -723,7 +710,6 @@ export default function OrdersPage() {
                         handleKOTStatusUpdate(ids, status, kot.order)
                       }
                       onMove={(order) => {
-                        // Open your transfer modal here
                         setPendingTable(order.table || null);
                         setShowTableSelector(true);
                         toast.info(
@@ -744,7 +730,7 @@ export default function OrdersPage() {
                   .filter((k) => k.type === "BAR")
                   .map((kot, i) => (
                     <KOTCard
-                      key={kot.order.id + kot.type} // Better key than just 'i'
+                      key={kot.order.id + kot.type}
                       order={kot.order}
                       items={kot.items}
                       type={kot.type}
@@ -752,7 +738,6 @@ export default function OrdersPage() {
                         handleKOTStatusUpdate(ids, status, kot.order)
                       }
                       onMove={(order) => {
-                        // Open your transfer modal here
                         setPendingTable(order.table || null);
                         setShowTableSelector(true);
                         toast.info(
