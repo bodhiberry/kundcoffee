@@ -564,7 +564,11 @@ class BluetoothPrinterService {
       CMD.BOLD_ON,
       this.text(`Total Items: ${totalItems}\n`),
       CMD.BOLD_OFF,
-      this.text("\n\n\n\n\n\n\n\n"), // 8 lines gap for tearing safely
+      
+      // HUGE GAP + TEAR LINE: Forces RawBT not to trim the space!
+      this.text("\n\n\n\n\n\n\n\n"),
+      this.text("- - - - - Tear Here - - - - -\n"),
+      
       CMD.PARTIAL_CUT
     );
 
@@ -638,9 +642,21 @@ class BluetoothPrinterService {
       CMD.BOLD_ON,
       this.text("*** THANK YOU ***\n"),
       CMD.BOLD_OFF,
+      CMD.LINE_FEED,
+      
+      // Custom Text
+      this.text("Kund Coffee produces 100% natural organic\n"),
+      this.text("Arabica coffee grown in Nepal's\n"),
+      this.text("high-altitude Rasuwa region.\n"),
+      CMD.LINE_FEED,
+      
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
       this.text(`${now.toLocaleString('en-GB')}\n`),
-      this.text("\n\n\n\n\n\n\n\n"), // 8 lines gap for tearing safely
+      
+      // HUGE GAP + TEAR LINE
+      this.text("\n\n\n\n\n\n\n\n"),
+      this.text("- - - - - Tear Here - - - - -\n"),
+
       CMD.PARTIAL_CUT
     );
 
@@ -657,7 +673,6 @@ class BluetoothPrinterService {
 
     const parts: Uint8Array[] = [];
 
-    // Header
     parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
@@ -682,7 +697,6 @@ class BluetoothPrinterService {
       CMD.LINE_FEED
     );
 
-    // Metadata
     parts.push(
       CMD.ALIGN_LEFT,
       this.dividerLine("-"),
@@ -694,11 +708,9 @@ class BluetoothPrinterService {
     parts.push(this.text(`MODE: ${totals.paymentMethod}\n`));
     parts.push(this.dividerLine("-"));
 
-    // Items
     parts.push(CMD.BOLD_ON, this.padLine("ITEM", "AMT"), CMD.BOLD_OFF, this.dividerLine("-"));
 
     for (const item of activeItems) {
-      // Logic for complimentary items pricing calculation
       const compQty = totals.complimentaryItems?.[item.id] || 0;
       const paidQty = Math.max(0, item.quantity - compQty);
       const unitPrice = totals.itemPrices?.[item.id] ?? item.unitPrice;
@@ -713,7 +725,6 @@ class BluetoothPrinterService {
       }
     }
 
-    // Totals Block
     parts.push(this.dividerLine("-"));
     parts.push(this.padLine("Subtotal", `${currency} ${totals.subtotal.toFixed(2)}`));
 
@@ -732,17 +743,26 @@ class BluetoothPrinterService {
       this.dividerLine("-")
     );
 
-    // Footer
     parts.push(
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
       this.text("*** THANK YOU, VISIT AGAIN ***\n"),
       CMD.BOLD_OFF,
+      CMD.LINE_FEED,
+      
+      // Custom Text
+      this.text("Kund Coffee produces 100% natural organic\n"),
+      this.text("Arabica coffee grown in Nepal's\n"),
+      this.text("high-altitude Rasuwa region.\n"),
+      CMD.LINE_FEED,
+      
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
       this.text(`${now.toLocaleString('en-GB')}\n`),
       
-      // Explicit 8-line gap for safe tearing before RawBT watermark
+      // HUGE GAP + TEAR LINE
       this.text("\n\n\n\n\n\n\n\n"),
+      this.text("- - - - - Tear Here - - - - -\n"),
+
       CMD.PARTIAL_CUT
     );
 
@@ -771,7 +791,11 @@ class BluetoothPrinterService {
       CMD.BOLD_ON,
       this.text("*** TEST COMPLETE ***\n"),
       CMD.BOLD_OFF,
+      
+      // Tear gap
       this.text("\n\n\n\n\n\n\n\n"),
+      this.text("- - - - - Tear Here - - - - -\n"),
+
       CMD.PARTIAL_CUT
     );
     await this.sendData(role, data);
