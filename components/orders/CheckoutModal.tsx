@@ -815,7 +815,7 @@ export function CheckoutModal({
             </div>
         
         {/* --- RIGHT COLUMN: ORDER ITEMS & COMPLIMENTARY --- */}
-        <div className="bg-white border border-black p-6 flex flex-col h-[760px]">
+        <div className="bg-white border border-black p-6  h-[760px] hidden md:flex flex-col">
           <h3 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-3 mb-6 shrink-0">
             Line Items
           </h3>
