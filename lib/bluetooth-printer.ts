@@ -85,6 +85,7 @@ const ESC = 0x1b;
 const GS = 0x1d;
 const LF = 0x0a;
 
+// --- FIXED: Added FEED_LINES back to the CMD Object to fix build error ---
 const CMD = {
   INIT: new Uint8Array([ESC, 0x40]),
   BOLD_ON: new Uint8Array([ESC, 0x45, 0x01]),
@@ -99,6 +100,7 @@ const CMD = {
   CUT: new Uint8Array([GS, 0x56, 0x00]),
   PARTIAL_CUT: new Uint8Array([GS, 0x56, 0x01]),
   LINE_FEED: new Uint8Array([LF]),
+  FEED_LINES: (n: number) => new Uint8Array([ESC, 0x64, n]),
 };
 
 const encoder = new TextEncoder();
