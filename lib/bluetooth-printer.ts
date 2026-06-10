@@ -518,6 +518,7 @@ class BluetoothPrinterService {
 
     parts.push(
       CMD.INIT,
+      CMD.FEED_LINES(2), // NEW: Top margin to prevent KOT header cut-off
       CMD.ALIGN_CENTER,
       CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
@@ -565,9 +566,10 @@ class BluetoothPrinterService {
       this.text(`Total Items: ${totalItems}\n`),
       CMD.BOLD_OFF,
       
-      // HUGE GAP + TEAR LINE: Forces RawBT not to trim the space!
-      this.text("\n\n\n\n\n\n\n\n"),
+      // HUGE GAP + TEAR LINE + GAP AFTER: Guarantees RawBT pushes the watermark away
+      this.text("\n\n\n\n\n\n\n\n\n\n"),
       this.text("- - - - - Tear Here - - - - -\n"),
+      this.text("\n\n"),
       
       CMD.PARTIAL_CUT
     );
@@ -589,6 +591,7 @@ class BluetoothPrinterService {
 
     parts.push(
       CMD.INIT,
+      CMD.FEED_LINES(2), // NEW: Top margin to prevent Store Name cut-off
       CMD.ALIGN_CENTER,
       CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
@@ -653,9 +656,10 @@ class BluetoothPrinterService {
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
       this.text(`${now.toLocaleString('en-GB')}\n`),
       
-      // HUGE GAP + TEAR LINE
-      this.text("\n\n\n\n\n\n\n\n"),
+      // HUGE GAP + TEAR LINE + GAP AFTER
+      this.text("\n\n\n\n\n\n\n\n\n\n"),
       this.text("- - - - - Tear Here - - - - -\n"),
+      this.text("\n\n"),
 
       CMD.PARTIAL_CUT
     );
@@ -675,6 +679,7 @@ class BluetoothPrinterService {
 
     parts.push(
       CMD.INIT,
+      CMD.FEED_LINES(2), // NEW: Top margin to prevent Store Name cut-off
       CMD.ALIGN_CENTER,
       CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
@@ -721,7 +726,7 @@ class BluetoothPrinterService {
       parts.push(this.formatBillLine(item.quantity, name, amt));
       
       if (compQty > 0) {
-        parts.push(this.text(`    (FREE: ${compQty})\n`));
+        parts.push(this.text("    (FREE: " + compQty + ")\n"));
       }
     }
 
@@ -759,9 +764,10 @@ class BluetoothPrinterService {
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
       this.text(`${now.toLocaleString('en-GB')}\n`),
       
-      // HUGE GAP + TEAR LINE
-      this.text("\n\n\n\n\n\n\n\n"),
+      // HUGE GAP + TEAR LINE + GAP AFTER
+      this.text("\n\n\n\n\n\n\n\n\n\n"),
       this.text("- - - - - Tear Here - - - - -\n"),
+      this.text("\n\n"),
 
       CMD.PARTIAL_CUT
     );
@@ -793,8 +799,9 @@ class BluetoothPrinterService {
       CMD.BOLD_OFF,
       
       // Tear gap
-      this.text("\n\n\n\n\n\n\n\n"),
+      this.text("\n\n\n\n\n\n\n\n\n\n"),
       this.text("- - - - - Tear Here - - - - -\n"),
+      this.text("\n\n"),
 
       CMD.PARTIAL_CUT
     );
