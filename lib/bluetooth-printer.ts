@@ -551,32 +551,29 @@ class BluetoothPrinterService {
     return result;
   }
 
-  private dividerLine(char = "-", width = 32): Uint8Array {
+  // ============================================================================
+  // FORMATTING HELPERS (Width set to 48 for 80mm Printers)
+  // ============================================================================
+
+  private dividerLine(char = "-", width = 48): Uint8Array {
     return this.text(char.repeat(width) + "\n");
   }
 
-  private padLine(left: string, right: string, width = 32): Uint8Array {
+  private padLine(left: string, right: string, width = 48): Uint8Array {
     const gap = width - left.length - right.length;
     const spaces = gap > 0 ? " ".repeat(gap) : " ";
     return this.text(left + spaces + right + "\n");
   }
 
-  /**
-   * Helper to format an item line specifically:
-   * 2x  Item Name
-   */
-  private formatItemLine(qty: number, name: string, width = 32): Uint8Array {
-    const qtyStr = `${qty}x  `;
-    const maxNameLen = width - qtyStr.length;
+  private formatItemLine(qty: number, name: string, width = 48): Uint8Array {
+    const qtyStr = `x${qty}`;
+    // Leave at least 1 space between name and qty
+    const maxNameLen = width - qtyStr.length - 1; 
     const cleanName = name.length > maxNameLen ? name.substring(0, maxNameLen) : name;
-    return this.text(qtyStr + cleanName + "\n");
+    return this.padLine(cleanName, qtyStr, width);
   }
 
-  /**
-   * Helper to format a bill line specifically:
-   * 2x Item Name          250.00
-   */
-  private formatBillLine(qty: number, name: string, amt: string, width = 32): Uint8Array {
+  private formatBillLine(qty: number, name: string, amt: string, width = 48): Uint8Array {
     const qtyStr = `${qty}x `;
     const amtStr = ` ${amt}`;
     const maxNameLen = width - qtyStr.length - amtStr.length;
@@ -604,30 +601,34 @@ class BluetoothPrinterService {
 
     const parts: Uint8Array[] = [];
 
-    // Header (Center)
+    // Header (Centered *** KOT ***)
     parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
-      CMD.FEED_LINES(1), // Top margin
       CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
-      this.text(`[ KOT: ${type} ]\n`),
+      this.text(`*** KOT ***\n`),
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
-      CMD.LINE_FEED,
-      CMD.DOUBLE_HEIGHT,
-      CMD.BOLD_ON,
-      this.text(`TABLE: ${tableName}\n`),
-      CMD.NORMAL_SIZE,
-      CMD.BOLD_OFF,
-      this.text(`ID: #${orderId}\n`)
+      this.text(`${type === "KITCHEN" ? "KITCHEN" : "BAR"} ORDER TICKET\n`),
+      CMD.LINE_FEED
     );
 
     // Metadata (Left Align)
     parts.push(
       CMD.ALIGN_LEFT,
       this.dividerLine("-"),
-      this.padLine(`DATE: ${dateStr}`, `TIME: ${timeStr}`),
+      this.padLine(`Order: #${orderId}`, `${dateStr}`),
+      this.padLine(`TABLE: ${tableName}`, `${timeStr}`),
+      this.text(`Type: ${order.type?.replace("_", " ") || "DINE IN"}\n`),
+      this.dividerLine("-")
+    );
+
+    // Table Headers
+    parts.push(
+      CMD.BOLD_ON,
+      this.padLine("ITEM", "QTY"),
+      CMD.BOLD_OFF,
       this.dividerLine("-")
     );
 
@@ -636,26 +637,25 @@ class BluetoothPrinterService {
       const name = item.dish?.name || item.combo?.name || "Item";
       parts.push(CMD.BOLD_ON, this.formatItemLine(item.quantity, name), CMD.BOLD_OFF);
       
-      // Remarks logic: Check for remarks, and indent them
+      // Indented Remarks
       if (item.remarks) {
-        // Maximum length for remark line before wrapping is approx 26 chars due to indent
         let rmk = `    Note: ${item.remarks}`;
-        if (rmk.length > 32) rmk = rmk.substring(0, 32); 
+        if (rmk.length > 48) rmk = rmk.substring(0, 48); 
         parts.push(this.text(rmk + "\n"));
       }
-      
-      // Small gap between items for readability
-      parts.push(this.text("\n"));
+      // Small gap between items
+      parts.push(CMD.LINE_FEED);
     }
 
-    // Footer (Center)
+    // Footer
+    const totalItems = items.reduce((s, i) => s + i.quantity, 0);
     parts.push(
       this.dividerLine("-"),
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
-      this.text("*** END OF KOT ***\n"),
+      this.text(`Total Items: ${totalItems}\n`),
       CMD.BOLD_OFF,
-      CMD.FEED_LINES(6), // IMPORTANT: Extra margin at bottom for easy tearing!
+      CMD.FEED_LINES(6), // IMPORTANT: Extra margin at bottom for easy tearing & pushing RawBT watermark down!
       CMD.PARTIAL_CUT
     );
 
@@ -676,7 +676,6 @@ class BluetoothPrinterService {
     parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
-      CMD.FEED_LINES(1),
       CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
       this.text(`${settings.name || "RESTAURANT"}\n`),
@@ -692,7 +691,7 @@ class BluetoothPrinterService {
       CMD.LINE_FEED,
       CMD.DOUBLE_HEIGHT,
       CMD.BOLD_ON,
-      this.text(`[ PROVISIONAL BILL ]\n`),
+      this.text(`*** PROVISIONAL BILL ***\n`),
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
       CMD.LINE_FEED
@@ -733,7 +732,7 @@ class BluetoothPrinterService {
       CMD.BOLD_OFF,
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
       this.text(`${now.toLocaleString()}\n`),
-      CMD.FEED_LINES(6), // IMPORTANT: Extra bottom margin for tearing!
+      CMD.FEED_LINES(6), // IMPORTANT: Pushes RawBT watermark down
       CMD.PARTIAL_CUT
     );
 
@@ -752,7 +751,6 @@ class BluetoothPrinterService {
     parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
-      CMD.FEED_LINES(1),
       CMD.DOUBLE_SIZE,
       CMD.BOLD_ON,
       this.text(`${settings.name || "RESTAURANT"}\n`),
@@ -768,7 +766,7 @@ class BluetoothPrinterService {
       CMD.LINE_FEED,
       CMD.DOUBLE_HEIGHT,
       CMD.BOLD_ON,
-      this.text(`[ INVOICE ]\n`),
+      this.text(`*** ESTIMATE INVOICE ***\n`),
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
       CMD.LINE_FEED
@@ -829,7 +827,7 @@ class BluetoothPrinterService {
       CMD.BOLD_OFF,
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
       this.text(`${now.toLocaleString()}\n`),
-      CMD.FEED_LINES(6), // IMPORTANT: Extra bottom margin for tearing!
+      CMD.FEED_LINES(6), // IMPORTANT: Pushes RawBT watermark down
       CMD.PARTIAL_CUT
     );
 
