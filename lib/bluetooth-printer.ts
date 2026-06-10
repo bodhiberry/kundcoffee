@@ -4,9 +4,6 @@
  * Manages Web Bluetooth connections to ESC/POS thermal printers and provides
  * methods to generate and send receipt data. Supports multiple simultaneous
  * printer connections assigned to different roles (kitchen, bar, bill).
- *
- * Printer device assignments are persisted in localStorage so reconnection
- * can be attempted across page reloads.
  */
 
 import { Order, OrderItem, KOTType, PrinterRole, PrinterInfo, ReceiptTotals, PrinterConnectionMethod } from "./types";
@@ -99,7 +96,6 @@ const CMD = {
   DOUBLE_WIDTH: new Uint8Array([ESC, 0x21, 0x20]),
   DOUBLE_SIZE: new Uint8Array([ESC, 0x21, 0x30]),
   NORMAL_SIZE: new Uint8Array([ESC, 0x21, 0x00]),
-  FEED_LINES: (n: number) => new Uint8Array([ESC, 0x64, n]),
   CUT: new Uint8Array([GS, 0x56, 0x00]),
   PARTIAL_CUT: new Uint8Array([GS, 0x56, 0x01]),
   LINE_FEED: new Uint8Array([LF]),
@@ -222,13 +218,8 @@ class BluetoothPrinterService {
     const info = stored[role];
     if (!info) return false;
 
-    if (info.connectionMethod === "network") {
-      return true;
-    }
-
-    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
-      return true;
-    }
+    if (info.connectionMethod === "network") return true;
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) return true;
 
     try {
       const devices = await navigator.bluetooth.getDevices();
@@ -261,11 +252,7 @@ class BluetoothPrinterService {
 
     const conn = this.connections[role];
     if (conn) {
-      try {
-        conn.server.disconnect();
-      } catch {
-        // Already disconnected
-      }
+      try { conn.server.disconnect(); } catch {}
       delete this.connections[role];
     }
 
@@ -281,9 +268,7 @@ class BluetoothPrinterService {
     const info = stored[role];
     const conn = this.connections[role];
 
-    if (!info) {
-      return { deviceId: null, name: null, status: "not_paired" };
-    }
+    if (!info) return { deviceId: null, name: null, status: "not_paired" };
 
     const method = info.connectionMethod || "bluetooth";
 
@@ -326,9 +311,7 @@ class BluetoothPrinterService {
 
   getConnectedCount(): number {
     const stored = this.getStoredPrinters();
-    let count = 0;
-    
-    count += Object.keys(this.connections).length;
+    let count = Object.keys(this.connections).length;
 
     for (const role of ["kitchen", "bar", "bill"] as PrinterRole[]) {
       const info = stored[role];
@@ -346,15 +329,9 @@ class BluetoothPrinterService {
 
   isConnected(role: PrinterRole): boolean {
     const info = this.getPrinterInfo(role);
-    if (info.connectionMethod === "network") {
-      return info.status === "connected";
-    }
-    if (info.connectionMethod === "rawbt") {
-      return true;
-    }
-    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
-      return info.status === "connected";
-    }
+    if (info.connectionMethod === "network") return info.status === "connected";
+    if (info.connectionMethod === "rawbt") return true;
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) return info.status === "connected";
     return !!this.connections[role];
   }
 
@@ -369,9 +346,7 @@ class BluetoothPrinterService {
           try {
             characteristic = await service.getCharacteristic(charUUID);
             break;
-          } catch {
-            continue;
-          }
+          } catch { continue; }
         }
         if (characteristic) break;
 
@@ -383,27 +358,7 @@ class BluetoothPrinterService {
           }
         }
         if (characteristic) break;
-      } catch {
-        continue;
-      }
-    }
-
-    if (!characteristic) {
-      try {
-        const services = await server.getPrimaryServices();
-        for (const service of services) {
-          const chars = await service.getCharacteristics();
-          for (const c of chars) {
-            if (c.properties.write || c.properties.writeWithoutResponse) {
-              characteristic = c;
-              break;
-            }
-          }
-          if (characteristic) break;
-        }
-      } catch {
-        // Ignore
-      }
+      } catch { continue; }
     }
 
     if (!characteristic) {
@@ -447,26 +402,10 @@ class BluetoothPrinterService {
           const pluginName = 'capacitor-thermal-printer';
           const { CapacitorThermalPrinter } = await import(pluginName);
           const connected = await CapacitorThermalPrinter.isConnected();
-          if (!connected) {
-            const connectResult = await CapacitorThermalPrinter.connect({ address: info.deviceId });
-            if (!connectResult) {
-              throw new Error(`Failed to connect to native bluetooth printer: ${info.deviceId}`);
-            }
-          }
+          if (!connected) await CapacitorThermalPrinter.connect({ address: info.deviceId });
           await CapacitorThermalPrinter.begin().raw(data).write();
           return;
-        } catch (thermalError) {
-          console.error("CapacitorThermalPrinter failed, falling back to Web View Print:", thermalError);
-        }
-      }
-
-      try {
-        const pluginName = '@capgo/capacitor-printer';
-        const { Printer } = await import(pluginName);
-        await Printer.printWebView({ name: `KOT-Order-${role.toUpperCase()}` });
-        return;
-      } catch (nativeError) {
-        console.error("Native WebView Print engine failed:", nativeError);
+        } catch (error) { console.error("Native BT failed:", error); }
       }
     }
 
@@ -478,49 +417,28 @@ class BluetoothPrinterService {
     }
 
     if (info.connectionMethod === "network") {
-      if (!info.ipAddress) throw new Error(`Network printer for role "${role}" has no IP address configured.`);
-
-      if (this.isCloudDeployment() && this.isPrivateIp(info.ipAddress)) {
-        throw new Error(
-          `Cloud server cannot connect to local private IP ${info.ipAddress}. Falling back to browser print.`
-        );
-      }
-
+      if (!info.ipAddress) throw new Error("No IP config.");
       const base64Data = this.uint8ArrayToBase64(data);
       const response = await fetch("/api/print", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ipAddress: info.ipAddress,
-          port: info.port || 9100,
-          base64Data,
-        }),
+        body: JSON.stringify({ ipAddress: info.ipAddress, port: info.port || 9100, base64Data }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to print to network printer at ${info.ipAddress}`);
-      }
+      if (!response.ok) throw new Error("Failed to print to network printer");
       return;
     }
 
     const conn = this.connections[role];
-    if (!conn) throw new Error(`Printer for role "${role}" is not connected.`);
+    if (!conn) throw new Error("Printer not connected.");
 
     const { characteristic } = conn;
-
     for (let offset = 0; offset < data.length; offset += CHUNK_SIZE) {
       const chunk = data.slice(offset, offset + CHUNK_SIZE);
-      try {
-        if (characteristic.properties.writeWithoutResponse) {
-          await characteristic.writeValueWithoutResponse(chunk);
-        } else {
-          await characteristic.writeValueWithResponse(chunk);
-        }
-      } catch (err) {
-        throw new Error(`Failed to write to printer: ${err}`);
+      if (characteristic.properties.writeWithoutResponse) {
+        await characteristic.writeValueWithoutResponse(chunk);
+      } else {
+        await characteristic.writeValueWithResponse(chunk);
       }
-
       if (offset + CHUNK_SIZE < data.length) {
         await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
       }
@@ -530,9 +448,7 @@ class BluetoothPrinterService {
   private uint8ArrayToBase64(arr: Uint8Array): string {
     let binary = "";
     const len = arr.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(arr[i]);
-    }
+    for (let i = 0; i < len; i++) binary += String.fromCharCode(arr[i]);
     return window.btoa(binary);
   }
 
@@ -552,7 +468,7 @@ class BluetoothPrinterService {
   }
 
   // ============================================================================
-  // FORMATTING HELPERS (Width set to 48 for 80mm Printers)
+  // FORMATTING HELPERS (Strictly 48 Width for 80mm Printers)
   // ============================================================================
 
   private dividerLine(char = "-", width = 48): Uint8Array {
@@ -565,9 +481,8 @@ class BluetoothPrinterService {
     return this.text(left + spaces + right + "\n");
   }
 
-  private formatItemLine(qty: number, name: string, width = 48): Uint8Array {
+  private formatItemLine(name: string, qty: number, width = 48): Uint8Array {
     const qtyStr = `x${qty}`;
-    // Leave at least 1 space between name and qty
     const maxNameLen = width - qtyStr.length - 1; 
     const cleanName = name.length > maxNameLen ? name.substring(0, maxNameLen) : name;
     return this.padLine(cleanName, qtyStr, width);
@@ -596,12 +511,11 @@ class BluetoothPrinterService {
     const tableName = order.table?.name || "N/A";
     const orderId = order.id.slice(-6).toUpperCase();
     const now = new Date();
-    const dateStr = now.toLocaleDateString();
-    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const dateStr = now.toLocaleDateString('en-GB'); 
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 
     const parts: Uint8Array[] = [];
 
-    // Header (Centered *** KOT ***)
     parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
@@ -610,11 +524,11 @@ class BluetoothPrinterService {
       this.text(`*** KOT ***\n`),
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
+      CMD.LINE_FEED,
       this.text(`${type === "KITCHEN" ? "KITCHEN" : "BAR"} ORDER TICKET\n`),
       CMD.LINE_FEED
     );
 
-    // Metadata (Left Align)
     parts.push(
       CMD.ALIGN_LEFT,
       this.dividerLine("-"),
@@ -624,7 +538,6 @@ class BluetoothPrinterService {
       this.dividerLine("-")
     );
 
-    // Table Headers
     parts.push(
       CMD.BOLD_ON,
       this.padLine("ITEM", "QTY"),
@@ -632,22 +545,18 @@ class BluetoothPrinterService {
       this.dividerLine("-")
     );
 
-    // Items List
     for (const item of items) {
       const name = item.dish?.name || item.combo?.name || "Item";
-      parts.push(CMD.BOLD_ON, this.formatItemLine(item.quantity, name), CMD.BOLD_OFF);
+      parts.push(CMD.BOLD_ON, this.formatItemLine(name, item.quantity), CMD.BOLD_OFF);
       
-      // Indented Remarks
       if (item.remarks) {
         let rmk = `    Note: ${item.remarks}`;
         if (rmk.length > 48) rmk = rmk.substring(0, 48); 
         parts.push(this.text(rmk + "\n"));
       }
-      // Small gap between items
       parts.push(CMD.LINE_FEED);
     }
 
-    // Footer
     const totalItems = items.reduce((s, i) => s + i.quantity, 0);
     parts.push(
       this.dividerLine("-"),
@@ -655,7 +564,7 @@ class BluetoothPrinterService {
       CMD.BOLD_ON,
       this.text(`Total Items: ${totalItems}\n`),
       CMD.BOLD_OFF,
-      CMD.FEED_LINES(6), // IMPORTANT: Extra margin at bottom for easy tearing & pushing RawBT watermark down!
+      this.text("\n\n\n\n\n\n\n\n"), // 8 lines gap for tearing safely
       CMD.PARTIAL_CUT
     );
 
@@ -666,13 +575,14 @@ class BluetoothPrinterService {
     const orderId = order.id.slice(-6).toUpperCase();
     const tableName = order.table?.name || "N/A";
     const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB'); 
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
     const currency = settings.currency || "Rs.";
     const activeItems = order.items.filter((i) => (i.status || "PENDING") !== "CANCELLED");
     const subtotal = activeItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
     const parts: Uint8Array[] = [];
 
-    // Header
     parts.push(
       CMD.INIT,
       CMD.ALIGN_CENTER,
@@ -697,23 +607,22 @@ class BluetoothPrinterService {
       CMD.LINE_FEED
     );
 
-    // Metadata
     parts.push(
       CMD.ALIGN_LEFT,
       this.dividerLine("-"),
-      this.padLine(`ORD: #${orderId}`, `DATE: ${now.toLocaleDateString()}`),
-      this.padLine(`TBL: ${tableName}`, `TIME: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`),
+      this.padLine(`ORD: #${orderId}`, `DATE: ${dateStr}`),
+      this.padLine(`TBL: ${tableName}`, `TIME: ${timeStr}`),
       this.dividerLine("-")
     );
 
-    // Items
+    parts.push(CMD.BOLD_ON, this.padLine("ITEM", "AMT"), CMD.BOLD_OFF, this.dividerLine("-"));
+
     for (const item of activeItems) {
       const name = item.dish?.name || item.combo?.name || "Item";
       const amt = `${currency} ${(item.quantity * item.unitPrice).toFixed(2)}`;
       parts.push(this.formatBillLine(item.quantity, name, amt));
     }
 
-    // Totals
     parts.push(
       this.dividerLine("-"),
       CMD.BOLD_ON,
@@ -724,15 +633,14 @@ class BluetoothPrinterService {
       this.dividerLine("-")
     );
 
-    // Footer
     parts.push(
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
       this.text("*** THANK YOU ***\n"),
       CMD.BOLD_OFF,
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
-      this.text(`${now.toLocaleString()}\n`),
-      CMD.FEED_LINES(6), // IMPORTANT: Pushes RawBT watermark down
+      this.text(`${now.toLocaleString('en-GB')}\n`),
+      this.text("\n\n\n\n\n\n\n\n"), // 8 lines gap for tearing safely
       CMD.PARTIAL_CUT
     );
 
@@ -743,6 +651,8 @@ class BluetoothPrinterService {
     const orderId = order.id.slice(-6).toUpperCase();
     const tableName = order.table?.name || "N/A";
     const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB'); 
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
     const currency = settings.currency || "Rs.";
 
     const parts: Uint8Array[] = [];
@@ -766,7 +676,7 @@ class BluetoothPrinterService {
       CMD.LINE_FEED,
       CMD.DOUBLE_HEIGHT,
       CMD.BOLD_ON,
-      this.text(`*** ESTIMATE INVOICE ***\n`),
+      this.text(`*** TAX INVOICE ***\n`),
       CMD.NORMAL_SIZE,
       CMD.BOLD_OFF,
       CMD.LINE_FEED
@@ -776,8 +686,8 @@ class BluetoothPrinterService {
     parts.push(
       CMD.ALIGN_LEFT,
       this.dividerLine("-"),
-      this.padLine(`INV: #${orderId}`, `DATE: ${now.toLocaleDateString()}`),
-      this.padLine(`TBL: ${tableName}`, `TIME: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`)
+      this.padLine(`INV: #${orderId}`, `DATE: ${dateStr}`),
+      this.padLine(`TBL: ${tableName}`, `TIME: ${timeStr}`)
     );
 
     if (totals.customerName) parts.push(this.text(`CUST: ${totals.customerName}\n`));
@@ -785,7 +695,10 @@ class BluetoothPrinterService {
     parts.push(this.dividerLine("-"));
 
     // Items
+    parts.push(CMD.BOLD_ON, this.padLine("ITEM", "AMT"), CMD.BOLD_OFF, this.dividerLine("-"));
+
     for (const item of activeItems) {
+      // Logic for complimentary items pricing calculation
       const compQty = totals.complimentaryItems?.[item.id] || 0;
       const paidQty = Math.max(0, item.quantity - compQty);
       const unitPrice = totals.itemPrices?.[item.id] ?? item.unitPrice;
@@ -823,11 +736,13 @@ class BluetoothPrinterService {
     parts.push(
       CMD.ALIGN_CENTER,
       CMD.BOLD_ON,
-      this.text("*** THANK YOU ***\n"),
+      this.text("*** THANK YOU, VISIT AGAIN ***\n"),
       CMD.BOLD_OFF,
       this.text(`Powered by ${settings.name || "POS"} ERP\n`),
-      this.text(`${now.toLocaleString()}\n`),
-      CMD.FEED_LINES(6), // IMPORTANT: Pushes RawBT watermark down
+      this.text(`${now.toLocaleString('en-GB')}\n`),
+      
+      // Explicit 8-line gap for safe tearing before RawBT watermark
+      this.text("\n\n\n\n\n\n\n\n"),
       CMD.PARTIAL_CUT
     );
 
@@ -856,7 +771,7 @@ class BluetoothPrinterService {
       CMD.BOLD_ON,
       this.text("*** TEST COMPLETE ***\n"),
       CMD.BOLD_OFF,
-      CMD.FEED_LINES(6),
+      this.text("\n\n\n\n\n\n\n\n"),
       CMD.PARTIAL_CUT
     );
     await this.sendData(role, data);
