@@ -35,7 +35,7 @@ import { KOTCard } from "@/components/kot/KOTCard";
 import { Button } from "@/components/ui/Button";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { Modal } from "@/components/ui/Modal";
-import { History, Search, Plus, Settings, FileText, Slash, WifiOff, CalendarDays, Users, ChefHat, Wine, X, Package, CreditCard, GripVertical, Printer } from "lucide-react";
+import { History, Search, Plus, Settings, FileText, Slash, WifiOff, CalendarDays, Users, ChefHat, Wine, X, Package, CreditCard, GripVertical, Printer, AlertTriangle, Play } from "lucide-react";
 import { Popover } from "@/components/ui/Popover";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -232,6 +232,8 @@ export default function OrdersPage() {
   const [quickMenuTable, setQuickMenuTable] = useState<Table | null>(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [newlyCreatedOrder, setNewlyCreatedOrder] = useState<Order | null>(null);
+  const [activeSession, setActiveSession] = useState<any>(null);
+  const [showNoSessionModal, setShowNoSessionModal] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -241,12 +243,13 @@ export default function OrdersPage() {
   );
 
   const fetchData = async () => {
-    const [oData, busyTables, tData, sData, ttData] = await Promise.all([
+    const [oData, busyTables, tData, sData, ttData, sessionRes] = await Promise.all([
       getOrders(),
       getOccupiedTable(),
       getTables(),
       getSpaces(),
       getTableTypes(),
+      fetch("/api/finance/daily-session?active=true"),
     ]);
 
     const freshOrdersList = oData || [];
@@ -256,11 +259,25 @@ export default function OrdersPage() {
     setSpaces(sData || []);
     setTableTypes(ttData || []);
 
+    try {
+      const sessionData = await sessionRes.json();
+      setActiveSession(sessionData.success ? sessionData.data : null);
+    } catch {
+      setActiveSession(null);
+    }
+
     setSelectedOrder((prevSelectedOrder) => {
       if (!prevSelectedOrder) return null;
       const refreshed = freshOrdersList.find((o) => o.id === prevSelectedOrder.id);
       return refreshed || null;
     });
+  };
+
+  /** Returns true if a session is active; otherwise shows the no-session modal and returns false. */
+  const requireSession = (): boolean => {
+    if (activeSession) return true;
+    setShowNoSessionModal(true);
+    return false;
   };
 
   useEffect(() => {
@@ -457,8 +474,10 @@ export default function OrdersPage() {
   const handleTableClick = (table: Table) => {
     const session = occupiedTable.find((o) => o.tableId === table.id);
     if (session) {
+      // Existing occupied table — view/manage actions don't require a new session
       setQuickMenuTable(table);
     } else {
+      if (!requireSession()) return;
       setPendingTable(table);
       setShowOrderTypeSelector(true);
     }
@@ -566,7 +585,7 @@ export default function OrdersPage() {
                 </Button>
               </Link>
               <Button
-                onClick={() => setShowOrderTypeSelector(true)}
+                onClick={() => { if (requireSession()) setShowOrderTypeSelector(true); }}
                 className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 uppercase tracking-widest text-[10px]"
               >
                 <Plus size={14} className="mr-2" /> Add Order
@@ -1016,6 +1035,44 @@ export default function OrdersPage() {
               </span>
             </button>
           ))}
+        </div>
+      </Modal>
+
+      {/* No Active Session Modal */}
+      <Modal
+        isOpen={showNoSessionModal}
+        onClose={() => setShowNoSessionModal(false)}
+        size="sm"
+        title=""
+      >
+        <div className="p-6 flex flex-col items-center gap-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+            <AlertTriangle size={28} className="text-amber-600" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base font-black text-zinc-900 uppercase tracking-tight">
+              No Active Session
+            </h3>
+            <p className="text-xs text-zinc-500 leading-relaxed max-w-xs">
+              You need to start a daily session before taking orders. Please
+              open the day from the Finance dashboard.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 w-full">
+            <Link
+              href="/dashboard/finance"
+              onClick={() => setShowNoSessionModal(false)}
+              className="w-full h-12 bg-zinc-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-zinc-800 transition-colors"
+            >
+              <Play size={14} fill="currentColor" /> Start Day Session
+            </Link>
+            <button
+              onClick={() => setShowNoSessionModal(false)}
+              className="w-full h-10 bg-zinc-100 text-zinc-600 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-zinc-200 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       </Modal>
 
