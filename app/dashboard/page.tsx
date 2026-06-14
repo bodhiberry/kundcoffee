@@ -3,7 +3,54 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
 
+
+export const metadata:Metadata ={
+  title:"Dashbaord | Bodhiberry",
+  description:"Log in to the Bodhiberry dashboard to manage sales, reservations, events, customers, and business operations efficiently.",
+  keywords: [
+    "Bodhiberry Dashboard",
+    "Restaurant Dashboard Nepal",
+    "Cafe POS Dashboard",
+    "Restaurant Management Panel",
+    "Bodhiberry Admin"
+  ],
+  authors: [{ name: "Bodhiberry Team" }],
+  creator: "Bodhiberry",
+  publisher: "Bodhiberry",
+  
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  
+  metadataBase: new URL("https://bodhiberry.com"),
+  
+  alternates: {
+    canonical: "/dashboard",
+  },
+  
+  openGraph: {
+    title: "Dashboard | Bodhiberry",
+    description:
+      "Access your Bodhiberry dashboard to manage orders, reservations, inventory, staff, sales reports, and daily business operations.",
+  
+    url: "https://bodhiberry.com/dashboard",
+    siteName: "Bodhiberry",
+    images: [
+      {
+        url: "/Logo.jpeg",
+        width: 800,
+        height: 600,
+        alt: "Bodhiberry Dashboard",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  }
+}
 async function getData(storeId: string) {
   try {
     const [spaces, tables, tableTypes, customers] = await Promise.all([

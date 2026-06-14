@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   formatDetection: {
     email: false,
     address: false,
-    telephone: false,
+    telephone: false, 
   },
   metadataBase: new URL("https://bodhiberry.com"), // Replace with actual domain if different
   alternates: {

@@ -126,8 +126,8 @@ export default function SalesLineChart() {
                       border: "none",
                       fontSize: "12px",
                     }}
-                    formatter={(value: number | undefined) => [
-                      `${settings.currency} ${(value || 0).toLocaleString()}`,
+                    formatter={(value: any) => [
+                      `${settings.currency} ${(Number(value) || 0).toLocaleString()}`,
                       "Sales",
                     ]}
                   />
