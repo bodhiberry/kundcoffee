@@ -7,8 +7,12 @@ export default async function middleware(req: NextRequest) {
 
   // --- CORS check for public API ---
   if (path.startsWith("/api/public/")) {
-    const origin = req.headers.get("origin") || "";
+    const origin = req.headers.get("origin") || "https://localhost:3000";
     // Allow https://app.kundcoffee.com and localhost:3000 for local testing
+    console.log("CORS HIT");
+    console.log("Path:", path);
+    console.log("Origin:", origin);
+
     const isAllowed = 
       origin === "https://app.kundcoffee.com" || 
       origin === "https://app.kundcoffee.com/" ||
