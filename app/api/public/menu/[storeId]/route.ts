@@ -72,7 +72,7 @@ export async function GET(
             image: true,
             sortOrder: true,
             dishes: {
-              where: { isAvailable: true },
+              where: { isAvailable: true, showInOrderingApp: true },
               orderBy: { sortOrder: "asc" },
               select: {
                 id: true,
@@ -146,7 +146,7 @@ export async function GET(
           },
         },
         dishes: {
-          where: { isAvailable: true, subMenuId: null },
+          where: { isAvailable: true, subMenuId: null, showInOrderingApp: true },
           orderBy: { sortOrder: "asc" },
           select: {
             id: true,

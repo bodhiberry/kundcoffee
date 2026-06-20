@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       stockConsumption,
       addOnIds,
       sortOrder,
+      showInOrderingApp,
     } = body;
 
     if (!name || !categoryId) {
@@ -128,6 +129,7 @@ export async function POST(req: NextRequest) {
         type: type || "VEG",
         kotType: kotType || "KITCHEN",
         isAvailable: true,
+        showInOrderingApp: showInOrderingApp !== undefined ? showInOrderingApp : true,
         sortOrder: finalSortOrder,
         price: {
           create: {
@@ -184,6 +186,7 @@ export async function PUT(req: NextRequest) {
       price,
       stockConsumption,
       addOnIds,
+      showInOrderingApp,
     } = body;
 
     if (!id) {
@@ -206,6 +209,7 @@ export async function PUT(req: NextRequest) {
           subMenuId,
           type,
           kotType,
+          showInOrderingApp,
         },
       });
 

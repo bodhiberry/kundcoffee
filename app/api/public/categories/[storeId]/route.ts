@@ -54,7 +54,7 @@ export async function GET(
         sortOrder: true,
         _count: {
           select: {
-            dishes: { where: { isAvailable: true } },
+            dishes: { where: { isAvailable: true, showInOrderingApp: true } },
             combos: { where: { isAvailable: true } },
             subMenus: { where: { isActive: true } },
           },

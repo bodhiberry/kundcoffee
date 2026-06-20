@@ -74,6 +74,7 @@ export default function DishesPage() {
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [showInOrderingApp, setShowInOrderingApp] = useState(true);
 
   // --- Inline Sorting State ---
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
@@ -217,6 +218,7 @@ export default function DishesPage() {
     setPrice({});
     setStockConsumption([]);
     setSelectedAddOnIds([]);
+    setShowInOrderingApp(true);
   };
 
   const openCreate = () => {
@@ -249,6 +251,7 @@ export default function DishesPage() {
     );
     // @ts-ignore
     setSelectedAddOnIds(d.addOns?.map((da: any) => da.addOnId) || []);
+    setShowInOrderingApp(d.showInOrderingApp ?? true);
     setIsPanelOpen(true);
   };
 
@@ -316,6 +319,7 @@ export default function DishesPage() {
       },
       stocks: stockConsumption.filter((s) => s.stockId && s.quantity > 0),
       addOnIds: selectedAddOnIds,
+      showInOrderingApp,
     };
 
     let res;
@@ -772,6 +776,22 @@ export default function DishesPage() {
                 />
               </div>
             </div>
+            
+            {/* Toggle showInOrderingApp */}
+            <div className="flex items-center gap-6 py-2">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showInOrderingApp}
+                  onChange={(e) => setShowInOrderingApp(e.target.checked)}
+                  className="rounded border-gray-200 text-red-600 focus:ring-red-500 h-4 w-4 cursor-pointer"
+                />
+                <span className="text-sm font-semibold text-gray-700">
+                  Show in Ordering App
+                </span>
+              </label>
+            </div>
+
             <ImageUpload
               label="Dish Photo"
               value={typeof imageFile === "string" ? imageFile : undefined}

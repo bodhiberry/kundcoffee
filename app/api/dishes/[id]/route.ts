@@ -58,6 +58,7 @@ export async function PATCH(request: NextRequest, context: { params: Params }) {
       stockConsumption,
       addOnIds,
       sortOrder, // <--- 1. Extract sortOrder
+      showInOrderingApp,
     } = body;
 
     const currentDish = await prisma.dish.findUnique({ where: { id } });
@@ -98,6 +99,7 @@ export async function PATCH(request: NextRequest, context: { params: Params }) {
       
       // 2. Add sortOrder to update data
       if (sortOrder !== undefined) dishUpdateData.sortOrder = parseInt(sortOrder);
+      if (showInOrderingApp !== undefined) dishUpdateData.showInOrderingApp = showInOrderingApp;
 
       if (Object.keys(dishUpdateData).length > 0) {
         await tx.dish.update({

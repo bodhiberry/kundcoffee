@@ -73,6 +73,7 @@ export type Dish = {
   type: "VEG" | "NON_VEG" | "SNACK" | "DRINK";
   kotType: "KITCHEN" | "BAR";
   isAvailable: boolean;
+  showInOrderingApp: boolean;
   price?: Price | null;
   stocks?: StockConsumption[];
   createdAt: Date;
