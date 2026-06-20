@@ -7,8 +7,8 @@ export default async function middleware(req: NextRequest) {
 
   // --- CORS check for public API ---
   if (path.startsWith("/api/public/")) {
+    const origin = req.headers.get("origin") || "*";
     if (req.method === "OPTIONS") {
-      const origin = req.headers.get("origin") || "*";
       return new NextResponse(null, {
         status: 200,
         headers: {
@@ -20,7 +20,12 @@ export default async function middleware(req: NextRequest) {
         },
       });
     }
-    return NextResponse.next();
+    const response = NextResponse.next();
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS, PATCH, DELETE, POST, PUT");
+    response.headers.set("Access-Control-Allow-Headers", "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization");
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+    return response;
   }
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
