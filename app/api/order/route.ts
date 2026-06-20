@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+
     const storeId = session?.user?.storeId;
 
     if (!storeId) {
