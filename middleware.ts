@@ -7,36 +7,20 @@ export default async function middleware(req: NextRequest) {
 
   // --- CORS check for public API ---
   if (path.startsWith("/api/public/")) {
-    const origin = req.headers.get("origin") || "https://localhost:3000";
-    // Allow https://app.kundcoffee.com and localhost:3000 for local testing
-    console.log("CORS HIT");
-    console.log("Path:", path);
-    console.log("Origin:", origin);
-
-    const isAllowed = 
-      origin === "https://app.kundcoffee.com" || 
-      origin === "https://app.kundcoffee.com/" ||
-      origin === "http://localhost:3000" ||
-      origin === "http://localhost:3000/";
-    const allowedOrigin = isAllowed ? origin : "https://app.kundcoffee.com";
-    
     if (req.method === "OPTIONS") {
+      const origin = req.headers.get("origin") || "*";
       return new NextResponse(null, {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": allowedOrigin,
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+          "Access-Control-Allow-Origin": origin,
+          "Access-Control-Allow-Methods": "GET, OPTIONS, PATCH, DELETE, POST, PUT",
+          "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
           "Access-Control-Max-Age": "86400",
+          "Access-Control-Allow-Credentials": "true",
         },
       });
     }
-
-    const response = await NextResponse.next();
-    response.headers.set("Access-Control-Allow-Origin", allowedOrigin);
-    response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-    return response;
+    return NextResponse.next();
   }
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
