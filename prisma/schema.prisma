@@ -209,6 +209,7 @@ model Dish {
   type            DishType
   kotType         KOTType
   isAvailable     Boolean            @default(true)
+  showInOrderingApp Boolean          @default(true)
   createdAt       DateTime           @default(now())
   image           String[]
   sortOrder       Int                @default(0)

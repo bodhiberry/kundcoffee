@@ -32,6 +32,7 @@ export async function GET(
         name: true,
         status: true,
         isSuspended: true,
+        dishes:true
       },
     });
 
@@ -49,6 +50,9 @@ export async function GET(
       );
     }
 
+    if(store.dishes){
+      
+    }
     // Fetch categories with nested subMenus, dishes, combos, and add-ons
     const categories = await prisma.category.findMany({
       where: { storeId },
