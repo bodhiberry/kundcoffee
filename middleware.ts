@@ -8,8 +8,12 @@ export default async function middleware(req: NextRequest) {
   // --- CORS check for public API ---
   if (path.startsWith("/api/public/")) {
     const origin = req.headers.get("origin") || "";
-    // Allow https://app.kundcoffee.com (handling trailing slash normalization if needed)
-    const isAllowed = origin === "https://app.kundcoffee.com" || origin === "https://app.kundcoffee.com/";
+    // Allow https://app.kundcoffee.com and localhost:3000 for local testing
+    const isAllowed = 
+      origin === "https://app.kundcoffee.com" || 
+      origin === "https://app.kundcoffee.com/" ||
+      origin === "http://localhost:3000" ||
+      origin === "http://localhost:3000/";
     const allowedOrigin = isAllowed ? origin : "https://app.kundcoffee.com";
     
     if (req.method === "OPTIONS") {
