@@ -3,8 +3,35 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export default async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const path = req.nextUrl.pathname;
+
+  // --- CORS check for public API ---
+  if (path.startsWith("/api/public/")) {
+    const origin = req.headers.get("origin") || "";
+    // Allow https://app.kundcoffee.com (handling trailing slash normalization if needed)
+    const isAllowed = origin === "https://app.kundcoffee.com" || origin === "https://app.kundcoffee.com/";
+    const allowedOrigin = isAllowed ? origin : "https://app.kundcoffee.com";
+    
+    if (req.method === "OPTIONS") {
+      return new NextResponse(null, {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": allowedOrigin,
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+          "Access-Control-Max-Age": "86400",
+        },
+      });
+    }
+
+    const response = await NextResponse.next();
+    response.headers.set("Access-Control-Allow-Origin", allowedOrigin);
+    response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    return response;
+  }
+
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const host = req.headers.get("host") || "";
   const isAdminSubdomain = host.startsWith("admin.");
 
@@ -122,5 +149,6 @@ export const config = {
     "/login",
     "/signup",
     "/blocked",
+    "/api/public/:path*",
   ],
 };
