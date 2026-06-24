@@ -100,6 +100,29 @@ export const deleteOrderItem = async (
   }
 };
 
+export const deleteOrder = async (
+  orderId: string,
+): Promise<ApiResponse> => {
+  try {
+    const res = await fetch(`/api/order/${orderId}`, {
+      method: "DELETE",
+    });
+
+    const result = await res.json();
+
+    return {
+      success: result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "Internal Server Error",
+    };
+  }
+};
+
 export const getOrderHistory = async (page = 1, limit = 20, search = "") => {
   try {
     const res = await fetch(

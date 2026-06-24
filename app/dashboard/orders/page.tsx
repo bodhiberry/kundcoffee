@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { usePrinter } from "@/components/providers/PrinterProvider";
 import { useRouter } from "next/navigation";
+import { useOrderNotification } from "@/components/providers/OrderNotificationProvider";
 import {
   Order,
   OrderStatus,
@@ -12,6 +13,7 @@ import {
   TableType,
   TableSession,
 } from "@/lib/types";
+
 import {
   getOrders,
   updateOrderStatus,
@@ -19,7 +21,9 @@ import {
   updateOrderItems,
   createOrder,
   deleteOrderItem,
+  deleteOrder,
 } from "@/services/order";
+
 import {
   getTables,
   getTableTypes,
@@ -204,6 +208,7 @@ function SortableSpaceSection({
 export default function OrdersPage() {
   const router = useRouter();
   const printer = usePrinter();
+  const { registerListener } = useOrderNotification();
   const [activeTab, setActiveTab] = useState<ActiveTab>("TABLES");
   const [orders, setOrders] = useState<Order[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -282,7 +287,20 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+
+    // Register Pusher order listener for instant refresh
+    const unsubscribe = registerListener(() => {
+      fetchData();
+    });
+
+    // Fallback polling relaxed to 15 seconds
+    const interval = setInterval(fetchData, 15000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, [registerListener]);
 
   const handleSpaceDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -395,6 +413,22 @@ export default function OrdersPage() {
         refreshed ? setSelectedOrder(refreshed) : setSelectedOrder(null);
       }
       toast.success("Item removed");
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this entire order? This action cannot be undone."
+    );
+    if (!confirmDelete) return;
+
+    const res = await deleteOrder(orderId);
+    if (res.success) {
+      toast.success(res.message || "Order deleted successfully");
+      setSelectedOrder(null);
+      await fetchData();
+    } else {
+      toast.error(res.message || "Failed to delete order");
     }
   };
 
@@ -612,6 +646,7 @@ export default function OrdersPage() {
                   onPrint={() => {}}
                   onCopy={handleCopyOrder}
                   onAddItems={setExistingOrderForAdding}
+                  onDelete={(order) => handleDeleteOrder(order.id)} // Added here
                 />
               ))}
           </div>
@@ -658,9 +693,10 @@ export default function OrdersPage() {
                         order={order}
                         onClick={setSelectedOrder}
                         onQuickCheckout={setCheckoutOrder}
-                    onPrint={() => {}} // Handled internally
+                        onPrint={() => {}} // Handled internally
                         onCopy={handleCopyOrder}
                         onAddItems={setExistingOrderForAdding}
+                        onDelete={(order) => handleDeleteOrder(order.id)} // Added here
                       />
                     ))}
                 </div>
@@ -789,6 +825,7 @@ export default function OrdersPage() {
             onCheckout={setCheckoutOrder}
             onAddMore={setExistingOrderForAdding}
             onPrint={() => window.print()}
+            onDeleteOrder={handleDeleteOrder}
           />
         )}
       </Modal>

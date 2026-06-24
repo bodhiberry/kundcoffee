@@ -35,6 +35,7 @@ interface OrderDetailViewProps {
   onAddMore: (order: Order) => void;
   onRemoveItem?: (itemId: string) => void;
   onPrint?: (order: Order) => void;
+  onDeleteOrder?: (orderId: string) => void;
 }
 
 export function OrderDetailView({
@@ -47,6 +48,7 @@ export function OrderDetailView({
   onAddMore,
   onRemoveItem,
   onPrint,
+  onDeleteOrder,
 }: OrderDetailViewProps) {
   const { settings } = useSettings();
   const printer = usePrinter();
@@ -210,6 +212,16 @@ export function OrderDetailView({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+          {order.status === "PENDING" && onDeleteOrder && (
+            <Button
+              onClick={() => onDeleteOrder(order.id)}
+              className="flex-1 sm:flex-initial h-10 px-3 sm:px-5 border-rose-200 hover:border-rose-300 hover:bg-rose-50 text-rose-600 font-black flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest bg-white rounded-xl transition-all"
+            >
+              <Trash2 size={16} strokeWidth={2.5} />
+              <span className="hidden sm:inline">Delete Order</span>
+              <span className="sm:hidden">Delete</span>
+            </Button>
+          )}
           {!isReadOnly && (
             <Button
               onClick={() => onAddMore(order)}

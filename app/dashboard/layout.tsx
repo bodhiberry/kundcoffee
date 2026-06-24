@@ -3,6 +3,7 @@ import Sidebar from "@/components/Sidebar";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { OrderNotificationProvider } from "@/components/providers/OrderNotificationProvider";
 
 
 export default function DashboardLayout({
@@ -67,7 +68,11 @@ export default function DashboardLayout({
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden">{children}</main>
+        <main className="flex-1 overflow-x-hidden">
+          <OrderNotificationProvider>
+            {children}
+          </OrderNotificationProvider>
+        </main>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { Order, OrderStatus } from "@/lib/types";
-import { Plus, Printer, Copy, Zap, Clock, Utensils, Edit } from "lucide-react";
+import { Plus, Printer, Copy, Zap, Clock, Utensils, Edit, Trash2 } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
 import { usePrinter } from "@/components/providers/PrinterProvider";
 import { useSession } from "next-auth/react";
@@ -14,6 +14,7 @@ interface OrderCardProps {
   onPrint: (order: Order) => void;
   onCopy: (order: Order) => void;
   onAddItems: (order: Order) => void;
+  onDelete?: (order: Order) => void; // <-- Made optional with '?' to prevent crashing
 }
 
 export function OrderCard({
@@ -23,6 +24,7 @@ export function OrderCard({
   onPrint,
   onCopy,
   onAddItems,
+  onDelete,
 }: OrderCardProps) {
   const { settings } = useSettings();
   const { data: session } = useSession();
@@ -30,7 +32,11 @@ export function OrderCard({
 
   const userRole = session?.user?.role as string | undefined;
   const userPermissions = (session?.user?.permissions as string[]) || [];
-  const canEdit = userRole === "ADMIN" || userRole === "SUPERADMIN" || userPermissions.includes("edit_orders");
+  const canEdit =
+    userRole === "ADMIN" ||
+    userRole === "SUPERADMIN" ||
+    userPermissions.includes("edit_orders");
+
   const statusColors: Record<OrderStatus, string> = {
     PENDING: "border-emerald-100 text-emerald-600 bg-emerald-50",
     PREPARING: "border-zinc-200 text-zinc-600 bg-zinc-50",
@@ -178,52 +184,51 @@ export function OrderCard({
       onClick={() => onClick(order)}
     >
       {/* 1. TOP HEADER: Table Name and Meta */}
-      <div className="p-5 border-b border-zinc-100 bg-white flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-zinc-900 text-sm tracking-tight uppercase truncate">
+      <div className="p-4 flex items-start justify-between border-b border-zinc-100">
+        <div className="flex flex-col gap-1.5">
+          <span className="font-bold text-zinc-900">
             {order.table?.name || "Direct Order"}
-          </h3>
-          <div
-            className={`text-[8px] font-medium px-2 py-0.5 rounded-md border ${statusColors[order.status]} uppercase tracking-widest`}
-          >
-            {order.status}
-          </div>
-          <div className="flex items-center gap-1">
-            {canEdit && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick(order);
-                }}
-                className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                title="Edit Order"
-              >
-                <Edit size={14} />
-              </button>
-            )}
-            <button
-              onClick={handlePrintKOT}
-              className="p-1.5 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-all"
-              title="Print KOT"
-            >
-              <Printer size={14} />
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center justify-between mt-1">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className={`text-[8px] font-medium px-2 py-0.5 rounded-md border ${statusColors[order.status]} uppercase tracking-widest`}>
+              {order.status}
+            </div>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-widest">
               {order.type?.replace("_", " ")}
             </span>
-            <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-medium">
-              <Clock size={11} />
-              {new Date(order.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </div>
+            <span className="text-[10px] text-zinc-500 flex items-center gap-1">
+              <Clock size={10} />
+              {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
           </div>
         </div>
+
+        {/* Action Buttons (Edit + Delete) */}
+        {canEdit && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick(order);
+              }}
+              className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+              title="Edit Order"
+            >
+              <Edit size={16} />
+            </button>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(order); // <-- Added safe optional chaining '?.'
+              }}
+              className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+              title="Delete Order"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 2. MAIN CONTENT: Dish Summary */}

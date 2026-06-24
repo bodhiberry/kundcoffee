@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { pusherServer } from "@/lib/pusher";
 
 /**
  * Public Order API — Authenticated via PUBLIC_API_SECRET header.
@@ -216,6 +217,20 @@ export async function POST(
         customer: true,
       },
     });
+
+    // 7. Trigger Pusher Event
+    try {
+      await pusherServer.trigger(`store-${storeId}`, "new-order", {
+        orderId: newOrder.id,
+        type: newOrder.type,
+        total: newOrder.total,
+        itemCount: newOrder.items.length,
+        createdAt: newOrder.createdAt,
+      });
+    } catch (pusherError) {
+      // Don't fail the order API call if Pusher fails, but log it
+      console.error("Failed to trigger Pusher notification:", pusherError);
+    }
 
     return NextResponse.json({ success: true, data: newOrder }, { status: 201 });
   } catch (error) {

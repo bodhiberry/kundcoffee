@@ -242,12 +242,32 @@ export async function DELETE(req: NextRequest, context: { params: Params }) {
       );
     }
 
-    await prisma.order.delete({ where: { id } });
+    // Soft delete the order and clean up active session if DINE_IN
+    await prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id },
+        data: { isDeleted: true },
+      });
+
+      if (order.type === "DINE_IN" && order.tableId && order.sessionId) {
+        await tx.tableSession.update({
+          where: { id: order.sessionId },
+          data: { isActive: false, endedAt: new Date() },
+        });
+
+        await tx.table.update({
+          where: { id: order.tableId },
+          data: { status: "ACTIVE" },
+        });
+      }
+    });
+
     return NextResponse.json({
       success: true,
       message: "Deleted Successfully",
     });
   } catch (error: any) {
+    console.error("DEBUG ORDER DELETE ERROR:", error);
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 },
