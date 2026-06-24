@@ -280,7 +280,7 @@ export default function Sidebar() {
             />
           </AccordionItem>
 
-          <AccordionItem id="procurement" label="Procurement" icon={Package} permission="manage_inventory">
+          <AccordionItem id="procurement" label="Procurement" icon={Package} permission="manage_procurement">
             <NavItem
               href="/dashboard/purchases"
               icon={CreditCard}
