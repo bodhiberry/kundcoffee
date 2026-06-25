@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, description, image, sortOrder } = await req.json();
+    const { name, description, image, sortOrder, showInOrderingApp } = await req.json();
     const session = await getServerSession(authOptions);
     const storeId = session?.user?.storeId;
 
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         description,
         sortOrder: finalSortOrder,
         storeId,
+        showInOrderingApp: showInOrderingApp !== undefined ? showInOrderingApp : true,
         ...(image && { image }),
       },
     });

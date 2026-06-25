@@ -57,6 +57,7 @@ export type Category = {
   combos?: any[]; // Replace with Combo type when defined
   createdAt?: Date;
   sortOrder?: number;
+  showInOrderingApp?: boolean;
 };
 
 export type Dish = {

@@ -44,7 +44,7 @@ export async function GET(
     }
 
     const category = await prisma.category.findFirst({
-      where: { id: categoryId, storeId },
+      where: { id: categoryId, storeId, showInOrderingApp: true },
       select: {
         id: true,
         name: true,

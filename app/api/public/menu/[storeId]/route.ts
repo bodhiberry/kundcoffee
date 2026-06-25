@@ -55,7 +55,7 @@ export async function GET(
     }
     // Fetch categories with nested subMenus, dishes, combos, and add-ons
     const categories = await prisma.category.findMany({
-      where: { storeId },
+      where: { storeId, showInOrderingApp: true },
       orderBy: { sortOrder: "asc" },
       select: {
         id: true,

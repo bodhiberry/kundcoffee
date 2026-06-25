@@ -95,6 +95,7 @@ model Category {
   createdAt   DateTime     @default(now())
   sortOrder   Int          @default(0)
   storeId     String
+  showInOrderingApp Boolean    @default(true)
   addOns      AddOn[]
   store       Store        @relation(fields: [storeId], references: [id])
   combos      ComboOffer[]

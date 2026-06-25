@@ -38,6 +38,7 @@ export default function CategoriesPage() {
   const [imageFile, setImageFile] = useState<File | string | null>(null);
   const [description, setDescription] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
+  const [showInOrderingApp, setShowInOrderingApp] = useState(true);
   const [uploading, setUploading] = useState(false);
 
   // --- Inline Editing State ---
@@ -145,6 +146,7 @@ export default function CategoriesPage() {
     setImageFile(null);
     setDescription("");
     setSortOrder(0);
+    setShowInOrderingApp(true);
     setIsPanelOpen(true);
   };
 
@@ -156,6 +158,7 @@ export default function CategoriesPage() {
     setImageFile(c.image || null);
     setDescription(c.description || "");
     setSortOrder((c as any).sortOrder ?? 0);
+    setShowInOrderingApp((c as any).showInOrderingApp ?? true);
     setIsPanelOpen(true);
   };
 
@@ -180,7 +183,7 @@ export default function CategoriesPage() {
       }
     }
 
-    const payload = { name, image: imageUrl, description, sortOrder };
+    const payload = { name, image: imageUrl, description, sortOrder, showInOrderingApp };
 
     let res;
     if (isEditing && selectedId) {
@@ -404,6 +407,21 @@ export default function CategoriesPage() {
                 }
               }}
             />
+          </div>
+
+          {/* Toggle showInOrderingApp */}
+          <div className="flex items-center gap-6 py-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showInOrderingApp}
+                onChange={(e) => setShowInOrderingApp(e.target.checked)}
+                className="rounded border-gray-200 text-red-600 focus:ring-red-500 h-4 w-4 cursor-pointer"
+              />
+              <span className="text-sm font-semibold text-gray-700">
+                Show in Ordering App
+              </span>
+            </label>
           </div>
 
           <ImageUpload

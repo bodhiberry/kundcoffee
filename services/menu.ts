@@ -62,6 +62,7 @@ export async function updateCategory(data: Partial<Category> & { sortOrder?: num
         description: data.description,
         image: data.image,
         sortOrder: data.sortOrder, // <--- ADD THIS LINE
+        showInOrderingApp: data.showInOrderingApp,
       }),
     });
 

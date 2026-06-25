@@ -69,7 +69,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     }
 
     // ADD sortOrder HERE
-    const { name, description, sortOrder, image } = await req.json();
+    const { name, description, sortOrder, image, showInOrderingApp } = await req.json();
     
     if (name) {
       const existingCategory = await prisma.category.findFirst({
@@ -95,6 +95,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         ...(image && { image }),
         // ADD THIS LINE
         sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : undefined,
+        showInOrderingApp: showInOrderingApp !== undefined ? showInOrderingApp : undefined,
       },
     });
 
