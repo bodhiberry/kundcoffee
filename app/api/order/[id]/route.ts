@@ -129,6 +129,46 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         if (guests !== undefined) updateData.guests = guests;
         if (kotRemarks !== undefined) updateData.kotRemarks = kotRemarks;
 
+        // --- Handle Table Transfer ---
+        if (body.tableId !== undefined) {
+          const newTableId = body.tableId;
+
+          // Free old table if changing
+          if (existingOrder.tableId && existingOrder.tableId !== newTableId) {
+            await tx.tableSession.updateMany({
+              where: { tableId: existingOrder.tableId, isActive: true },
+              data: { isActive: false, endedAt: new Date() },
+            });
+            await tx.table.update({
+              where: { id: existingOrder.tableId },
+              data: { status: "ACTIVE" },
+            });
+          }
+
+          if (newTableId) {
+            // Mark new table occupied
+            await tx.table.update({
+              where: { id: newTableId },
+              data: { status: "OCCUPIED" },
+            });
+            // Get or create session for new table
+            let newSession = await tx.tableSession.findFirst({
+              where: { tableId: newTableId, isActive: true },
+            });
+            if (!newSession) {
+              newSession = await tx.tableSession.create({
+                data: { tableId: newTableId, storeId, isActive: true },
+              });
+            }
+            updateData.tableId = newTableId;
+            updateData.sessionId = newSession.id;
+            updateData.type = "DINE_IN";
+          } else {
+            updateData.tableId = null;
+            updateData.sessionId = null;
+          }
+        }
+
         const order = await tx.order.update({
           where: { id },
           data: updateData,

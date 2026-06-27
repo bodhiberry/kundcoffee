@@ -25,8 +25,8 @@ export async function GET() {
     });
     if (!sessions)
       return NextResponse.json(
-        { success: false, message: "No table session currently" },
-        { status: 400 },
+        { success: true, data: [] },
+        { status: 200 },
       );
 
     return NextResponse.json(
@@ -34,10 +34,10 @@ export async function GET() {
       { status: 200 },
     );
   } catch (error: any) {
-    console.log(error.message);
+    console.error("tableSession error:", error.message);
     return NextResponse.json(
-      { success: false, message: "something went wrong" },
-      { status: 400 },
+      { success: true, data: [] },
+      { status: 200 },
     );
   }
 }

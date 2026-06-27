@@ -239,6 +239,7 @@ export default function OrdersPage() {
   const [newlyCreatedOrder, setNewlyCreatedOrder] = useState<Order | null>(null);
   const [activeSession, setActiveSession] = useState<any>(null);
   const [showNoSessionModal, setShowNoSessionModal] = useState(false);
+  const [transferOrder, setTransferOrder] = useState<Order | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -826,6 +827,7 @@ export default function OrdersPage() {
             onAddMore={setExistingOrderForAdding}
             onPrint={() => window.print()}
             onDeleteOrder={handleDeleteOrder}
+            onTransfer={(order) => { setTransferOrder(order); setSelectedOrder(null); }}
           />
         )}
       </Modal>
@@ -1113,7 +1115,71 @@ export default function OrdersPage() {
         </div>
       </Modal>
 
-      {/* Print KOT Confirmation Modal */}
+      
+      {/* Transfer Table Modal */}
+      <Modal
+        isOpen={!!transferOrder}
+        onClose={() => setTransferOrder(null)}
+        size="4xl"
+        title="Transfer / Assign Table"
+      >
+        <div className="space-y-6 p-4">
+          <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
+            {transferOrder?.tableId ? "Transfer" : "Assign"} Order to a table
+          </p>
+          {spaces.map((space) => (
+            <div key={space.id}>
+              <h2 className="text-xs font-bold uppercase text-zinc-500 mb-3">{space.name}</h2>
+              <div className="grid grid-cols-4 gap-4">
+                {tables.filter((t) => t.spaceId === space.id).map((table) => {
+                  const isCurrentTable = table.id === transferOrder?.tableId;
+                  const isOccupied = occupiedTable.some((o) => o.tableId === table.id) && !isCurrentTable;
+                  return (
+                    <button
+                      key={table.id}
+                      disabled={isCurrentTable || isOccupied}
+                      onClick={async () => {
+                        if (!transferOrder) return;
+                        try {
+                          const res = await fetch("/api/order/" + transferOrder.id, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ tableId: table.id }),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            toast.success("Order moved to " + table.name);
+                            setTransferOrder(null);
+                            fetchData();
+                          } else {
+                            toast.error(data.message || "Transfer failed");
+                          }
+                        } catch (e) {
+                          toast.error("Transfer failed");
+                        }
+                      }}
+                      className={
+                        "p-4 rounded-lg border transition-all font-bold text-sm " +
+                        (isCurrentTable
+                          ? "bg-blue-50 border-blue-300 text-blue-400 cursor-not-allowed"
+                          : isOccupied
+                          ? "bg-zinc-50 text-zinc-300 border-zinc-100 cursor-not-allowed"
+                          : "bg-white text-zinc-900 hover:border-emerald-500")
+                      }
+                    >
+                      {table.name}
+                      {isCurrentTable && <span className="block text-[8px] font-bold uppercase text-blue-400 mt-1">Current</span>}
+                      {isOccupied && <span className="block text-[8px] font-bold uppercase text-zinc-400 mt-1">Occupied</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Modal>
+
+{/* Print KOT Confirmation Modal */}
       <Modal
         isOpen={showPrintModal}
         onClose={() => {
