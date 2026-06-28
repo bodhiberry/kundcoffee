@@ -7,6 +7,7 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: ReactNode;
+  noPadding?: boolean;
   size?:
     | "sm"
     | "md"
@@ -25,6 +26,7 @@ export const Modal: FC<ModalProps> = ({
   onClose,
   title,
   children,
+  noPadding = false,
   size = "md",
 }) => {
   useEffect(() => {
@@ -64,33 +66,36 @@ export const Modal: FC<ModalProps> = ({
         onClick={onClose}
       />
       <div
-        className={`relative transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all duration-300 ease-out ${sizeClasses[size]} sm:scale-100 opacity-100 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 flex flex-col max-h-[92vh]`}
+        className={`relative transform rounded-2xl bg-white text-left shadow-2xl transition-all duration-300 ease-out ${sizeClasses[size]} sm:scale-100 opacity-100 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 flex flex-col max-h-[92vh] ${noPadding ? "p-0 overflow-hidden" : "p-6"}`}
       >
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4 shrink-0">
-          <h3 className="text-xl font-bold leading-6 text-gray-900 tracking-tight">
-            {title}
-          </h3>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"
-          >
-            <span className="sr-only">Close</span>
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-              stroke="currentColor"
+        {/* Only show built-in header when title is provided and noPadding is false */}
+        {!noPadding && title && (
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4 shrink-0">
+            <h3 className="text-xl font-bold leading-6 text-gray-900 tracking-tight">
+              {title}
+            </h3>
+            <button
+              onClick={onClose}
+              className="rounded-full p-1 bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 -mr-2">
+              <span className="sr-only">Close</span>
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+        <div className={`flex-1 min-h-0 ${noPadding ? "overflow-hidden" : "overflow-y-auto custom-scrollbar pr-2 -mr-2"}`}>
           {children}
         </div>
       </div>

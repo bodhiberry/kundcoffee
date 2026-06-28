@@ -90,10 +90,9 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     const updatedCategory = await prisma.category.update({
       where: { id },
       data: {
-        ...(name && { name }),
-        ...(description && { description }),
-        ...(image && { image }),
-        // ADD THIS LINE
+        name: name !== undefined ? name : undefined,
+        description: description !== undefined ? description : undefined,
+        image: image !== undefined ? image : undefined,
         sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : undefined,
         showInOrderingApp: showInOrderingApp !== undefined ? showInOrderingApp : undefined,
       },

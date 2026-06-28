@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         sortOrder: finalSortOrder,
         storeId,
         showInOrderingApp: showInOrderingApp !== undefined ? showInOrderingApp : true,
-        ...(image && { image }),
+        image: image || null,
       },
     });
     return NextResponse.json({

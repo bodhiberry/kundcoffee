@@ -34,8 +34,79 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       );
     }
 
+    // 3. Validate new table before entering transaction
+    const newTableId = body.tableId; // string | null | undefined
+
+    if (body.tableId !== undefined && body.tableId !== null) {
+      const newTable = await prisma.table.findFirst({
+        where: { id: body.tableId, storeId },
+      });
+
+      if (!newTable) {
+        return NextResponse.json(
+          { success: false, message: "Table not found or unauthorized" },
+          { status: 404 },
+        );
+      }
+    }
+
     const updatedOrder = await prisma.$transaction(
       async (tx) => {
+        // --- Handle Table Reassignment ---
+        if (body.tableId !== undefined) {
+          // Free up old table if it's changing
+          if (existingOrder.tableId && existingOrder.tableId !== newTableId) {
+            const otherActiveOrders = await tx.order.count({
+              where: {
+                tableId: existingOrder.tableId,
+                id: { not: id },
+                status: { notIn: ["COMPLETED", "CANCELLED"] },
+              },
+            });
+
+            // Only free the table if no other active orders are on it
+            if (otherActiveOrders === 0) {
+              await tx.table.update({
+                where: { id: existingOrder.tableId },
+                data: { status: "ACTIVE" },
+              });
+
+              await tx.tableSession.updateMany({
+                where: { tableId: existingOrder.tableId, isActive: true },
+                data: { isActive: false, endedAt: new Date() },
+              });
+            }
+          }
+
+          if (newTableId) {
+            // Mark new table as occupied
+            await tx.table.update({
+              where: { id: newTableId },
+              data: { status: "OCCUPIED" },
+            });
+
+            // Get or create session for new table
+            let newSession = await tx.tableSession.findFirst({
+              where: { tableId: newTableId, isActive: true },
+            });
+
+            if (!newSession) {
+              newSession = await tx.tableSession.create({
+                data: { tableId: newTableId, storeId, isActive: true },
+              });
+            }
+
+            // Will be applied in order update below
+            body._resolvedTableId = newTableId;
+            body._resolvedSessionId = newSession.id;
+            body._resolvedType = "DINE_IN";
+          } else {
+            // Removing table — converting to direct order
+            body._resolvedTableId = null;
+            body._resolvedSessionId = null;
+          }
+        }
+
         // --- Handle Item Updates ---
         if (items && Array.isArray(items)) {
           for (const item of items) {
@@ -70,12 +141,20 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
               const existingOrderItem = await tx.orderItem.findUnique({
                 where: { id: item.id },
               });
-              const unitPrice = item.unitPrice !== undefined ? item.unitPrice : (existingOrderItem?.unitPrice || 0);
+              const unitPrice =
+                item.unitPrice !== undefined
+                  ? item.unitPrice
+                  : existingOrderItem?.unitPrice || 0;
 
               // Check if price is being overridden
-              if (item.unitPrice !== undefined && item.unitPrice !== existingOrderItem?.unitPrice) {
+              if (
+                item.unitPrice !== undefined &&
+                item.unitPrice !== existingOrderItem?.unitPrice
+              ) {
                 if (!hasPermission(sessionUser, PERMISSIONS.OVERRIDE_PRICE)) {
-                  throw new Error("You do not have permission to override item prices.");
+                  throw new Error(
+                    "You do not have permission to override item prices.",
+                  );
                 }
               }
 
@@ -84,8 +163,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
                   sum + (a.unitPrice || 0) * (a.quantity || 1),
                 0,
               );
-              const totalPrice =
-                unitPrice * (item.quantity || 1) + addOnsTotal;
+              const totalPrice = unitPrice * (item.quantity || 1) + addOnsTotal;
 
               await (tx.orderItem.update as any)({
                 where: { id: item.id },
@@ -120,8 +198,13 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         const allItems = await tx.orderItem.findMany({
           where: { orderId: id },
         });
-        const nonCancelledItems = allItems.filter((i) => i.status !== "CANCELLED");
-        const newTotal = nonCancelledItems.reduce((sum, i) => sum + i.totalPrice, 0);
+        const nonCancelledItems = allItems.filter(
+          (i) => i.status !== "CANCELLED",
+        );
+        const newTotal = nonCancelledItems.reduce(
+          (sum, i) => sum + i.totalPrice,
+          0,
+        );
 
         const updateData: any = { total: newTotal };
         if (status) updateData.status = status;
@@ -129,44 +212,11 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         if (guests !== undefined) updateData.guests = guests;
         if (kotRemarks !== undefined) updateData.kotRemarks = kotRemarks;
 
-        // --- Handle Table Transfer ---
+        // Apply table reassignment to updateData
         if (body.tableId !== undefined) {
-          const newTableId = body.tableId;
-
-          // Free old table if changing
-          if (existingOrder.tableId && existingOrder.tableId !== newTableId) {
-            await tx.tableSession.updateMany({
-              where: { tableId: existingOrder.tableId, isActive: true },
-              data: { isActive: false, endedAt: new Date() },
-            });
-            await tx.table.update({
-              where: { id: existingOrder.tableId },
-              data: { status: "ACTIVE" },
-            });
-          }
-
-          if (newTableId) {
-            // Mark new table occupied
-            await tx.table.update({
-              where: { id: newTableId },
-              data: { status: "OCCUPIED" },
-            });
-            // Get or create session for new table
-            let newSession = await tx.tableSession.findFirst({
-              where: { tableId: newTableId, isActive: true },
-            });
-            if (!newSession) {
-              newSession = await tx.tableSession.create({
-                data: { tableId: newTableId, storeId, isActive: true },
-              });
-            }
-            updateData.tableId = newTableId;
-            updateData.sessionId = newSession.id;
-            updateData.type = "DINE_IN";
-          } else {
-            updateData.tableId = null;
-            updateData.sessionId = null;
-          }
+          updateData.tableId = body._resolvedTableId ?? null;
+          updateData.sessionId = body._resolvedSessionId ?? null;
+          if (body._resolvedType) updateData.type = body._resolvedType;
         }
 
         const order = await tx.order.update({
@@ -199,8 +249,8 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
                 amount: newTotal,
                 method: paymentMethod,
                 status: "PAID",
-                sessionId: tableSession?.id || null, // Scalar field
-                storeId: storeId, // FIX: Changed from 'store: { connect... }'
+                sessionId: tableSession?.id || null,
+                storeId: storeId,
               },
             });
           } else {
@@ -209,8 +259,8 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
                 amount: newTotal,
                 method: paymentMethod,
                 status: "PAID",
-                sessionId: tableSession?.id || null, // Scalar field
-                storeId: storeId, // FIX: Changed from 'store: { connect... }'
+                sessionId: tableSession?.id || null,
+                storeId: storeId,
                 orders: {
                   connect: { id: id },
                 },
@@ -238,7 +288,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         return order;
       },
       {
-        timeout: 20000, // Increase timeout to 20 seconds
+        timeout: 20000,
       },
     );
 

@@ -240,7 +240,6 @@ export default function OrdersPage() {
   const [activeSession, setActiveSession] = useState<any>(null);
   const [showNoSessionModal, setShowNoSessionModal] = useState(false);
   const [transferOrder, setTransferOrder] = useState<Order | null>(null);
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
@@ -640,15 +639,16 @@ export default function OrdersPage() {
               )
               .map((order) => (
                 <OrderCard
-                  key={order.id}
-                  order={order}
-                  onClick={setSelectedOrder}
-                  onQuickCheckout={setCheckoutOrder}
-                  onPrint={() => {}}
-                  onCopy={handleCopyOrder}
-                  onAddItems={setExistingOrderForAdding}
-                  onDelete={(order) => handleDeleteOrder(order.id)} // Added here
-                />
+                key={order.id}
+                order={order}
+                onClick={setSelectedOrder}
+                onQuickCheckout={setCheckoutOrder}
+                onPrint={() => {}}
+                onCopy={handleCopyOrder}
+                onAddItems={setExistingOrderForAdding}
+                onDelete={(order) => handleDeleteOrder(order.id)}
+                onTransfer={(order) => setTransferOrder(order)}  // ← ADD TO BOTH
+              />
               ))}
           </div>
         )}
@@ -690,15 +690,16 @@ export default function OrdersPage() {
                     .slice(0, 6)
                     .map((order) => (
                       <OrderCard
-                        key={order.id}
-                        order={order}
-                        onClick={setSelectedOrder}
-                        onQuickCheckout={setCheckoutOrder}
-                        onPrint={() => {}} // Handled internally
-                        onCopy={handleCopyOrder}
-                        onAddItems={setExistingOrderForAdding}
-                        onDelete={(order) => handleDeleteOrder(order.id)} // Added here
-                      />
+                      key={order.id}
+                      order={order}
+                      onClick={setSelectedOrder}
+                      onQuickCheckout={setCheckoutOrder}
+                      onPrint={() => {}}
+                      onCopy={handleCopyOrder}
+                      onAddItems={setExistingOrderForAdding}
+                      onDelete={(order) => handleDeleteOrder(order.id)}
+                      onTransfer={(order) => setTransferOrder(order)}  // ← ADD TO BOTH
+                    />
                     ))}
                 </div>
               </div>
@@ -814,8 +815,11 @@ export default function OrdersPage() {
         onClose={() => setSelectedOrder(null)}
         size="5xl"
         title=""
+        noPadding 
       >
+        
         {selectedOrder && (
+          
           <OrderDetailView
             order={selectedOrder}
             onClose={() => setSelectedOrder(null)}
@@ -827,7 +831,11 @@ export default function OrdersPage() {
             onAddMore={setExistingOrderForAdding}
             onPrint={() => window.print()}
             onDeleteOrder={handleDeleteOrder}
-            onTransfer={(order) => { setTransferOrder(order); setSelectedOrder(null); }}
+            onTransfer={(order) => {        
+           setTransferOrder(order);
+           setSelectedOrder(null);
+           
+  }}
           />
         )}
       </Modal>
@@ -837,6 +845,7 @@ export default function OrdersPage() {
         onClose={() => setActiveTable(null)}
         size="6xl"
         title=""
+        noPadding
       >
         {activeTable && (
           <TableOrderingSystem
@@ -882,6 +891,7 @@ export default function OrdersPage() {
         onClose={() => setQuickMenuTable(null)}
         size="md"
         title=""
+        noPadding
       >
         {quickMenuTable && (
           <div className="p-8 space-y-8">
@@ -966,35 +976,46 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <Button
-                      onClick={() => {
-                        if (activeOrder) setExistingOrderForAdding(activeOrder);
-                        setQuickMenuTable(null);
-                      }}
-                      className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] shadow-lg shadow-emerald-200 border-none"
-                    >
-                      Add Item
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        if (activeOrder) setCheckoutOrder(activeOrder);
-                        setQuickMenuTable(null);
-                      }}
-                      className="w-full h-14 bg-zinc-900 hover:bg-zinc-800 text-white font-bold uppercase text-[10px] shadow-lg shadow-zinc-200 border-none"
-                    >
-                      Direct checkout
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        if (activeOrder) setSelectedOrder(activeOrder);
-                        setQuickMenuTable(null);
-                      }}
-                      className="w-full h-12 border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-bold text-[10px] uppercase transition-colors"
-                    >
-                      View Order
-                    </Button>
-                  </div>
+  <Button
+    onClick={() => {
+      if (activeOrder) setExistingOrderForAdding(activeOrder);
+      setQuickMenuTable(null);
+    }}
+    className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] shadow-lg shadow-emerald-200 border-none"
+  >
+    Add Item
+  </Button>
+
+  <Button
+    onClick={() => {
+      if (activeOrder) setTransferOrder(activeOrder);
+      setQuickMenuTable(null);
+    }}
+    className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase text-[10px] border-none"
+  >
+    Transfer Table
+  </Button>
+
+  <Button
+    onClick={() => {
+      if (activeOrder) setCheckoutOrder(activeOrder);
+      setQuickMenuTable(null);
+    }}
+    className="w-full h-14 bg-zinc-900 hover:bg-zinc-800 text-white font-bold uppercase text-[10px] shadow-lg shadow-zinc-200 border-none"
+  >
+    Direct checkout
+  </Button>
+  <Button
+    variant="secondary"
+    onClick={() => {
+      if (activeOrder) setSelectedOrder(activeOrder);
+      setQuickMenuTable(null);
+    }}
+    className="w-full h-12 border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-bold text-[10px] uppercase transition-colors"
+  >
+    View Order
+  </Button>
+</div>
                 </>
               );
             })()}
@@ -1083,6 +1104,8 @@ export default function OrdersPage() {
         onClose={() => setShowNoSessionModal(false)}
         size="sm"
         title=""
+        noPadding
+
       >
         <div className="p-6 flex flex-col items-center gap-6 text-center">
           <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
@@ -1115,71 +1138,73 @@ export default function OrdersPage() {
         </div>
       </Modal>
 
-      
-      {/* Transfer Table Modal */}
-      <Modal
-        isOpen={!!transferOrder}
-        onClose={() => setTransferOrder(null)}
-        size="4xl"
-        title="Transfer / Assign Table"
-      >
-        <div className="space-y-6 p-4">
-          <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
-            {transferOrder?.tableId ? "Transfer" : "Assign"} Order to a table
-          </p>
-          {spaces.map((space) => (
-            <div key={space.id}>
-              <h2 className="text-xs font-bold uppercase text-zinc-500 mb-3">{space.name}</h2>
-              <div className="grid grid-cols-4 gap-4">
-                {tables.filter((t) => t.spaceId === space.id).map((table) => {
-                  const isCurrentTable = table.id === transferOrder?.tableId;
-                  const isOccupied = occupiedTable.some((o) => o.tableId === table.id) && !isCurrentTable;
-                  return (
-                    <button
-                      key={table.id}
-                      disabled={isCurrentTable || isOccupied}
-                      onClick={async () => {
-                        if (!transferOrder) return;
-                        try {
-                          const res = await fetch("/api/order/" + transferOrder.id, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ tableId: table.id }),
-                          });
-                          const data = await res.json();
-                          if (data.success) {
-                            toast.success("Order moved to " + table.name);
-                            setTransferOrder(null);
-                            fetchData();
-                          } else {
-                            toast.error(data.message || "Transfer failed");
-                          }
-                        } catch (e) {
-                          toast.error("Transfer failed");
-                        }
-                      }}
-                      className={
-                        "p-4 rounded-lg border transition-all font-bold text-sm " +
-                        (isCurrentTable
-                          ? "bg-blue-50 border-blue-300 text-blue-400 cursor-not-allowed"
-                          : isOccupied
-                          ? "bg-zinc-50 text-zinc-300 border-zinc-100 cursor-not-allowed"
-                          : "bg-white text-zinc-900 hover:border-emerald-500")
-                      }
-                    >
-                      {table.name}
-                      {isCurrentTable && <span className="block text-[8px] font-bold uppercase text-blue-400 mt-1">Current</span>}
-                      {isOccupied && <span className="block text-[8px] font-bold uppercase text-zinc-400 mt-1">Occupied</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Modal>
 
-{/* Print KOT Confirmation Modal */}
+
+          {/* Transfer Table Modal */}
+{/* Transfer Table Modal */}
+<Modal
+  isOpen={!!transferOrder}
+  onClose={() => setTransferOrder(null)}
+  size="4xl"
+  title="Transfer / Assign Table"
+>
+  <div className="space-y-6 p-4">
+    <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
+      {transferOrder?.tableId ? "Transfer" : "Assign"} Order #{transferOrder?.id.slice(-6).toUpperCase()} to a table
+    </p>
+    {spaces.map((space) => (
+      <div key={space.id}>
+        <h2 className="text-xs font-bold uppercase text-zinc-500 mb-3">{space.name}</h2>
+        <div className="grid grid-cols-4 gap-4">
+          {tables.filter((t) => t.spaceId === space.id).map((table) => {
+            const isCurrentTable = table.id === transferOrder?.tableId;
+            const isOccupied = occupiedTable.some((o) => o.tableId === table.id) && !isCurrentTable;
+            return (
+              <button
+                key={table.id}
+                disabled={isCurrentTable || isOccupied}
+                onClick={async () => {
+                  if (!transferOrder) return;
+                  try {
+                    const res = await fetch(`/api/orders/${transferOrder.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ tableId: table.id }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      toast.success("Order moved to " + table.name);
+setTransferOrder(null);
+setTimeout(() => fetchData(), 500);
+                    } else {
+                      toast.error(data.message || "Transfer failed");
+                    }
+                  } catch (e) {
+                    toast.error("Transfer failed");
+                  }
+                }}
+                className={`p-4 rounded-lg border transition-all font-bold text-sm ${
+                  isCurrentTable
+                    ? "bg-blue-50 border-blue-300 text-blue-400 cursor-not-allowed"
+                    : isOccupied
+                    ? "bg-zinc-50 text-zinc-300 border-zinc-100 cursor-not-allowed"
+                    : "bg-white text-zinc-900 hover:border-emerald-500 hover:shadow-sm"
+                }`}
+              >
+                {table.name}
+                {isCurrentTable && <span className="block text-[8px] font-bold uppercase text-blue-400 mt-1">Current</span>}
+                {isOccupied && <span className="block text-[8px] font-bold uppercase text-zinc-400 mt-1">Occupied</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    ))}
+  </div>
+</Modal>
+
+
+      {/* Print KOT Confirmation Modal */}
       <Modal
         isOpen={showPrintModal}
         onClose={() => {

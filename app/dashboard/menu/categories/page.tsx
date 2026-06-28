@@ -166,7 +166,7 @@ export default function CategoriesPage() {
     if (!name) return;
     setUploading(true);
 
-    let imageUrl = typeof imageFile === "string" ? imageFile : undefined;
+    let imageUrl: string | null | undefined = undefined;
     if (imageFile instanceof File) {
       const formData = new FormData();
       formData.append("file", imageFile);
@@ -181,6 +181,10 @@ export default function CategoriesPage() {
       } catch (err) {
         console.error(err);
       }
+    } else if (typeof imageFile === "string") {
+      imageUrl = imageFile;
+    } else if (imageFile === null) {
+      imageUrl = null;
     }
 
     const payload = { name, image: imageUrl, description, sortOrder, showInOrderingApp };
