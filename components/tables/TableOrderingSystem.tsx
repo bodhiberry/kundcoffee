@@ -74,12 +74,12 @@ export function TableOrderingSystem({
           fetch("/api/staff"),
         ]);
         const staffData = await staffRes.json();
-        // Filter out inactive categories
-        const activeCategories = cData.filter((cat: any) => cat.showInOrderingApp !== false);
+        // Filter out inactive categories (isActive controls POS visibility)
+        const activeCategories = cData.filter((cat: any) => cat.isActive !== false);
         // Filter out dishes that belong to inactive categories
         const activeDishes = dData.filter((d: any) => {
           const parentCat = cData.find((c: any) => c.id === d.categoryId);
-          return !parentCat || parentCat.showInOrderingApp !== false;
+          return !parentCat || parentCat.isActive !== false;
         });
         setCategories(activeCategories);
         setDishes(activeDishes);

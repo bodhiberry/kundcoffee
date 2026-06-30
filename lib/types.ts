@@ -58,6 +58,7 @@ export type Category = {
   createdAt?: Date;
   sortOrder?: number;
   showInOrderingApp?: boolean;
+  isActive?: boolean;
 };
 
 export type Dish = {

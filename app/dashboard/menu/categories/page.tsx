@@ -39,6 +39,7 @@ export default function CategoriesPage() {
   const [description, setDescription] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
   const [showInOrderingApp, setShowInOrderingApp] = useState(true);
+  const [isActive, setIsActive] = useState(true);
   const [uploading, setUploading] = useState(false);
 
   // --- Inline Editing State ---
@@ -147,6 +148,7 @@ export default function CategoriesPage() {
     setDescription("");
     setSortOrder(0);
     setShowInOrderingApp(true);
+    setIsActive(true);
     setIsPanelOpen(true);
   };
 
@@ -159,6 +161,7 @@ export default function CategoriesPage() {
     setDescription(c.description || "");
     setSortOrder((c as any).sortOrder ?? 0);
     setShowInOrderingApp((c as any).showInOrderingApp ?? true);
+    setIsActive((c as any).isActive ?? true);
     setIsPanelOpen(true);
   };
 
@@ -187,7 +190,7 @@ export default function CategoriesPage() {
       imageUrl = null;
     }
 
-    const payload = { name, image: imageUrl, description, sortOrder, showInOrderingApp };
+    const payload = { name, image: imageUrl, description, sortOrder, showInOrderingApp, isActive };
 
     let res;
     if (isEditing && selectedId) {
@@ -349,7 +352,7 @@ export default function CategoriesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    {c.showInOrderingApp ?? true ? (
+                    {(c as any).isActive ?? true ? (
                       <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border bg-green-50 text-green-700 border-green-100">
                         Active
                       </span>
@@ -427,8 +430,20 @@ export default function CategoriesPage() {
             />
           </div>
 
-          {/* Toggle showInOrderingApp */}
-          <div className="flex items-center gap-6 py-2">
+          {/* Toggle showInOrderingApp and isActive */}
+          <div className="flex flex-col gap-3 py-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                className="rounded border-gray-200 text-red-600 focus:ring-red-500 h-4 w-4 cursor-pointer"
+              />
+              <span className="text-sm font-semibold text-gray-700">
+                Active (Show in POS)
+              </span>
+            </label>
+
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -437,7 +452,7 @@ export default function CategoriesPage() {
                 className="rounded border-gray-200 text-red-600 focus:ring-red-500 h-4 w-4 cursor-pointer"
               />
               <span className="text-sm font-semibold text-gray-700">
-                Active (Show in Ordering/POS App)
+                Show in Customer Ordering App
               </span>
             </label>
           </div>
