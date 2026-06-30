@@ -74,8 +74,15 @@ export function TableOrderingSystem({
           fetch("/api/staff"),
         ]);
         const staffData = await staffRes.json();
-        setCategories(cData);
-        setDishes(dData);
+        // Filter out inactive categories
+        const activeCategories = cData.filter((cat: any) => cat.showInOrderingApp !== false);
+        // Filter out dishes that belong to inactive categories
+        const activeDishes = dData.filter((d: any) => {
+          const parentCat = cData.find((c: any) => c.id === d.categoryId);
+          return !parentCat || parentCat.showInOrderingApp !== false;
+        });
+        setCategories(activeCategories);
+        setDishes(activeDishes);
         setSubMenus(smData);
         if (staffData.success) setStaff(staffData.data);
       } catch (err) {

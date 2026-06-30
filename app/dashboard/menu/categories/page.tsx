@@ -283,6 +283,9 @@ export default function CategoriesPage() {
                 <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-center">
                   Dishes
                 </th>
+                <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-center">
+                  Status
+                </th>
                 <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-right">
                   Actions
                 </th>
@@ -345,6 +348,17 @@ export default function CategoriesPage() {
                       {c.dishes?.length || 0} ITEMS
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    {c.showInOrderingApp ?? true ? (
+                      <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border bg-green-50 text-green-700 border-green-100">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border bg-yellow-50 text-yellow-700 border-yellow-100">
+                        Inactive
+                      </span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex justify-end">
                       <Button
@@ -361,7 +375,7 @@ export default function CategoriesPage() {
               ))}
               {filtered.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={5} className="text-center py-12 text-gray-400">
+                  <td colSpan={6} className="text-center py-12 text-gray-400">
                     <Trash2 size={24} className="mx-auto mb-2 opacity-20" />
                     No categories found.
                   </td>
@@ -423,7 +437,7 @@ export default function CategoriesPage() {
                 className="rounded border-gray-200 text-red-600 focus:ring-red-500 h-4 w-4 cursor-pointer"
               />
               <span className="text-sm font-semibold text-gray-700">
-                Show in Ordering App
+                Active (Show in Ordering/POS App)
               </span>
             </label>
           </div>

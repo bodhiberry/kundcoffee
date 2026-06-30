@@ -19,7 +19,9 @@ import { pusherServer } from "@/lib/pusher";
  *     }
  *   ],
  *   "tableId": "string", (optional)
- *   "customerId": "string", (optional)
+ *   "customerId": "string", (optional — ignored if customerPhone is provided)
+ *   "customerName": "string", (optional — used to create new customer if phone doesn't exist)
+ *   "customerPhone": "string", (optional — auto-finds or creates customer by phone)
  *   "guests": number, (optional)
  *   "kotRemarks": "string" (optional)
  * }
@@ -83,7 +85,45 @@ export async function POST(
 
     // 3. Parse and Validate Request Body
     const body = await req.json();
-    const { tableId, type, items, customerId, guests, kotRemarks } = body;
+    const { tableId, type, items, customerId, customerName, customerPhone, guests, kotRemarks } = body;
+
+    // 4. Resolve Customer — auto-create if phone provided and customer doesn't exist
+    let resolvedCustomerId: string | null = customerId || null;
+
+    if (customerPhone) {
+      const normalizedPhone = customerPhone.trim();
+
+      // Look up existing customer by phone number
+      const existingCustomer = await prisma.customer.findUnique({
+        where: { phone: normalizedPhone },
+      });
+
+      if (existingCustomer) {
+        // Customer found — link to this order
+        resolvedCustomerId = existingCustomer.id;
+      } else {
+        // Customer not found — create a new one
+        const newCustomerName = customerName?.trim() || `Customer ${normalizedPhone}`;
+
+        const newCustomer = await prisma.customer.create({
+          data: {
+            fullName: newCustomerName,
+            phone: normalizedPhone,
+            storeId,
+          },
+        });
+
+        // Auto-generate loyalty ID
+        await prisma.customer.update({
+          where: { id: newCustomer.id },
+          data: {
+            loyaltyId: `LOY-${newCustomer.id.slice(0, 8).toUpperCase()}`,
+          },
+        });
+
+        resolvedCustomerId = newCustomer.id;
+      }
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -200,7 +240,7 @@ export async function POST(
         items: {
           create: orderItemsData,
         },
-        customerId: customerId || null,
+        customerId: resolvedCustomerId,
         guests,
         kotRemarks,
         sessionId: activeSessionId,
