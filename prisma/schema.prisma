@@ -360,6 +360,7 @@ model Order {
   kotRemarks     String?
   dailySessionId String?
   splitGroupId   String?
+  invoiceNumber  Int?
   customer       Customer?     @relation(fields: [customerId], references: [id])
   dailySession   DailySession? @relation(fields: [dailySessionId], references: [id])
   payment        Payment?      @relation(fields: [paymentId], references: [id])
@@ -427,6 +428,7 @@ model Payment {
   staffId         String?
   dailySessionId  String?
   splitGroupId    String?
+  invoiceNumber   Int?
   orders          Order[]
   dailySession    DailySession? @relation(fields: [dailySessionId], references: [id])
   session         TableSession? @relation(fields: [sessionId], references: [id])

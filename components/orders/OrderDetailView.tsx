@@ -138,7 +138,7 @@ export function OrderDetailView({
           </div>
           <div class="divider"></div>
           <table>
-            <tr><td>ORDER: #${order.id.slice(-6).toUpperCase()}</td><td class="right">${order.table?.name || "N/A"}</td></tr>
+            <tr><td>ORDER: #${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</td><td class="right">${order.table?.name || "N/A"}</td></tr>
           </table>
           <div class="divider"></div>
           <table>${itemsHtml}</table>
@@ -173,7 +173,7 @@ export function OrderDetailView({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-sm font-black text-zinc-900 uppercase">Order #{order.id.slice(-6).toUpperCase()}</h2>
+              <h2 className="text-sm font-black text-zinc-900 uppercase">Order #{order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</h2>
               <span className="text-[10px] font-black px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 uppercase border border-zinc-200">
                 {order.type?.replace("_", " ")}
               </span>

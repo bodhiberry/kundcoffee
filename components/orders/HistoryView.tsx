@@ -63,7 +63,7 @@ export function HistoryView({ onViewDetails }: { onViewDetails: (o: Order) => vo
               {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-zinc-50">
                   <td className="p-4">{format(new Date(order.createdAt), "dd MMM yyyy HH:mm")}</td>
-                  <td className="p-4 font-bold">#{order.id.slice(-6).toUpperCase()}</td>
+                  <td className="p-4 font-bold">#{order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</td>
                   <td className="p-4">{order.table?.name || "Takeaway"}</td>
                   <td className="p-4 font-bold">${order.total.toFixed(2)}</td>
                   <td className="p-4 text-right">

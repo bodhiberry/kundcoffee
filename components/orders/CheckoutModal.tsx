@@ -338,7 +338,7 @@ export function CheckoutModal({
             {/* Bill Info */}
             <div className="border-y border-black border-dashed py-2 mb-4 space-y-1">
               <div className="flex justify-between">
-                <span>Invoice: #{order.id.slice(-6).toUpperCase()}</span>
+                <span>Invoice: #{order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</span>
                 <span>Date: {new Date().toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between">

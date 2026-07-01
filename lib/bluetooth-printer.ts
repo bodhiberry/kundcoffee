@@ -511,7 +511,7 @@ class BluetoothPrinterService {
 
   buildKOTReceipt(order: Order, items: OrderItem[], type: KOTType): Uint8Array {
     const tableName = order.table?.name || "N/A";
-    const orderId = order.id.slice(-6).toUpperCase();
+    const orderId = order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase();
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB'); 
     const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -580,7 +580,7 @@ class BluetoothPrinterService {
   }
 
   buildBillReceipt(order: Order, settings: Record<string, string>): Uint8Array {
-    const orderId = order.id.slice(-6).toUpperCase();
+    const orderId = order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase();
     const tableName = order.table?.name || "N/A";
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB'); 
@@ -670,7 +670,7 @@ class BluetoothPrinterService {
   }
 
   buildCheckoutReceipt(order: Order, settings: Record<string, string>, totals: ReceiptTotals, activeItems: OrderItem[]): Uint8Array {
-    const orderId = order.id.slice(-6).toUpperCase();
+    const orderId = order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase();
     const tableName = order.table?.name || "N/A";
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB'); 

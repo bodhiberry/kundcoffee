@@ -1150,7 +1150,7 @@ export default function OrdersPage() {
 >
   <div className="space-y-6 p-4">
     <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
-      {transferOrder?.tableId ? "Transfer" : "Assign"} Order #{transferOrder?.id.slice(-6).toUpperCase()} to a table
+      {transferOrder?.tableId ? "Transfer" : "Assign"} Order #{transferOrder?.invoiceNumber ? String(transferOrder.invoiceNumber).padStart(3, '0') : transferOrder?.id.slice(-6).toUpperCase()} to a table
     </p>
     {spaces.map((space) => (
       <div key={space.id}>
@@ -1221,7 +1221,7 @@ setTimeout(() => fetchData(), 500);
             </div>
             <h3 className="text-lg font-bold text-zinc-900">Order Created!</h3>
             <p className="text-sm text-zinc-500">
-              Order #{newlyCreatedOrder?.id.slice(-6).toUpperCase()} for{" "}
+              Order #{newlyCreatedOrder?.invoiceNumber ? String(newlyCreatedOrder.invoiceNumber).padStart(3, '0') : newlyCreatedOrder?.id.slice(-6).toUpperCase()} for{" "}
               {newlyCreatedOrder?.table?.name || "Direct Order"} has been created.
             </p>
             <p className="text-xs text-zinc-400">

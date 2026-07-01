@@ -218,7 +218,7 @@ export default function FinancePage() {
             
             <table style="font-size: 10px;">
               <tr>
-                <td>INV: <span class="bold">#${txn.id.slice(-6).toUpperCase()}</span></td>
+                <td>INV: <span class="bold">#${txn.invoiceNumber ? String(txn.invoiceNumber).padStart(3, '0') : txn.id.slice(-6).toUpperCase()}</span></td>
                 <td class="right">DATE: ${new Date(date).toLocaleDateString()}</td>
               </tr>
               <tr>

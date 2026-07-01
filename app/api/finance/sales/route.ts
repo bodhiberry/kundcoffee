@@ -224,6 +224,7 @@ export async function GET(req: NextRequest) {
           customer: order?.customer?.fullName || "Guest",
           table: order?.table?.name || p.session?.table?.name || "N/A",
           items: allItems,
+          invoiceNumber: p.invoiceNumber,
         });
       } else {
         const existing = transactionsMap.get(key);

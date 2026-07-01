@@ -87,6 +87,15 @@ export async function finalizeSessionTransaction(data: {
       const dailySessionId = activeDailySession?.id || null;
       console.log(`[CheckoutHelper] Linked to Daily Session: ${dailySessionId} for Store: ${finalStoreId}`);
 
+      // Query the highest invoiceNumber across all payments for this store
+      const maxPayment = await tx.payment.findFirst({
+        where: { storeId: finalStoreId },
+        orderBy: { invoiceNumber: "desc" },
+        select: { invoiceNumber: true },
+      });
+      const nextInvoiceNumber = (maxPayment?.invoiceNumber || 0) + 1;
+      console.log(`[CheckoutHelper] Next Invoice Number for Store ${finalStoreId}: ${nextInvoiceNumber}`);
+
       // 1. Handle Payments
       // Delete existing payments for this session/order to avoid duplicates
       if (sessionId) {
@@ -117,6 +126,7 @@ export async function finalizeSessionTransaction(data: {
             staffId: staffId || null,
             dailySessionId: dailySessionId,
             splitGroupId: splitGroupId,
+            invoiceNumber: nextInvoiceNumber,
           },
         });
         paymentRecords.push(createdPayment);
@@ -147,6 +157,7 @@ export async function finalizeSessionTransaction(data: {
             paymentId: finalPaymentId,
             dailySessionId: dailySessionId,
             splitGroupId: splitGroupId,
+            invoiceNumber: nextInvoiceNumber,
           },
         });
 
@@ -176,6 +187,7 @@ export async function finalizeSessionTransaction(data: {
             total: 0,
             dailySessionId: dailySessionId,
             splitGroupId: splitGroupId,
+            invoiceNumber: nextInvoiceNumber,
             items: {
               create: extraFreeItems.map((item) => ({
                 dishId: item.dishId || null,
@@ -208,6 +220,7 @@ export async function finalizeSessionTransaction(data: {
             sessionId: sessionId || null,
             dailySessionId: dailySessionId,
             splitGroupId: splitGroupId,
+            invoiceNumber: nextInvoiceNumber,
           },
         });
       }

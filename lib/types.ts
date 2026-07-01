@@ -232,6 +232,7 @@ export type Order = {
   guests?: number | null;
   kotRemarks?: string | null;
   createdAt: Date;
+  invoiceNumber?: number | null;
 };
 
 export type Customer = {

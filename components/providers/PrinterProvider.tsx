@@ -112,7 +112,7 @@ function buildKOTHtmlFallback(
   type: KOTType
 ): string {
   const tableName = order.table?.name || "N/A";
-  const orderId = order.id.slice(-6).toUpperCase();
+  const orderId = order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase();
   const now = new Date();
 
   const itemsHtml = items
@@ -329,7 +329,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
       await printerService.sendData(targetRole, data);
     } else {
       // Fallback to browser print
-      fallbackWindowPrint(buildKOTHtmlFallback(order, items, type), `KOT-${type}-${order.id.slice(-6).toUpperCase()}`);
+      fallbackWindowPrint(buildKOTHtmlFallback(order, items, type), `KOT-${type}-${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}`);
     }
   };
 
@@ -402,7 +402,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             <div class="divider"></div>
             <table style="font-size: 10px;">
               <tr>
-                <td>ORDER: <span class="bold">#${order.id.slice(-6).toUpperCase()}</span></td>
+                <td>ORDER: <span class="bold">#${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</span></td>
                 <td class="right">DATE: ${new Date().toLocaleDateString()}</td>
               </tr>
               <tr>
@@ -429,7 +429,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             <script>window.onload = function() { window.print(); window.close(); }</script>
           </body>
         </html>
-      `, `Bill-${order.table?.name || "Direct"}-${order.id.slice(-6).toUpperCase()}`);
+      `, `Bill-${order.table?.name || "Direct"}-${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}`);
     }
   };
 
@@ -509,7 +509,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             <div class="divider"></div>
             <table style="font-size: 10px;">
               <tr>
-                <td>INV: <span class="bold">#${order.id.slice(-6).toUpperCase()}</span></td>
+                <td>INV: <span class="bold">#${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</span></td>
                 <td class="right">DATE: ${new Date().toLocaleDateString()}</td>
               </tr>
               <tr>
@@ -569,7 +569,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             <script>window.onload = function() { window.print(); window.close(); }</script>
           </body>
         </html>
-      `, `Receipt-${order.id.slice(-6).toUpperCase()}`);
+      `, `Receipt-${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}`);
     }
   };
 

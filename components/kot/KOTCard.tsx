@@ -116,7 +116,7 @@ export function KOTCard({
                 KOT: ${type}
               </div>
               <div class="bold" style="font-size: 14px; display: block; margin-top: 5px;">TABLE: ${order.table?.name || "N/A"}</div>
-              <div style="font-size: 10px; margin-top: 2px;">ID: #${order.id.slice(-6).toUpperCase()}</div>
+              <div style="font-size: 10px; margin-top: 2px;">ID: #${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</div>
             </div>
             
             <div class="divider"></div>
@@ -185,7 +185,7 @@ export function KOTCard({
     setShowOptionsModal(false); // Close modal when action is clicked
     const text = `
 KOT TICKET - ${type}
-Ticket: #${order.id.slice(-6).toUpperCase()}
+Ticket: #${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}
 Table: ${order.table?.name || "N/A"}
 Time: ${new Date(order.createdAt).toLocaleString()}
 --------------------------------
@@ -233,7 +233,7 @@ ${items
           </div>
           <div>
             <h3 className="text-sm font-bold text-zinc-900 tracking-tight">
-              KOT #{order.id.slice(-6).toUpperCase()}
+              KOT #{order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}
             </h3>
             <p className="text-[10px] text-zinc-600 font-bold uppercase mt-1">
               Table: {order.table?.name || "N/A"}
