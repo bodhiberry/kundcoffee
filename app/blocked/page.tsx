@@ -54,7 +54,7 @@ export default function BlockedPage() {
             {isSuspended ? "Store Access Suspended" : isExpired ? "Subscription Expired" : "Store Access Restricted"}
           </h2>
           <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold">
-            {session?.user?.storeId ? `Store ID: ${session.user.storeId}` : "Bodhiberry POS"}
+            {session?.user?.storeId ? `Store ID: ${session.user.storeId}` : "XolaCloud POS"}
           </p>
         </div>
 
@@ -72,8 +72,8 @@ export default function BlockedPage() {
         {/* Contact Info */}
         <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">
           Support Contact:{" "}
-          <a href="mailto:support@bodhiberry.com" className="text-slate-700 hover:underline">
-            support@bodhiberry.com
+          <a href="mailto:support@xolacloud.com" className="text-slate-700 hover:underline">
+            support@xolacloud.com
           </a>
         </div>
 

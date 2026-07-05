@@ -80,7 +80,7 @@ export default function SignupPage() {
               <Coffee size={22} className="text-zinc-900" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-white tracking-tight leading-none uppercase">Bodhiberry</span>
+              <span className="text-xl font-bold text-white tracking-tight leading-none uppercase">XolaCloud</span>
 
               <span className="text-[10px] font-semibold text-red-600 tracking-[0.2em] uppercase">Coffee Group</span>
             </div>
@@ -122,7 +122,7 @@ export default function SignupPage() {
           </div>
 
           <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
-            © 2026 Bodhiberry Group • Built for Excellence
+            © 2026 XolaCloud Group • Built for Excellence
 
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function SignupPage() {
           {/* Mobile-only Logo */}
           <div className="md:hidden flex items-center gap-3 mb-10">
             <Coffee size={24} className="text-red-700" />
-            <h1 className="text-lg font-bold tracking-tighter uppercase">Bodhiberry</h1>
+            <h1 className="text-lg font-bold tracking-tighter uppercase">XolaCloud</h1>
 
           </div>
 
@@ -148,7 +148,7 @@ export default function SignupPage() {
               Create Account
             </h2>
             <p className="text-zinc-500 text-sm">
-              Register your workspace within the Bodhiberry network.
+              Register your workspace within the XolaCloud network.
 
             </p>
           </div>

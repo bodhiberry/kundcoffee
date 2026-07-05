@@ -59,11 +59,11 @@ export default function DashboardLayout({
               <Menu size={20} />
             </button>
             <span className="text-sm font-black text-zinc-900 uppercase tracking-tighter">
-              {settings.name || "Bodhiberry"} ERP
+              {settings.name || "XolaCloud"} ERP
             </span>
           </div>
           <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-white text-xs font-bold">
-            {settings.name?.substring(0, 2).toUpperCase() || "BB"}
+            {settings.name?.substring(0, 2).toUpperCase() || "XC"}
           </div>
         </header>
 

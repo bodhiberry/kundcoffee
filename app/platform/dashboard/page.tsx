@@ -225,7 +225,7 @@ export default function PlatformDashboard() {
           </div>
           <div>
             <h1 className="text-md font-black tracking-tight text-slate-900 uppercase leading-none">
-              Bodhiberry SaaS
+              XolaCloud SaaS
             </h1>
             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 block">
               Platform Admin Console

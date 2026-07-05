@@ -55,17 +55,17 @@ export async function registerAction(data: RegisterInput) {
     // SEND EMAIL
     const { error } = await sendMail({
       to: [email],
-      subject: "Verify your email | Bodhiberry",
+      subject: "Verify your email | XolaCloud",
       html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded-lg: 8px;">
-        <h1 style="color: #111827; font-size: 24px; font-weight: 700; margin-bottom: 20px;">Welcome to Bodhiberry</h1>
+        <h1 style="color: #111827; font-size: 24px; font-weight: 700; margin-bottom: 20px;">Welcome to XolaCloud</h1>
         <p style="color: #4b5563; font-size: 16px; margin-bottom: 20px;">Your verification code is:</p>
         <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
           <span style="font-size: 32px; font-weight: 800; letter-spacing: 4px; color: #111827;">${verificationCode}</span>
         </div>
         <p style="color: #6b7280; font-size: 14px;">This code expires in 15 minutes.</p>
         <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
-        <p style="color: #9ca3af; font-size: 12px;">© 2026 Bodhiberry POS. All rights reserved.</p>
+        <p style="color: #9ca3af; font-size: 12px;">© 2026 XolaCloud POS. All rights reserved.</p>
       </div>`,
     });
 
@@ -164,7 +164,7 @@ export async function resendCodeAction(email: string) {
     // Send email
     const { error } = await sendMail({
       to: [email],
-      subject: "Your new verification code | Bodhiberry",
+      subject: "Your new verification code | XolaCloud",
       html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded-lg: 8px;">
         <h1 style="color: #111827; font-size: 24px; font-weight: 700; margin-bottom: 20px;">New Verification Code</h1>
@@ -175,7 +175,7 @@ export async function resendCodeAction(email: string) {
         <p style="color: #6b7280; font-size: 14px;">This code expires in 15 minutes.</p>
         <p style="color: #6b7280; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
         <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
-        <p style="color: #9ca3af; font-size: 12px;">© 2026 Bodhiberry POS. All rights reserved.</p>
+        <p style="color: #9ca3af; font-size: 12px;">© 2026 XolaCloud POS. All rights reserved.</p>
       </div>`,
     });
 

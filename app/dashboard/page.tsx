@@ -7,18 +7,18 @@ import { Metadata } from "next";
 
 
 export const metadata:Metadata ={
-  title:"Dashbaord | Bodhiberry",
-  description:"Log in to the Bodhiberry dashboard to manage sales, reservations, events, customers, and business operations efficiently.",
+  title:"Dashboard | XolaCloud",
+  description:"Log in to the XolaCloud dashboard to manage sales, reservations, events, customers, and business operations efficiently.",
   keywords: [
-    "Bodhiberry Dashboard",
+    "XolaCloud Dashboard",
     "Restaurant Dashboard Nepal",
     "Cafe POS Dashboard",
     "Restaurant Management Panel",
-    "Bodhiberry Admin"
+    "XolaCloud Admin"
   ],
-  authors: [{ name: "Bodhiberry Team" }],
-  creator: "Bodhiberry",
-  publisher: "Bodhiberry",
+  authors: [{ name: "XolaCloud Team" }],
+  creator: "XolaCloud",
+  publisher: "XolaCloud",
   
   formatDetection: {
     email: false,
@@ -26,25 +26,25 @@ export const metadata:Metadata ={
     telephone: false,
   },
   
-  metadataBase: new URL("https://bodhiberry.com"),
+  metadataBase: new URL("https://xolacloud.com"),
   
   alternates: {
     canonical: "/dashboard",
   },
   
   openGraph: {
-    title: "Dashboard | Bodhiberry",
+    title: "Dashboard | XolaCloud",
     description:
-      "Access your Bodhiberry dashboard to manage orders, reservations, inventory, staff, sales reports, and daily business operations.",
+      "Access your XolaCloud dashboard to manage orders, reservations, inventory, staff, sales reports, and daily business operations.",
   
-    url: "https://bodhiberry.com/dashboard",
-    siteName: "Bodhiberry",
+    url: "https://xolacloud.com/dashboard",
+    siteName: "XolaCloud",
     images: [
       {
         url: "/Logo.jpeg",
         width: 800,
         height: 600,
-        alt: "Bodhiberry Dashboard",
+        alt: "XolaCloud Dashboard",
       },
     ],
     locale: "en_US",

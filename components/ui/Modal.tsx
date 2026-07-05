@@ -1,5 +1,5 @@
 "use client";
-import { FC, ReactNode, useEffect } from "react";
+import { FC, ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface ModalProps {
@@ -29,6 +29,27 @@ export const Modal: FC<ModalProps> = ({
   noPadding = false,
   size = "md",
 }) => {
+  const portalRef = useRef<HTMLDivElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Create a stable portal container div on mount
+  useEffect(() => {
+    const el = document.createElement("div");
+    el.setAttribute("data-modal-portal", "true");
+    document.body.appendChild(el);
+    portalRef.current = el;
+    setMounted(true);
+    return () => {
+      // Safely remove the container; guard against removeChild errors
+      try {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+      } catch {}
+      portalRef.current = null;
+    };
+  }, []);
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -37,7 +58,7 @@ export const Modal: FC<ModalProps> = ({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted || !portalRef.current) return null;
 
   const sizeClasses = {
     sm: "w-[95vw] max-w-md",
@@ -100,6 +121,6 @@ export const Modal: FC<ModalProps> = ({
         </div>
       </div>
     </div>,
-    document.body,
+    portalRef.current,
   );
 };

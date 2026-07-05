@@ -61,8 +61,8 @@ export default function SupplierModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName) {
-      toast.error("Supplier name is required");
+    if (!formData.fullName.trim()) {
+      toast.error("Please fill in the Supplier Full Name (Required field)");
       return;
     }
 
@@ -79,16 +79,16 @@ export default function SupplierModal({
 
       const data = await res.json();
       if (data.success) {
-        toast.success(supplier ? "Supplier updated" : "Supplier added", {
+        toast.success(supplier ? "Supplier updated successfully" : "Supplier added successfully", {
           icon: <CheckCircle2 className="text-emerald-500" size={18} />,
         });
         onSuccess();
         onClose();
       } else {
-        toast.error(data.message || "Failed to save supplier");
+        toast.error(data.message || "Failed to save supplier. Please check if details are correct.");
       }
-    } catch (error) {
-      toast.error("Failed to save supplier");
+    } catch (error: any) {
+      toast.error(error?.message || "A network or server error occurred while saving the supplier. Please try again.");
     } finally {
       setLoading(false);
     }

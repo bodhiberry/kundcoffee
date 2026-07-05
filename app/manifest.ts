@@ -2,8 +2,8 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Bodhiberry POS",
-    short_name: "Bodhiberry",
+    name: "XolaCloud POS",
+    short_name: "XolaCloud",
     description: "Premium Restaurant & Cafe POS System in Kathmandu",
     start_url: "/",
     display: "standalone",

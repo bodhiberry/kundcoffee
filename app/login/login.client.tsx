@@ -135,7 +135,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
-            © © 2026 BodhiBerry • Café POS System
+            © 2026 XolaCloud • Café POS System
           </p>
         </div>
       </div>
@@ -151,22 +151,22 @@ export default function LoginPage() {
           {/* Mobile-only Logo */}
           
 
-          <div className="mb-10">
-            <h2 className="text-3xl font-semibold text-zinc-900 tracking-tight mb-2">
-              Welcome back
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-black uppercase tracking-widest text-zinc-900">
+              Sign In
             </h2>
-            <p className="text-zinc-500 text-sm">
-              Please enter your details to sign in.
+            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mt-1">
+              Enter your credentials to access terminal
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <AnimatePresence mode="wait">
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
                   className="bg-red-50 border-l-2 border-red-700 p-4 flex gap-3 items-center text-red-900"
                 >
                   <AlertCircle size={18} className="shrink-0" />
@@ -190,7 +190,7 @@ export default function LoginPage() {
                         ? "border-red-600 shadow-sm shadow-red-50"
                         : "border-zinc-200"
                     } rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/5 focus:border-zinc-900 placeholder:text-zinc-400`}
-                    placeholder="info@bodhiberry.com"
+                    placeholder="info@xolacloud.com"
                   />
                 </div>
                 {errors.email && (

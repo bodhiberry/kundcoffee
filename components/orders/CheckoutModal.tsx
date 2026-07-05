@@ -253,9 +253,11 @@ export function CheckoutModal({
           onCheckoutComplete(data.data);
           onClose();
         }, 1500);
+      } else {
+        toast.error(data.message || "Checkout failed. Please verify the payments or table configuration.");
       }
-    } catch (e) {
-      alert("Settlement Error");
+    } catch (e: any) {
+      toast.error(e?.message || "An unexpected network error occurred while settling the bill. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -325,7 +327,7 @@ export function CheckoutModal({
                 </div>
               )}
               <h2 className="text-sm font-black uppercase leading-none">
-                {settings.name || "BODHIBERRY"}
+                {settings.name || "XOLACLOUD"}
               </h2>
               <p className="uppercase">
                 {settings.address || "Kathmandu, Nepal"}
@@ -446,7 +448,7 @@ export function CheckoutModal({
                 </div>
               )}
               <p className="font-bold">THANK YOU FOR YOUR VISIT!</p>
-              <p className="text-[8px]">POWERED BY {settings.name || "BODHIBERRY"} ERP</p>
+              <p className="text-[8px]">POWERED BY {settings.name || "XOLACLOUD"} ERP</p>
             </div>
           </div>
 

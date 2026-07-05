@@ -342,19 +342,29 @@ export function CheckoutModal({
               <div style="font-size: 8px;">${new Date().toLocaleString()}</div>
             </div>
           </div>
-          
-          <script>
-            window.onload = function() { 
-              setTimeout(() => {
-                window.print(); 
-                window.close(); 
-              }, 300);
-            }
-          </script>
         </body>
       </html>
     `);
     printWindow.document.close();
+
+    // Trigger print from parent window after content renders - only once
+    const pw = printWindow;
+    setTimeout(() => {
+      try {
+        pw.focus();
+        pw.print();
+      } catch (e) {
+        console.warn("Print failed:", e);
+      }
+      // Auto-close after print dialog
+      const closePw = () => { try { pw.close(); } catch {} };
+      if ('onafterprint' in pw) {
+        pw.onafterprint = closePw;
+      } else {
+        setTimeout(closePw, 1000);
+      }
+    }, 400);
+
     setStep(3);
   };
 
@@ -1148,7 +1158,7 @@ export function CheckoutModal({
                     </div>
                   )}
                   <h2 className="text-xl font-black tracking-tight text-zinc-900">
-                    {settings.name || "BODHIBERRY"}
+                    {settings.name || "XOLACLOUD"}
                   </h2>
                   <p className="text-[10px] uppercase">{settings.address || "Kathmandu, Nepal"}</p>
                   <p className="text-[10px]">PAN/VAT: {settings.panNumber || "123456789"}</p>
@@ -1217,7 +1227,7 @@ export function CheckoutModal({
 
                 <div className="text-center mt-4 pt-2 border-t border-dashed space-y-1">
                   <p className="font-bold text-xs uppercase tracking-widest">Thank you for your visit!</p>
-                  <p className="text-[8px]">POWERED BY {settings.name || "BODHIBERRY"} ERP</p>
+                  <p className="text-[8px]">POWERED BY {settings.name || "XOLACLOUD"} ERP</p>
                 </div>
               </div>
             )}

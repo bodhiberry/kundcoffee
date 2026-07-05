@@ -82,7 +82,17 @@ const PrinterContext = createContext<PrinterContextType | undefined>(undefined);
 // Fallback: open a window and print via browser dialog or native printHtml
 // -----------------------------------------------------------
 
+// Guard to prevent concurrent print attempts
+let _isPrintingFallback = false;
+
 async function fallbackWindowPrint(htmlContent: string, docName: string = "Document") {
+  // Prevent duplicate calls while a print dialog is already open
+  if (_isPrintingFallback) {
+    console.warn("fallbackWindowPrint: Already printing, ignoring duplicate call.");
+    return;
+  }
+  _isPrintingFallback = true;
+
   const isNativeApp = typeof window !== 'undefined' && (window as any).Capacitor;
 
   if (isNativeApp) {
@@ -96,13 +106,47 @@ async function fallbackWindowPrint(htmlContent: string, docName: string = "Docum
       });
     } catch (error) {
       console.error("Native system printer failed:", error);
+    } finally {
+      _isPrintingFallback = false;
     }
   } else {
-    console.log("Running on a standard desktop/laptop browser.");
+    // Strip any inline <script> tags from the HTML to prevent them from
+    // independently triggering window.print() (which caused triple-popup).
+    const safeHtml = htmlContent.replace(/<script[\s\S]*?<\/script>/gi, "");
+
     const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(htmlContent);
+    if (!printWindow) {
+      _isPrintingFallback = false;
+      return;
+    }
+    printWindow.document.write(safeHtml);
     printWindow.document.close();
+
+    // Wait for images/content to load, then trigger print exactly once
+    const triggerPrint = () => {
+      try {
+        printWindow.focus();
+        printWindow.print();
+      } catch (e) {
+        console.warn("Print failed:", e);
+      }
+
+      // Close the print window and reset the guard after print dialog closes
+      const cleanup = () => {
+        _isPrintingFallback = false;
+        try { printWindow.close(); } catch {}
+      };
+
+      // Use afterprint event if available, otherwise close after a delay
+      if ('onafterprint' in printWindow) {
+        printWindow.onafterprint = cleanup;
+      } else {
+        setTimeout(cleanup, 1000);
+      }
+    };
+
+    // Small delay to let document finish rendering
+    setTimeout(triggerPrint, 400);
   }
 }
 
@@ -171,9 +215,6 @@ function buildKOTHtmlFallback(
         <div class="center" style="font-size: 9px; color: #666; margin-top: 5px;">
           Printed: ${now.toLocaleString()}
         </div>
-        <script>
-          window.onload = function() { window.print(); window.close(); }
-        </script>
       </body>
     </html>`;
 }
@@ -426,7 +467,6 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
               <div class="bold">THANK YOU!</div>
               <div style="font-size: 8px;">${new Date().toLocaleString()}</div>
             </div>
-            <script>window.onload = function() { window.print(); window.close(); }</script>
           </body>
         </html>
       `, `Bill-${order.table?.name || "Direct"}-${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}`);
@@ -460,25 +500,25 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!printed) {
       const currency = settings.currency || "Rs.";
       const itemsHtml = activeItems
-        .map(
-          (item) => {
-            const compQty = totals.complimentaryItems?.[item.id] || 0;
-            const paidQty = Math.max(0, item.quantity - compQty);
-            const unitPrice = totals.itemPrices?.[item.id] ?? item.unitPrice;
-            const cost = (paidQty * unitPrice).toFixed(2);
-            return `
-            <tr style="border-bottom: 0.5px solid #eee;">
-              <td style="padding: 5px 0; font-size: 11px;">
-                ${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}
-                ${compQty > 0 ? `<br/><small style="font-weight: bold;">(FREE: ${compQty})</small>` : ""}
-              </td>
-              <td style="padding: 5px 0; font-size: 11px; text-align: right;">
-                ${currency} ${cost}
-              </td>
-            </tr>`;
-          }
-        )
-        .join("");
+          .map(
+            (item) => {
+              const compQty = totals.complimentaryItems?.[item.id] || 0;
+              const paidQty = Math.max(0, item.quantity - compQty);
+              const unitPrice = totals.itemPrices?.[item.id] ?? item.unitPrice;
+              const cost = (paidQty * unitPrice).toFixed(2);
+              return `
+              <tr style="border-bottom: 0.5px solid #eee;">
+                <td style="padding: 5px 0; font-size: 11px;">
+                  ${item.quantity}x ${item.dish?.name || item.combo?.name || "Item"}
+                  ${compQty > 0 ? `<br/><small style="font-weight: bold;">(FREE: ${compQty})</small>` : ""}
+                </td>
+                <td style="padding: 5px 0; font-size: 11px; text-align: right;">
+                  ${currency} ${cost}
+                </td>
+              </tr>`;
+            }
+          )
+          .join("");
 
       await fallbackWindowPrint(`
         <html>
@@ -566,7 +606,6 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
               <div class="bold">THANK YOU FOR YOUR VISIT!</div>
               <div style="font-size: 8px;">${new Date().toLocaleString()}</div>
             </div>
-            <script>window.onload = function() { window.print(); window.close(); }</script>
           </body>
         </html>
       `, `Receipt-${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}`);

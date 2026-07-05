@@ -63,7 +63,7 @@ export default function PlatformLoginPage() {
           </div>
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
-              Bodhiberry SaaS
+              XolaCloud SaaS
             </h2>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1.5">
               Platform Admin Console
@@ -99,7 +99,7 @@ export default function PlatformLoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium placeholder:text-slate-400"
-                  placeholder="admin@bodhiberry.com"
+                  placeholder="admin@xolacloud.com"
                   required
                 />
               </div>

@@ -142,9 +142,27 @@ export default function PurchaseModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.supplierId) return toast.error("Please select a supplier");
-    if (formData.items.some((it) => !it.itemName || it.amount <= 0))
-      return toast.error("Please fill all items correctly");
+    if (!formData.supplierId) {
+      toast.error("Please select a Supplier (Required field)");
+      return;
+    }
+    
+    // Check for empty items or zero amounts
+    for (let i = 0; i < formData.items.length; i++) {
+      const item = formData.items[i];
+      if (!item.itemName.trim()) {
+        toast.error(`Item #${i + 1} Name is empty. Please enter a valid item name.`);
+        return;
+      }
+      if (item.quantity <= 0) {
+        toast.error(`Item "${item.itemName}" has an invalid quantity. It must be greater than 0.`);
+        return;
+      }
+      if (item.rate <= 0) {
+        toast.error(`Item "${item.itemName}" has an invalid rate. Rate must be greater than 0.`);
+        return;
+      }
+    }
 
     setLoading(true);
     try {
@@ -179,10 +197,10 @@ export default function PurchaseModal({
         onSuccess();
         onClose();
       } else {
-        toast.error(data.message || "Failed to record purchase");
+        toast.error(data.message || "Failed to record purchase. Please verify all fields are filled correctly.");
       }
-    } catch (error) {
-      toast.error("Error connecting to server");
+    } catch (error: any) {
+      toast.error(error?.message || "A network or server error occurred while submitting the purchase bill. Please try again.");
     } finally {
       setLoading(false);
     }

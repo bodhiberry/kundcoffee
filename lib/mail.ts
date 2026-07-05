@@ -21,7 +21,7 @@ export const sendMail = async ({
 }) => {
   try {
     const info = await transporter.sendMail({
-      from: `"Bodhiberry" <${process.env.ZOHO_EMAIL}>`,
+      from: `"XolaCloud" <${process.env.ZOHO_EMAIL}>`,
       to: Array.isArray(to) ? to.join(", ") : to,
       subject,
       html,

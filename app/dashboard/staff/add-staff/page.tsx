@@ -157,7 +157,7 @@ export default function AddStaffPage() {
                 </label>
                 <input
                   type="email"
-                  placeholder="name@bodhiberry.com"
+                  placeholder="name@xolacloud.com"
 
                   className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-zinc-900 outline-none transition-all placeholder:text-zinc-300"
                   value={formData.email}

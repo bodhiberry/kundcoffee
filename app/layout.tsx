@@ -12,34 +12,34 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
-  description: "Experience the future of restaurant management with Bodhiberry. The most intuitive POS system for cafes and restaurants in Kathmandu. Streamline your operations today.",
-  keywords: ["Restaurant POS Kathmandu", "Cafe Management System Nepal", "Bodhiberry", "Coffee Shop POS", "Restaurant Software Nepal"],
-  authors: [{ name: "Bodhiberry Team" }],
-  creator: "Bodhiberry",
-  publisher: "Bodhiberry",
+  title: "XolaCloud | Premium Restaurant & Cafe POS System in Kathmandu",
+  description: "Experience the future of restaurant management with XolaCloud. The most intuitive POS system for cafes and restaurants in Kathmandu. Streamline your operations today.",
+  keywords: ["Restaurant POS Kathmandu", "Cafe Management System Nepal", "XolaCloud", "Coffee Shop POS", "Restaurant Software Nepal"],
+  authors: [{ name: "XolaCloud Team" }],
+  creator: "XolaCloud",
+  publisher: "XolaCloud",
 
   formatDetection: {
     email: false,
     address: false,
     telephone: false, 
   },
-  metadataBase: new URL("https://bodhiberry.com"), // Replace with actual domain if different
+  metadataBase: new URL("https://xolacloud.com"), // Replace with actual domain if different
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
-    description: "Streamline your restaurant operations with Bodhiberry POS. Built for the modern culinary experience.",
+    title: "XolaCloud | Premium Restaurant & Cafe POS System in Kathmandu",
+    description: "Streamline your restaurant operations with XolaCloud POS. Built for the modern culinary experience.",
 
-    url: "https://bodhiberry.com",
-    siteName: "Bodhiberry",
+    url: "https://xolacloud.com",
+    siteName: "XolaCloud",
     images: [
       {
         url: "/Logo.jpeg",
         width: 800,
         height: 600,
-        alt: "Bodhiberry Logo",
+        alt: "XolaCloud Logo",
       },
     ],
     locale: "en_US",
@@ -47,8 +47,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
-    description: "Streamline your restaurant operations with Bodhiberry POS.",
+    title: "XolaCloud | Premium Restaurant & Cafe POS System in Kathmandu",
+    description: "Streamline your restaurant operations with XolaCloud POS.",
 
     images: ["/Logo.jpeg"],
   },
