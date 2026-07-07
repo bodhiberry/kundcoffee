@@ -8,6 +8,8 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { useRouter } from "next/navigation";
@@ -20,6 +22,7 @@ import AuthFooter from "@/components/auth/AuthFooter";
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const {
@@ -135,14 +138,22 @@ export default function LoginPage() {
                 <div className="relative">
                   <input
                     {...register("password")}
-                    type="password"
-                    className={`w-full h-12 px-4 bg-white border ${
+                    type={showPassword ? "text" : "password"}
+                    className={`w-full h-12 pl-4 pr-10 bg-white border ${
                       errors.password
                         ? "border-red-600 shadow-sm shadow-red-50"
                         : "border-zinc-200"
                     } rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/5 focus:border-zinc-900 placeholder:text-zinc-400`}
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-[11px] text-red-700 font-medium mt-1 ml-1">
