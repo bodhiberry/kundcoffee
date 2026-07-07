@@ -10,11 +10,8 @@ export default function AuthFooter() {
         <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
           {/* Brand */}
           <div className="max-w-xs">
-            <div className="flex items-center gap-2 text-base font-bold text-zinc-900">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-900 text-white">
-                <Receipt size={14} />
-              </span>
-              XolaCloud
+            <div className="font-display text-2xl font-semibold tracking-[0.08em] text-zinc-900">
+              XOLA
             </div>
             <p className="mt-3 text-sm text-zinc-500">
               Multi-branch POS and ERP for restaurants and cafés, built and

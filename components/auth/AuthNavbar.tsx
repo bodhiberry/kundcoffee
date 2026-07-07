@@ -24,12 +24,9 @@ export default function AuthNavbar() {
         {/* Logo */}
         <a
           href={SITE_URL}
-          className="flex items-center gap-2 text-lg font-bold tracking-tight text-zinc-900"
+          className="font-display text-2xl font-semibold tracking-[0.08em] text-zinc-900"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-900 text-white">
-            <Receipt size={16} strokeWidth={2.25} />
-          </span>
-          XolaCloud
+          XOLA
         </a>
 
         {/* Desktop nav */}
