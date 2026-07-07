@@ -5,21 +5,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Coffee,
-  User,
-  Lock,
   ArrowRight,
   Loader2,
   AlertCircle,
-  ShieldCheck,
-  CheckCircle2,
 } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
+import AuthNavbar from "@/components/auth/AuthNavbar";
+import AuthFooter from "@/components/auth/AuthFooter";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,94 +59,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white flex flex-col md:flex-row overflow-hidden selection:bg-zinc-100">
-      {/* --- LEFT SIDE: THE BRAND EXPERIENCE --- */}
-      <div className="hidden md:flex md:w-[45%] lg:w-[50%] bg-zinc-950 relative overflow-hidden">
-        {/* Subtle high-end image with heavy vignette */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/login-hero.png"
-            alt="Professional Coffee Environment"
-            fill
-            className="object-cover opacity-40 grayscale-[0.2]"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950 via-zinc-950/60 to-transparent" />
-        </div>
+    <div className="flex min-h-screen flex-col bg-white">
+      <AuthNavbar />
 
-        <div className="relative z-10 w-full flex flex-col justify-between p-12 lg:p-20">
-          {/* Logo Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3"
-          >
-            <div className="w-10 h-10 bg-white flex items-center justify-center rounded-lg shadow-xl">
-              <Coffee size={22} className="text-zinc-900" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold text-white tracking-tight leading-none uppercase">
-                Xola
-              </span>
-              <span className="text-[10px] font-semibold text-red-600 tracking-[0.2em] uppercase">
-                Cloud
-              </span>
-
-            </div>
-          </motion.div>
-
-          {/* Value Prop */}
-          <div className="max-w-md">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="space-y-6"
-            >
-              <h3 className="text-4xl lg:text-5xl font-semibold text-white leading-tight tracking-tight">
-                Take Full Control of Your Café  <br />
-                <span className="text-zinc-400">with Confidence</span>
-              </h3>
-              <p className="text-zinc-400 text-lg leading-relaxed font-light">
-                Secure access to your café dashboard. Manage order, 
-                staff, ingredients, and daily operations with precision.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="mt-12 flex flex-col gap-4"
-            >
-              <div className="flex items-center gap-3 text-sm text-zinc-300">
-                <CheckCircle2 size={18} className="text-red-700" />
-                <span>Secure, bank-grade POS</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-zinc-300">
-                <CheckCircle2 size={18} className="text-red-700" />
-                <span>Real-time order sync</span>
-              </div>
-            </motion.div>
-          </div>
-
-          <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
-            © 2026 XolaCloud • Café POS System
-          </p>
-        </div>
-      </div>
-
-      {/* --- RIGHT SIDE: CLEAN AUTHENTICATION --- */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-16 bg-[#ffffff]">
+      {/* Centered form area */}
+      <main className="flex flex-1 items-center justify-center px-6 py-16">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="w-full max-w-[420px]"
         >
-          {/* Mobile-only Logo */}
-          
-
           <div className="text-center mb-8">
             <h2 className="text-2xl font-black uppercase tracking-widest text-zinc-900">
               Sign In
@@ -261,7 +180,9 @@ export default function LoginPage() {
             </p>
           </div>
         </motion.div>
-      </div>
+      </main>
+
+      <AuthFooter />
     </div>
   );
 }
