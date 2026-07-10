@@ -177,7 +177,7 @@
         <div className="p-4 flex items-start justify-between border-b border-zinc-100">
           <div className="flex flex-col gap-1.5">
             <span className="font-bold text-zinc-900">
-              {order.table?.name || "Direct Order"}
+              {order.table?.name || "Online Order"}
             </span>
             <div className="flex items-center gap-2 flex-wrap">
               <div className={`text-[8px] font-medium px-2 py-0.5 rounded-md border ${statusColors[order.status]} uppercase tracking-widest`}>

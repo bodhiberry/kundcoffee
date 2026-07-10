@@ -1166,7 +1166,7 @@ export default function OrdersPage() {
                 onClick={async () => {
                   if (!transferOrder) return;
                   try {
-                    const res = await fetch(`/api/orders/${transferOrder.id}`, {
+                    const res = await fetch(`/api/order/${transferOrder.id}`, {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ tableId: table.id }),
@@ -1222,7 +1222,7 @@ setTimeout(() => fetchData(), 500);
             <h3 className="text-lg font-bold text-zinc-900">Order Created!</h3>
             <p className="text-sm text-zinc-500">
               Order #{newlyCreatedOrder?.invoiceNumber ? String(newlyCreatedOrder.invoiceNumber).padStart(3, '0') : newlyCreatedOrder?.id.slice(-6).toUpperCase()} for{" "}
-              {newlyCreatedOrder?.table?.name || "Direct Order"} has been created.
+              {newlyCreatedOrder?.table?.name || "Online Order"} has been created.
             </p>
             <p className="text-xs text-zinc-400">
               Would you like to print the KOT now?

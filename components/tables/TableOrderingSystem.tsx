@@ -207,7 +207,7 @@ export function TableOrderingSystem({
                 {isAddingToExisting
                   ? "Update Session"
                   : table?.id === "DIRECT"
-                    ? "Direct Order"
+                    ? "Online Order"
                     : `Table ${table?.name || "Order"}`}
               </h2>
             </div>
