@@ -92,7 +92,7 @@ export default function SignupPage() {
       const result = await verifyEmailAction(registeredEmail, verifyCode);
       if (result.success) {
         toast.success(result.message);
-        router.push("/setup-store?email=" + encodeURIComponent(registeredEmail));
+        router.push("/dashboard");
       } else {
         setVerifyError(result.message);
       }

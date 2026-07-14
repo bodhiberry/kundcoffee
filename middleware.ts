@@ -122,15 +122,11 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (token.emailVerified && !token.isSetupComplete && !isSetupPage) {
-    return NextResponse.redirect(new URL("/setup-store", req.url));
-  }
-
-  if (token.emailVerified && isVerifyPage) {
+  if (token.emailVerified && !token.isSetupComplete && path !== "/dashboard" && path !== "/dashboard/settings") {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  if (token.isSetupComplete && isSetupPage) {
+  if (token.emailVerified && isVerifyPage) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 

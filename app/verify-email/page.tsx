@@ -50,7 +50,7 @@ function VerifyEmailContent() {
         await update();
         router.refresh();
         setTimeout(() => {
-          router.push("/setup-store?email=" + encodeURIComponent(data.email));
+          router.push("/dashboard");
         }, 150);
       } else {
         setError(result.message);

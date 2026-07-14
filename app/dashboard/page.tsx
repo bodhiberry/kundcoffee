@@ -133,6 +133,16 @@ export default async function DashboardPage() {
   const storeId = session?.user?.storeId;
 
   if (!storeId) {
+    if (session?.user && !session.user.isSetupComplete) {
+      return (
+        <DashboardClient
+          initialSpaces={[]}
+          initialTables={[]}
+          initialTableTypes={[]}
+          initialCustomers={[]}
+        />
+      );
+    }
     redirect("/login");
   }
 
