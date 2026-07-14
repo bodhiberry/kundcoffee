@@ -317,15 +317,15 @@ export default function FinancePage() {
   return (
     <div className="p-8 space-y-8 bg-zinc-50 min-h-screen">
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <h1 className="text-xl font-normal text-zinc-900 tracking-tight">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-6 overflow-x-auto scrollbar-none w-full sm:w-auto pb-1">
+            <h1 className="text-xl font-normal text-zinc-900 tracking-tight shrink-0">
               Finance
             </h1>
-            <div className="bg-zinc-100 p-1 rounded-lg flex items-center gap-1">
+            <div className="bg-zinc-100 p-1 rounded-lg flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none max-w-full">
               <button
                 onClick={() => setActiveTab("DAILY_SESSIONS")}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
+                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all shrink-0 ${
                   activeTab === "DAILY_SESSIONS"
                     ? "bg-white text-zinc-900 shadow-sm"
                     : "text-zinc-500 hover:text-zinc-700"
@@ -335,7 +335,7 @@ export default function FinancePage() {
               </button>
               <button
                 onClick={() => setActiveTab("SALES")}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
+                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all shrink-0 ${
                   activeTab === "SALES"
                     ? "bg-white text-zinc-900 shadow-sm"
                     : "text-zinc-500 hover:text-zinc-700"
@@ -345,7 +345,7 @@ export default function FinancePage() {
               </button>
               <button
                 onClick={() => setActiveTab("RETURNS")}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
+                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all shrink-0 ${
                   activeTab === "RETURNS"
                     ? "bg-white text-zinc-900 shadow-sm"
                     : "text-zinc-500 hover:text-zinc-700"
@@ -356,7 +356,7 @@ export default function FinancePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             {activeTab !== "DAILY_SESSIONS" && (
               <Button
                 onClick={handleExport}
@@ -512,8 +512,8 @@ export default function FinancePage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-visible">
-                  <table className="w-full text-left">
+                <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-x-auto w-full">
+                  <table className="w-full text-left min-w-[800px]">
                     <thead>
                       <tr className="bg-zinc-50 border-b border-zinc-100">
                         <th className="px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">

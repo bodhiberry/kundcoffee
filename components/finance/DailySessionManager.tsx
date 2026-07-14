@@ -272,8 +272,8 @@ export function DailySessionManager() {
           </span>
         </div>
 
-        <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
-          <table className="w-full text-left">
+        <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-x-auto w-full">
+          <table className="w-full text-left min-w-[800px]">
             <thead>
               <tr className="bg-zinc-50/50 border-b border-zinc-100">
                 <th className="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">

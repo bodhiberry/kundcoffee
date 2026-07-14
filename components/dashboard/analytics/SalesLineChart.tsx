@@ -74,77 +74,79 @@ export default function SalesLineChart() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
             </div>
           ) : data.length > 0 ? (
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={data}
-                  onClick={(e: any) => {
-                    if (e && e.activePayload && e.activePayload.length > 0) {
-                      setSelectedPoint(
-                        e.activePayload[0].payload as ChartDataPoint,
-                      );
-                    }
-                  }}
-                >
-                  <defs>
-                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#f4f4f5"
-                  />
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: "#71717a" }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: "#71717a" }}
-                    tickFormatter={(value) =>
-                      `${settings.currency}${value.toLocaleString()}`
-                    }
-                    dx={-10}
-                  />
-                  <Tooltip
-                    cursor={{
-                      stroke: "#10b981",
-                      strokeWidth: 1,
-                      strokeDasharray: "4 4",
+            <div className="h-[300px] w-full overflow-x-auto scrollbar-thin">
+              <div className="h-full min-w-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={data}
+                    onClick={(e: any) => {
+                      if (e && e.activePayload && e.activePayload.length > 0) {
+                        setSelectedPoint(
+                          e.activePayload[0].payload as ChartDataPoint,
+                        );
+                      }
                     }}
-                    contentStyle={{
-                      backgroundColor: "#fff",
-                      borderRadius: "12px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                      border: "none",
-                      fontSize: "12px",
-                    }}
-                    formatter={(value: any) => [
-                      `${settings.currency} ${(Number(value) || 0).toLocaleString()}`,
-                      "Sales",
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="total"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorSales)"
-                    activeDot={{
-                      r: 6,
-                      strokeWidth: 0,
-                    }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+                  >
+                    <defs>
+                      <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#f4f4f5"
+                    />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fill: "#71717a" }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fill: "#71717a" }}
+                      tickFormatter={(value) =>
+                        `${settings.currency}${value.toLocaleString()}`
+                      }
+                      dx={-10}
+                    />
+                    <Tooltip
+                      cursor={{
+                        stroke: "#10b981",
+                        strokeWidth: 1,
+                        strokeDasharray: "4 4",
+                      }}
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                        border: "none",
+                        fontSize: "12px",
+                      }}
+                      formatter={(value: any) => [
+                        `${settings.currency} ${(Number(value) || 0).toLocaleString()}`,
+                        "Sales",
+                      ]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorSales)"
+                      activeDot={{
+                        r: 6,
+                        strokeWidth: 0,
+                      }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-zinc-400">

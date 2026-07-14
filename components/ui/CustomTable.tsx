@@ -17,7 +17,7 @@ export function CustomTable<T>({
 }) {
   return (
     <div className="bg-white border border-zinc-200 overflow-auto max-h-[calc(100vh-250px)]">
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse min-w-[800px]">
         <thead>
           <tr>
             {columns.map((col, i) => (
