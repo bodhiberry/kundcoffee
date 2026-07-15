@@ -7,24 +7,31 @@ export default async function middleware(req: NextRequest) {
 
   // --- CORS check for public API ---
   if (path.startsWith("/api/public/")) {
-    const origin = req.headers.get("origin") || "*";
-    if (req.method === "OPTIONS") {
-      return new NextResponse(null, {
-        status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": origin,
-          "Access-Control-Allow-Methods": "GET, OPTIONS, PATCH, DELETE, POST, PUT",
-          "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
-          "Access-Control-Max-Age": "86400",
-          "Access-Control-Allow-Credentials": "true",
-        },
-      });
+    const origin = req.headers.get("origin");
+
+    const corsHeaders: Record<string, string> = {
+      "Access-Control-Allow-Methods": "GET, OPTIONS, PATCH, DELETE, POST, PUT",
+      "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
+      "Access-Control-Max-Age": "86400",
+    };
+
+    if (origin) {
+      // Reflect the actual origin and allow credentials
+      corsHeaders["Access-Control-Allow-Origin"] = origin;
+      corsHeaders["Access-Control-Allow-Credentials"] = "true";
+    } else {
+      // No origin (server-to-server) — use wildcard without credentials
+      corsHeaders["Access-Control-Allow-Origin"] = "*";
     }
+
+    if (req.method === "OPTIONS") {
+      return new NextResponse(null, { status: 200, headers: corsHeaders });
+    }
+
     const response = NextResponse.next();
-    response.headers.set("Access-Control-Allow-Origin", origin);
-    response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS, PATCH, DELETE, POST, PUT");
-    response.headers.set("Access-Control-Allow-Headers", "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization");
-    response.headers.set("Access-Control-Allow-Credentials", "true");
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      response.headers.set(key, value);
+    }
     return response;
   }
 
