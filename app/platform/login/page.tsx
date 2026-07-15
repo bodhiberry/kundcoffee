@@ -32,12 +32,13 @@ export default function PlatformLoginPage() {
         password,
       });
 
-      if (result?.error) {
+      if (result?.ok) {
+        toast.success("Platform Authorized");
+        router.refresh();
+        router.push("/dashboard");
+      } else {
         setError("Invalid credentials or unauthorized access.");
         toast.error("Access Denied");
-      } else {
-        toast.success("Platform Authorized");
-        router.push("/dashboard");
       }
     } catch (err) {
       setError("System connection failure");

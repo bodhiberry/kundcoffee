@@ -42,15 +42,16 @@ export default function LoginPage() {
         password: data.password,
       });
 
-      if (result?.error) {
-        if (result.error === "USER_NOT_VERIFIED") {
-          toast.error("Please verify your email before logging in.");
-          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
-        } else {
-          setError("Invalid email or password");
-        }
-      } else {
+      if (result?.ok) {
+        // Login succeeded — refresh to pick up the new session cookie,
+        // then navigate to the dashboard.
+        router.refresh();
         router.push("/dashboard");
+      } else if (result?.error === "USER_NOT_VERIFIED") {
+        toast.error("Please verify your email before logging in.");
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+      } else {
+        setError("Invalid email or password");
       }
     } catch (err) {
       setError("An unexpected error occurred");
