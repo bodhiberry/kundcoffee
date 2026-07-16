@@ -311,14 +311,14 @@ export function CheckoutModal({
               </tr>
               ${includeServiceCharge ? `
               <tr>
-                <td>Service Charge (10%)</td>
+                <td>Service Charge (${settings.serviceChargeRate || "10"}%)</td>
                 <td class="right">${settings.currency} ${summary.serviceCharge.toFixed(2)}</td>
               </tr>
               ` : ""}
               ${includeTax ? `
               <tr>
-                <td>VAT (13%)</td>
-                <td class="right">${settings.currency} ${(summary.subtotal * 0.13).toFixed(2)}</td>
+                <td>VAT (${settings.taxRate || "13"}%)</td>
+                <td class="right">${settings.currency} ${summary.tax.toFixed(2)}</td>
               </tr>
               ` : ""}
               <tr class="bold" style="font-size: 13px;">
@@ -444,9 +444,11 @@ export function CheckoutModal({
       0,
       rawSubtotal - complimentaryValue - (checkoutData.summary.discount || 0),
     );
-    const serviceCharge = includeServiceCharge ? netSubtotal * 0.1 : 0;
+    const taxRate = parseFloat(settings.taxRate || "13") / 100;
+    const serviceChargeRate = parseFloat(settings.serviceChargeRate || "10") / 100;
+    const serviceCharge = includeServiceCharge ? netSubtotal * serviceChargeRate : 0;
 
-    const standardTax = includeTax ? netSubtotal * 0.13 : 0;
+    const standardTax = includeTax ? netSubtotal * taxRate : 0;
     const customTaxesTotal = customTaxes.reduce(
       (sum, tax) => sum + netSubtotal * (tax.percentage / 100),
       0,
@@ -1031,7 +1033,7 @@ export function CheckoutModal({
                       >
                         <span className="flex items-center gap-2">
                           {includeServiceCharge ? <Check size={12} className="text-blue-500" /> : <div className="w-3 h-3 border border-white/20 rounded" />}
-                          Service Charge (10%)
+                          Service Charge ({settings.serviceChargeRate || "10"}%)
                         </span>
                         <span className={includeServiceCharge ? "text-white" : "text-zinc-600 line-through"}>
                           {settings.currency} {summary.serviceCharge.toFixed(2)}
@@ -1045,11 +1047,11 @@ export function CheckoutModal({
                       >
                         <span className="flex items-center gap-2">
                           {includeTax ? <Check size={12} className="text-blue-500" /> : <div className="w-3 h-3 border border-white/20 rounded" />}
-                          VAT (13%)
+                          VAT ({settings.taxRate || "13"}%)
                         </span>
                         <span className={includeTax ? "text-white" : "text-zinc-600 line-through"}>
                           {settings.currency}{" "}
-                          {(summary.subtotal * 0.13).toFixed(2)}
+                          {summary.tax.toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -1200,14 +1202,14 @@ export function CheckoutModal({
                 </div>
                 {includeServiceCharge && (
                   <div className="flex justify-between text-xs">
-                    <span>Service Charge (10%)</span>
+                    <span>Service Charge ({settings.serviceChargeRate || "10"}%)</span>
                     <span>{settings.currency} {calculateSummary().serviceCharge.toFixed(2)}</span>
                   </div>
                 )}
                 {includeTax && (
                   <div className="flex justify-between text-xs">
-                    <span>VAT (13%)</span>
-                    <span>{settings.currency} {(calculateSummary().subtotal * 0.13).toFixed(2)}</span>
+                    <span>VAT ({settings.taxRate || "13"}%)</span>
+                    <span>{settings.currency} {calculateSummary().tax.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="border-t pt-4 text-sm font-bold flex justify-between">

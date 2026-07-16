@@ -142,9 +142,12 @@ export function CheckoutModal({
 
   const subtotalAfterDiscount = calculatedSubtotal - totalDiscount;
 
-  const taxAmount = includeTax ? subtotalAfterDiscount * 0.13 : 0;
+  const taxRate = parseFloat(settings.taxRate || "13") / 100;
+  const serviceChargeRate = parseFloat(settings.serviceChargeRate || "10") / 100;
+
+  const taxAmount = includeTax ? subtotalAfterDiscount * taxRate : 0;
   const serviceChargeAmount = includeServiceCharge
-    ? subtotalAfterDiscount * 0.1
+    ? subtotalAfterDiscount * serviceChargeRate
     : 0;
   const grandTotal = subtotalAfterDiscount + taxAmount + serviceChargeAmount;
 
@@ -421,13 +424,13 @@ export function CheckoutModal({
 
               {includeTax && (
                 <div className="flex justify-between">
-                  <span>VAT (13%)</span>
+                  <span>VAT ({settings.taxRate || "13"}%)</span>
                   <span>{taxAmount.toFixed(2)}</span>
                 </div>
               )}
               {includeServiceCharge && (
                 <div className="flex justify-between">
-                  <span>Service Charge (10%)</span>
+                  <span>Service Charge ({settings.serviceChargeRate || "10"}%)</span>
                   <span>{serviceChargeAmount.toFixed(2)}</span>
                 </div>
               )}
@@ -490,7 +493,7 @@ export function CheckoutModal({
                   onClick={() => setIncludeTax(!includeTax)}
                   className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeTax ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
                 >
-                  Add VAT (13%) {includeTax && <Check size={14} />}
+                  Add VAT ({settings.taxRate || "13"}%) {includeTax && <Check size={14} />}
                 </button>
               )}
               {settings.includeServiceChargeByDefault === "true" && (
@@ -498,7 +501,7 @@ export function CheckoutModal({
                   onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
                   className={`w-full py-3 px-4 border border-black text-[9px] font-black uppercase flex justify-between items-center transition-colors ${includeServiceCharge ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-50"}`}
                 >
-                  Add Service Chg (10%){" "}
+                  Add Service Chg ({settings.serviceChargeRate || "10"})%{" "}
                   {includeServiceCharge && <Check size={14} />}
                 </button>
               )}

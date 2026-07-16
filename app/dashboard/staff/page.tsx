@@ -26,9 +26,11 @@ export default function StaffPage() {
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentStaffId, setCurrentStaffId] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | string | null>(null);
+  const [newRoleName, setNewRoleName] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -39,6 +41,40 @@ export default function StaffPage() {
     joinDate: new Date().toISOString().split("T")[0],
     shift: "DAY",
   });
+
+  const handleAddRole = async () => {
+    if (!newRoleName) return;
+    try {
+      const res = await fetch("/api/staff-roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newRoleName }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Role added");
+        setNewRoleName("");
+        fetchData();
+      }
+    } catch (e) {
+      toast.error("Failed to add role");
+    }
+  };
+
+  const handleDeleteRole = async (id: string) => {
+    try {
+      const res = await fetch(`/api/staff-roles/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Role removed");
+        fetchData();
+      } else {
+        toast.error(data.message || "Failed to remove role");
+      }
+    } catch (e) {
+      toast.error("Error removing role");
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -158,12 +194,21 @@ export default function StaffPage() {
         description="Manage your staff members, roles, and system access."
         onSearch={() => {}}
         actionButton={
-          <Button
-            onClick={handleOpenAddModal}
-            className="bg-zinc-950 text-white hover:bg-zinc-800 shadow-xl shadow-zinc-200"
-          >
-            <UserPlus size={18} className="mr-2" /> Add Staff Member
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setIsRolesModalOpen(true)}
+              variant="secondary"
+              className="border-zinc-200 text-zinc-700 hover:bg-zinc-100"
+            >
+              <Shield size={18} className="mr-2" /> Manage Roles
+            </Button>
+            <Button
+              onClick={handleOpenAddModal}
+              className="bg-zinc-950 text-white hover:bg-zinc-800 shadow-xl shadow-zinc-200"
+            >
+              <UserPlus size={18} className="mr-2" /> Add Staff Member
+            </Button>
+          </div>
         }
       />
 
@@ -405,6 +450,55 @@ export default function StaffPage() {
             {isEditing ? "Save Profile Changes" : "Confirm Staff Addition"}
           </Button>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isRolesModalOpen}
+        onClose={() => setIsRolesModalOpen(false)}
+        title="Manage Staff Roles"
+        size="md"
+      >
+        <div className="p-6 space-y-6">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="e.g. Manager, Chef, Waiter..."
+              className="flex-1 h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
+              value={newRoleName}
+              onChange={(e) => setNewRoleName(e.target.value)}
+            />
+            <Button
+              onClick={handleAddRole}
+              className="h-11 px-5 bg-zinc-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest"
+            >
+              Add Role
+            </Button>
+          </div>
+
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {roles.map((role) => (
+              <div
+                key={role.id}
+                className="flex items-center justify-between p-3 bg-zinc-50 border border-zinc-100 rounded-xl group hover:border-zinc-200 transition-all"
+              >
+                <span className="text-xs font-bold text-zinc-700 uppercase tracking-wider pl-2">
+                  {role.name}
+                </span>
+                <button
+                  onClick={() => handleDeleteRole(role.id)}
+                  className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            {roles.length === 0 && (
+              <p className="text-center py-6 text-xs font-bold text-zinc-400 uppercase tracking-widest italic border-2 border-dashed border-zinc-100 rounded-xl">
+                No roles defined yet.
+              </p>
+            )}
+          </div>
+        </div>
       </Modal>
     </div>
   );

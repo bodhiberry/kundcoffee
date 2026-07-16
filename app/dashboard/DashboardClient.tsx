@@ -165,41 +165,126 @@ export default function DashboardClient({
   };
 
   const handlePrint = (txn: any) => {
-    const printContent = document.getElementById(`receipt-${txn.id}`);
-    if (!printContent) return;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const itemsHtml = txn.items
+      ?.map(
+        (it: any) => `
+      <tr style="border-bottom: 0.5px solid #eee;">
+        <td style="padding: 8px 0; font-size: 11px;">${it.dishName || "Item"}</td>
+        <td style="padding: 8px 0; font-size: 11px; text-align: center;">${it.quantity || 1}</td>
+        <td style="padding: 8px 0; font-size: 11px; text-align: right;">${(it.amount || 0).toFixed(2)}</td>
+      </tr>
+    `,
+      )
+      .join("") || "";
+
+    const amount = txn.amount !== undefined ? txn.amount : 0;
+    const date = txn.date || new Date().toISOString();
+    const customer = txn.customer || "Walking Guest";
+
+    printWindow.document.write(`
       <html>
         <head>
-          <title>Print Receipt</title>
+          <title>Receipt - ${txn.id}</title>
           <style>
-            body { font-family: monospace; padding: 20px; width: 300px; margin: 0 auto; }
-            .text-center { text-align: center; }
-            .flex { display: flex; }
-            .justify-between { display: flex; justify-content: space-between; }
-            .border-b { border-bottom: 1px dashed #ccc; }
-            .pb-4 { padding-bottom: 16px; }
-            .pt-4 { padding-top: 16px; }
-            .mt-4 { margin-top: 16px; }
-            .uppercase { text-transform: uppercase; }
-            .font-bold { font-weight: bold; }
+            @page { size: 80mm auto; margin: 0; }
+            * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+            html, body { margin: 0; padding: 0; width: 80mm; background: #fff; }
+            body { font-family: Arial, Helvetica, sans-serif; padding: 5mm; font-size: 11px; color: #000; line-height: 1.4; }
+            .receipt-container { width: 100%; overflow: hidden; }
+            .center { text-align: center; }
+            .right { text-align: right; }
+            .bold { font-weight: bold; }
+            .header { margin-bottom: 10px; }
+            .divider { border-top: 1px dashed #000; margin: 8px 0; width: 100%; }
+            table { width: 100%; border-collapse: collapse; margin: 5px 0; }
+            .footer { margin-top: 15px; font-size: 10px; padding-bottom: 10mm; }
+            .logo { max-height: 50px; margin-bottom: 8px; filter: grayscale(1); }
+            @media print { body { margin: 0; } .no-print { display: none; } }
           </style>
         </head>
         <body>
-          <div style="font-size: 12px; line-height: 1.5;">
-            ${printContent.innerHTML}
+          <div class="receipt-container">
+            <div class="header center">
+              ${settings.logo ? `<img src="${settings.logo}" class="logo" />` : ""}
+              <div class="bold" style="font-size: 15px;">${settings.name || "Restaurant"}</div>
+              <div style="font-size: 10px;">${settings.address || ""}</div>
+              <div style="font-size: 10px;">Tel: ${settings.phone || ""}</div>
+              ${settings.panNumber ? `<div style="font-size: 10px;">PAN/VAT: ${settings.panNumber}</div>` : ""}
+              <div class="bold" style="margin-top: 10px; font-size: 12px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">
+                TAX INVOICE
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <table style="font-size: 10px;">
+              <tr>
+                <td>INV: <span class="bold">#${txn.invoiceNumber ? String(txn.invoiceNumber).padStart(3, '0') : txn.id.slice(-6).toUpperCase()}</span></td>
+                <td class="right">DATE: ${new Date(date).toLocaleDateString()}</td>
+              </tr>
+              <tr>
+                <td>TABLE: <span class="bold">${txn.table || "N/A"}</span></td>
+                <td class="right">TIME: ${new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+              </tr>
+              <tr>
+                <td colspan="2">CUST: ${customer}</td>
+              </tr>
+              <tr>
+                <td colspan="2">MODE: <span class="bold">${txn.modes?.map((m: any) => `${m.method}(${m.amount})`).join(", ") || txn.mode || "N/A"}</span></td>
+              </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <table>
+              <thead>
+                <tr style="border-bottom: 1px solid #000;">
+                  <th style="text-align: left; padding: 4px 0;">ITEM</th>
+                  <th style="text-align: center; padding: 4px 0;">QTY</th>
+                  <th style="text-align: right; padding: 4px 0;">AMT</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div class="divider"></div>
+
+            <table style="font-size: 12px;">
+              <tr class="bold">
+                <td>GRAND TOTAL</td>
+                <td class="right">${settings.currency} ${amount.toFixed(2)}</td>
+              </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <div style="font-size: 9px; text-align: center; font-style: italic;">
+              * Prices are inclusive of all taxes *
+            </div>
+
+            <div class="footer center">
+              <div class="bold">THANK YOU FOR YOUR VISIT!</div>
+              <div style="font-size: 8px;">${new Date().toLocaleString()}</div>
+            </div>
           </div>
+
           <script>
             window.onload = function() {
-              window.print();
-              window.close();
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 300);
             }
           </script>
         </body>
       </html>
     `);
-    win.document.close();
+    printWindow.document.close();
   };
 
   // Handlers

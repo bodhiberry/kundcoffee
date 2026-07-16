@@ -65,10 +65,15 @@ export async function GET(
       }),
     );
 
-    // TODO: Add logic for service charge and tax if applicable
-    // For now, let's assume 10% service charge and 13% VAT based on common practices
-    const serviceChargeRate = 0.1;
-    const taxRate = 0.13;
+    // Fetch settings to get dynamic tax and service charge rates
+    const settingsList = await prisma.systemSetting.findMany();
+    const settings = settingsList.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const serviceChargeRate = parseFloat(settings.serviceChargeRate || "10") / 100;
+    const taxRate = parseFloat(settings.taxRate || "13") / 100;
 
     const serviceCharge = subtotal * serviceChargeRate;
     const tax = (subtotal + serviceCharge) * taxRate;

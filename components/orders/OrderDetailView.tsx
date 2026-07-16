@@ -89,7 +89,8 @@ export function OrderDetailView({
       (i.status || "PENDING") !== "CANCELLED",
   );
 
-  const taxAmount = includeTax ? order.total * 0.13 : 0;
+  const taxRate = parseFloat(settings.taxRate || "13") / 100;
+  const taxAmount = includeTax ? order.total * taxRate : 0;
   const grandTotal = order.total + taxAmount;
 
   const handleInternalPrint = async () => {
@@ -328,7 +329,7 @@ export function OrderDetailView({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-zinc-400 uppercase">Include Tax (13%)</span>
+              <span className="text-[10px] font-black text-zinc-400 uppercase">Include Tax ({settings.taxRate || "13"}%)</span>
               <button
                 disabled={isReadOnly}
                 onClick={() => setIncludeTax(!includeTax)}
@@ -343,7 +344,7 @@ export function OrderDetailView({
             </div>
             {includeTax && (
               <div className="flex justify-between text-xs text-zinc-500 font-black uppercase">
-                <span>VAT (13%)</span>
+                <span>VAT ({settings.taxRate || "13"}%)</span>
                 <span className="text-zinc-900">{settings.currency} {taxAmount.toFixed(2)}</span>
               </div>
             )}

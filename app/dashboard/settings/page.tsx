@@ -30,12 +30,12 @@ export default function SettingsPage() {
   const [email, setEmail] = useState(settings.email || "");
   const [logoFile, setLogoFile] = useState<File | string | null>(settings.logo || null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [isEditingDetails, setIsEditingDetails] = useState(false);
+
+  const [taxRate, setTaxRate] = useState(settings.taxRate || "13");
+  const [serviceChargeRate, setServiceChargeRate] = useState(settings.serviceChargeRate || "10");
 
   const [isSaving, setIsSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | string | null>(null);
-  const [staffRoles, setStaffRoles] = useState<any[]>([]);
-  const [newRoleName, setNewRoleName] = useState("");
   const [qrId, setQrId] = useState<string | null>(null);
 
   const [networkIps, setNetworkIps] = useState<Record<string, string>>({
@@ -96,6 +96,8 @@ export default function SettingsPage() {
         updateSetting("phone", phone),
         updateSetting("panNumber", panNumber),
         updateSetting("email", email),
+        updateSetting("taxRate", taxRate),
+        updateSetting("serviceChargeRate", serviceChargeRate),
       ]);
 
       // Save Logo
@@ -140,21 +142,10 @@ export default function SettingsPage() {
       }
 
       toast.success("Settings updated successfully");
-      setIsEditingDetails(false);
     } catch (error) {
       toast.error("Failed to update settings");
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const res = await fetch("/api/staff-roles");
-      const data = await res.json();
-      if (data.success) setStaffRoles(data.data);
-    } catch (e) {
-      toast.error("Failed to fetch staff roles");
     }
   };
 
@@ -174,7 +165,6 @@ export default function SettingsPage() {
   };
 
   useState(() => {
-    fetchRoles();
     fetchQrSettings();
   });
 
@@ -188,6 +178,8 @@ export default function SettingsPage() {
       setEmail(settings.email || "");
       setLogoFile(settings.logo || null);
       setCurrency(settings.currency || "Rs.");
+      setTaxRate(settings.taxRate || "13");
+      setServiceChargeRate(settings.serviceChargeRate || "10");
     }
   }, [loading, settings]);
 
@@ -277,13 +269,6 @@ export default function SettingsPage() {
             <p className="text-xs text-zinc-500 leading-relaxed font-medium mb-4">
               Update your restaurant's identity and contact information for bills and invoices.
             </p>
-            <Button
-              onClick={() => setIsEditingDetails(!isEditingDetails)}
-              variant="secondary"
-              className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-zinc-200"
-            >
-              {isEditingDetails ? "Cancel Editing" : "Edit Details"}
-            </Button>
           </div>
 
           <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
@@ -296,9 +281,8 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={restaurantName}
-                    disabled={!isEditingDetails}
                     onChange={(e) => setRestaurantName(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -308,9 +292,8 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={panNumber}
-                    disabled={!isEditingDetails}
                     onChange={(e) => setPanNumber(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -320,9 +303,8 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={phone}
-                    disabled={!isEditingDetails}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -332,9 +314,8 @@ export default function SettingsPage() {
                   <input
                     type="email"
                     value={email}
-                    disabled={!isEditingDetails}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
@@ -344,30 +325,19 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={address}
-                    disabled={!isEditingDetails}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
                   <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
                     Restaurant Logo
                   </label>
-                  {isEditingDetails ? (
-                    <ImageUpload
-                      label="Upload Logo"
-                      value={typeof logoFile === "string" ? logoFile : undefined}
-                      onChange={setLogoFile}
-                    />
-                  ) : (
-                    <div className="w-full h-32 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-center overflow-hidden">
-                      {logoPreview ? (
-                        <img src={logoPreview} alt="Logo" className="h-full w-auto object-contain" />
-                      ) : (
-                        <span className="text-zinc-300 text-[10px] font-bold uppercase tracking-widest">No Logo Uploaded</span>
-                      )}
-                    </div>
-                  )}
+                  <ImageUpload
+                    label="Upload Logo"
+                    value={typeof logoFile === "string" ? logoFile : undefined}
+                    onChange={setLogoFile}
+                  />
                 </div>
               </div>
             </div>
@@ -414,7 +384,7 @@ export default function SettingsPage() {
                 </label>
 
                 <div className="flex flex-wrap gap-2">
-                  {["Rs.", "NPR", "$", "€", "£"].map((symbol) => (
+                  {["Rs.", "NPR", "$", "€", "£", "AED"].map((symbol) => (
                     <button
                       key={symbol}
                       onClick={() => setCurrency(symbol)}
@@ -460,31 +430,35 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* --- TAX CONFIGURATION SECTION --- */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
           <div className="lg:pt-2">
             <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-tight mb-1">
               Compliance & Tax
             </h2>
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Manage how government mandates and taxes are applied to your
-              customer checkout flow.
+              Manage how government mandates and taxes are applied to your customer checkout flow.
             </p>
           </div>
 
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-8">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-8 space-y-6">
             <div className="flex items-center justify-between gap-6">
               <div className="flex items-start gap-4">
                 <div className="mt-1 w-10 h-10 rounded-lg bg-red-50 text-red-800 flex items-center justify-center">
                   <CreditCard size={20} />
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-zinc-900 block mb-1">
-                    Standard Tax (VAT 13%)
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-zinc-900 block">
+                    Standard Tax (VAT %)
                   </label>
+                  <input
+                    type="number"
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(e.target.value)}
+                    className="w-20 h-9 px-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
+                    placeholder="13"
+                  />
                   <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-sm">
-                    Automatically append statutory taxes to all new orders. You
-                    can override this manually per transaction.
+                    Automatically append statutory taxes to all new orders. You can override this manually per transaction.
                   </p>
                 </div>
               </div>
@@ -521,15 +495,21 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between gap-6">
               <div className="flex items-start gap-4">
                 <div className="mt-1 w-10 h-10 rounded-lg bg-red-50 text-red-800 flex items-center justify-center">
-                  <span className="font-bold text-sm">10%</span>
+                  <span className="font-bold text-sm">%</span>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-zinc-900 block mb-1">
-                    Service Charge (10%)
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-zinc-900 block">
+                    Service Charge (%)
                   </label>
+                  <input
+                    type="number"
+                    value={serviceChargeRate}
+                    onChange={(e) => setServiceChargeRate(e.target.value)}
+                    className="w-20 h-9 px-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
+                    placeholder="10"
+                  />
                   <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-sm">
-                    Automatically append service charge to all new orders. You
-                    can override this manually per transaction.
+                    Automatically append service charge to all new orders. You can override this manually per transaction.
                   </p>
                 </div>
               </div>
@@ -559,66 +539,6 @@ export default function SettingsPage() {
                   )}
                 </div>
               </button>
-            </div>
-          </div>
-        </section>
-
-        {/* --- STAFF ROLES SECTION --- */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-          <div className="lg:pt-2">
-            <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-tight mb-1">
-              Staff Roles
-            </h2>
-            <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Create and manage administrative and operational roles for your
-              team members.
-            </p>
-          </div>
-
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-8 space-y-6">
-            <div className="flex gap-4">
-              <input
-                type="text"
-                placeholder="Manager, Waiter, Chef..."
-                className="flex-1 h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-lg text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-              />
-              <Button
-                onClick={handleAddRole}
-                className="h-11 px-6 bg-zinc-900 text-white rounded-lg font-bold text-[10px] uppercase tracking-widest"
-              >
-                <Plus size={16} className="mr-2" /> Add Role
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {staffRoles.map((role) => (
-                <div
-                  key={role.id}
-                  className="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-100 rounded-xl group hover:border-zinc-200 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-red-800 transition-colors">
-                      <ShieldCheck size={16} />
-                    </div>
-                    <span className="text-xs font-bold text-zinc-700 uppercase tracking-wider">
-                      {role.name}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteRole(role.id)}
-                    className="p-2 text-zinc-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-              {staffRoles.length === 0 && (
-                <p className="col-span-2 text-center py-8 text-xs font-bold text-zinc-400 uppercase tracking-widest italic border-2 border-dashed border-zinc-100 rounded-2xl">
-                  No roles defined yet.
-                </p>
-              )}
             </div>
           </div>
         </section>

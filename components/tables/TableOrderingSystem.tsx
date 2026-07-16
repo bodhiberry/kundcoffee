@@ -184,7 +184,8 @@ export function TableOrderingSystem({
     (acc, item) => acc + (item.totalPrice || 0),
     0,
   );
-  const taxAmount = includeTax ? totalAmount * 0.13 : 0;
+  const taxRate = parseFloat(settings.taxRate || "13") / 100;
+  const taxAmount = includeTax ? totalAmount * taxRate : 0;
   const grandTotal = totalAmount + taxAmount;
   const totalQty = cart.reduce((acc, item) => acc + (item.quantity || 0), 0);
 
