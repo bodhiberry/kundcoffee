@@ -29,6 +29,7 @@ export default function SettingsPage() {
   const [panNumber, setPanNumber] = useState(settings.panNumber || "");
   const [email, setEmail] = useState(settings.email || "");
   const [logoFile, setLogoFile] = useState<File | string | null>(settings.logo || null);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const [taxRate, setTaxRate] = useState(settings.taxRate || "13");
@@ -142,6 +143,7 @@ export default function SettingsPage() {
       }
 
       toast.success("Settings updated successfully");
+      setIsEditingDetails(false);
     } catch (error) {
       toast.error("Failed to update settings");
     } finally {
@@ -269,6 +271,40 @@ export default function SettingsPage() {
             <p className="text-xs text-zinc-500 leading-relaxed font-medium mb-4">
               Update your restaurant's identity and contact information for bills and invoices.
             </p>
+            {!isEditingDetails ? (
+              <Button
+                onClick={() => setIsEditingDetails(true)}
+                variant="secondary"
+                className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-zinc-200"
+              >
+                Edit Details
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    setIsEditingDetails(false);
+                    // Reset to original settings values
+                    setRestaurantName(settings.name || "");
+                    setAddress(settings.address || "");
+                    setPhone(settings.phone || "");
+                    setPanNumber(settings.panNumber || "");
+                    setEmail(settings.email || "");
+                    setLogoFile(settings.logo || null);
+                  }}
+                  variant="secondary"
+                  className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-zinc-200 text-zinc-600"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest bg-zinc-950 text-white"
+                >
+                  Save
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
@@ -281,8 +317,9 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={restaurantName}
+                    disabled={!isEditingDetails}
                     onChange={(e) => setRestaurantName(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
                   />
                 </div>
                 <div className="space-y-2">
@@ -292,8 +329,9 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={panNumber}
+                    disabled={!isEditingDetails}
                     onChange={(e) => setPanNumber(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
                   />
                 </div>
                 <div className="space-y-2">
@@ -303,8 +341,9 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={phone}
+                    disabled={!isEditingDetails}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
                   />
                 </div>
                 <div className="space-y-2">
@@ -314,8 +353,9 @@ export default function SettingsPage() {
                   <input
                     type="email"
                     value={email}
+                    disabled={!isEditingDetails}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
@@ -325,19 +365,30 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={address}
+                    disabled={!isEditingDetails}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all"
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
                   <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
                     Restaurant Logo
                   </label>
-                  <ImageUpload
-                    label="Upload Logo"
-                    value={typeof logoFile === "string" ? logoFile : undefined}
-                    onChange={setLogoFile}
-                  />
+                  {isEditingDetails ? (
+                    <ImageUpload
+                      label="Upload Logo"
+                      value={typeof logoFile === "string" ? logoFile : undefined}
+                      onChange={setLogoFile}
+                    />
+                  ) : (
+                    <div className="w-full h-32 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-center overflow-hidden">
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Logo" className="h-full w-auto object-contain" />
+                      ) : (
+                        <span className="text-zinc-300 text-[10px] font-bold uppercase tracking-widest">No Logo Uploaded</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
