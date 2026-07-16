@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest } from "next/server";
+import { corsResponse, corsPreflightResponse } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return corsPreflightResponse();
+}
 
 /**
  * Public Categories API — No authentication required.
@@ -17,7 +22,7 @@ export async function GET(
     const { storeId } = await context.params;
 
     if (!storeId) {
-      return NextResponse.json(
+      return corsResponse(
         { success: false, message: "Store ID is required" },
         { status: 400 }
       );
@@ -30,14 +35,14 @@ export async function GET(
     });
 
     if (!store) {
-      return NextResponse.json(
+      return corsResponse(
         { success: false, message: "Store not found" },
         { status: 404 }
       );
     }
 
     if (store.isSuspended || store.status === "SUSPENDED" || store.status === "EXPIRED") {
-      return NextResponse.json(
+      return corsResponse(
         { success: false, message: "Store is currently unavailable" },
         { status: 403 }
       );
@@ -62,7 +67,7 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({
+    return corsResponse({
       success: true,
       data: categories.map((cat) => ({
         id: cat.id,
@@ -78,7 +83,7 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching public categories:", error);
-    return NextResponse.json(
+    return corsResponse(
       { success: false, message: "Failed to fetch categories" },
       { status: 500 }
     );

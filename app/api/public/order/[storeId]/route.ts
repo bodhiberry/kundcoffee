@@ -1,6 +1,11 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { pusherServer } from "@/lib/pusher";
+import { corsResponse, corsPreflightResponse } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return corsPreflightResponse();
+}
 
 /**
  * Public Order API — Authenticated via PUBLIC_API_SECRET header.
@@ -37,7 +42,7 @@ export async function POST(
 
     if (!secret) {
       console.error("PUBLIC_API_SECRET is not configured in environment variables.");
-      return NextResponse.json(
+      return corsResponse(
         { success: false, error: "API misconfiguration" },
         { status: 500 }
       );
@@ -49,7 +54,7 @@ export async function POST(
     }
 
     if (!token || token !== secret) {
-      return NextResponse.json(
+      return corsResponse(
         { success: false, error: "Unauthorized public API access" },
         { status: 401 }
       );
@@ -58,7 +63,7 @@ export async function POST(
     // 2. Validate Store
     const { storeId } = await context.params;
     if (!storeId) {
-      return NextResponse.json(
+      return corsResponse(
         { success: false, error: "Store ID is required" },
         { status: 400 }
       );
@@ -70,14 +75,14 @@ export async function POST(
     });
 
     if (!store) {
-      return NextResponse.json(
+      return corsResponse(
         { success: false, error: "Store not found" },
         { status: 404 }
       );
     }
 
     if (store.isSuspended || store.status === "SUSPENDED" || store.status === "EXPIRED") {
-      return NextResponse.json(
+      return corsResponse(
         { success: false, error: "Store is currently unavailable" },
         { status: 403 }
       );
@@ -126,7 +131,7 @@ export async function POST(
     }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
+      return corsResponse(
         { success: false, error: "No items in order" },
         { status: 400 }
       );
@@ -157,7 +162,7 @@ export async function POST(
       }
 
       if (!dbItem || !dbItem.price) {
-        return NextResponse.json(
+        return corsResponse(
           { success: false, error: `Item not found or price missing: ${itemName} (${dishId || comboId})` },
           { status: 404 }
         );
@@ -272,10 +277,10 @@ export async function POST(
       console.error("Failed to trigger Pusher notification:", pusherError);
     }
 
-    return NextResponse.json({ success: true, data: newOrder }, { status: 201 });
+    return corsResponse({ success: true, data: newOrder }, { status: 201 });
   } catch (error) {
     console.error("Public Order Creation Error:", error);
-    return NextResponse.json(
+    return corsResponse(
       {
         success: false,
         error: "Internal Server Error",
