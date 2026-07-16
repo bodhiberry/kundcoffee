@@ -185,41 +185,7 @@ export default function SettingsPage() {
     }
   }, [loading, settings]);
 
-  const handleAddRole = async () => {
-    if (!newRoleName) return;
-    try {
-      const res = await fetch("/api/staff-roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newRoleName }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Role added");
-        setNewRoleName("");
-        fetchRoles();
-      }
-    } catch (e) {
-      toast.error("Failed to add role");
-    }
-  };
 
-  const handleDeleteRole = async (id: string) => {
-    try {
-      const res = await fetch(`/api/staff-roles/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Role removed");
-        fetchRoles();
-      } else {
-        toast.error(data.message || "Failed to remove role");
-      }
-    } catch (e) {
-      toast.error("Error removing role");
-    }
-  };
-
-  // const handleQrSubmit = async()
 
   if (loading) {
     return (
