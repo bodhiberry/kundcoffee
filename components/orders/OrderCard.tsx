@@ -6,6 +6,7 @@
   import { usePrinter } from "@/components/providers/PrinterProvider";
   import { useSession } from "next-auth/react";
   import { toast } from "sonner";
+  import { formatInvoiceNumber } from "@/lib/nepali-date-helper";
 
   interface OrderCardProps {
     order: Order;
@@ -129,7 +130,7 @@
             </div>
             <div class="divider"></div>
             <div style="display: flex; justify-content: space-between; font-size: 11px;">
-              <span class="bold">Order: #${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</span>
+              <span class="bold">Order: {order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase()}</span>
               <span>${dateStr}</span>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 3px;">

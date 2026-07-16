@@ -11,6 +11,8 @@ import {
   PrinterInfo,
   ReceiptTotals,
 } from "@/lib/types";
+import { useSettings } from "@/components/providers/SettingsProvider";
+import { formatInvoiceNumber } from "@/lib/nepali-date-helper";
 
 interface NativeBluetoothDevice {
   name: string;
@@ -153,10 +155,11 @@ async function fallbackWindowPrint(htmlContent: string, docName: string = "Docum
 function buildKOTHtmlFallback(
   order: Order,
   items: OrderItem[],
-  type: KOTType
+  type: KOTType,
+  branchCode: string
 ): string {
   const tableName = order.table?.name || "N/A";
-  const orderId = order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase();
+  const orderId = order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, branchCode, new Date(order.createdAt)) : order.id.slice(-6).toUpperCase();
   const now = new Date();
 
   const itemsHtml = items
@@ -226,6 +229,7 @@ function buildKOTHtmlFallback(
 export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const { settings } = useSettings();
   const [printers, setPrinters] = useState<Record<PrinterRole, PrinterInfo>>({
     kitchen: { ...defaultPrinterInfo },
     bar: { ...defaultPrinterInfo },
@@ -366,11 +370,13 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
     const targetRole = resolveRole(idealRole);
 
     if (targetRole) {
-      const data = printerService.buildKOTReceipt(order, items, type);
+      const data = printerService.buildKOTReceipt(order, items, type, settings.branchCode || 'GB');
       await printerService.sendData(targetRole, data);
     } else {
       // Fallback to browser print
-      fallbackWindowPrint(buildKOTHtmlFallback(order, items, type), `KOT-${type}-${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}`);
+      const branchCode = settings.branchCode || 'GB';
+      const formattedInvoice = order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, branchCode, new Date(order.createdAt)) : order.id.slice(-6).toUpperCase();
+      fallbackWindowPrint(buildKOTHtmlFallback(order, items, type, branchCode), `KOT-${type}-${formattedInvoice}`);
     }
   };
 
@@ -443,7 +449,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             <div class="divider"></div>
             <table style="font-size: 10px;">
               <tr>
-                <td>ORDER: <span class="bold">#${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</span></td>
+                <td>ORDER: <span class="bold">${order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase()}</span></td>
                 <td class="right">DATE: ${new Date().toLocaleDateString()}</td>
               </tr>
               <tr>
@@ -469,7 +475,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             </div>
           </body>
         </html>
-      `, `Bill-${order.table?.name || "Direct"}-${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}`);
+      `, `Bill-${order.table?.name || "Direct"}-${order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase()}`);
     }
   };
 
@@ -549,7 +555,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             <div class="divider"></div>
             <table style="font-size: 10px;">
               <tr>
-                <td>INV: <span class="bold">#${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</span></td>
+                <td>INV: <span class="bold">${order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase()}</span></td>
                 <td class="right">DATE: ${new Date().toLocaleDateString()}</td>
               </tr>
               <tr>
@@ -608,7 +614,7 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({
             </div>
           </body>
         </html>
-      `, `Receipt-${order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}`);
+      `, `Receipt-${order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase()}`);
     }
   };
 

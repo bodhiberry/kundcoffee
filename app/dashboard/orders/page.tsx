@@ -43,6 +43,8 @@ import { History, Search, Plus, Settings, FileText, Slash, WifiOff, CalendarDays
 import { Popover } from "@/components/ui/Popover";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useSettings } from "@/components/providers/SettingsProvider";
+import { formatInvoiceNumber } from "@/lib/nepali-date-helper";
 
 // DnD Kit Imports
 import {
@@ -207,6 +209,7 @@ function SortableSpaceSection({
 
 export default function OrdersPage() {
   const router = useRouter();
+  const { settings } = useSettings();
   const printer = usePrinter();
   const { registerListener } = useOrderNotification();
   const [activeTab, setActiveTab] = useState<ActiveTab>("TABLES");
@@ -1150,7 +1153,7 @@ export default function OrdersPage() {
 >
   <div className="space-y-6 p-4">
     <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
-      {transferOrder?.tableId ? "Transfer" : "Assign"} Order #{transferOrder?.invoiceNumber ? String(transferOrder.invoiceNumber).padStart(3, '0') : transferOrder?.id.slice(-6).toUpperCase()} to a table
+      {transferOrder?.tableId ? "Transfer" : "Assign"} Order {transferOrder?.invoiceNumber ? formatInvoiceNumber(transferOrder.invoiceNumber, settings.branchCode || 'GB', new Date(transferOrder.createdAt)) : `#${transferOrder?.id.slice(-6).toUpperCase()}`} to a table
     </p>
     {spaces.map((space) => (
       <div key={space.id}>
@@ -1221,7 +1224,7 @@ setTimeout(() => fetchData(), 500);
             </div>
             <h3 className="text-lg font-bold text-zinc-900">Order Created!</h3>
             <p className="text-sm text-zinc-500">
-              Order #{newlyCreatedOrder?.invoiceNumber ? String(newlyCreatedOrder.invoiceNumber).padStart(3, '0') : newlyCreatedOrder?.id.slice(-6).toUpperCase()} for{" "}
+              Order {newlyCreatedOrder?.invoiceNumber ? formatInvoiceNumber(newlyCreatedOrder.invoiceNumber, settings.branchCode || 'GB', new Date(newlyCreatedOrder.createdAt)) : `#${newlyCreatedOrder?.id.slice(-6).toUpperCase()}`} for{" "}
               {newlyCreatedOrder?.table?.name || "Online Order"} has been created.
             </p>
             <p className="text-xs text-zinc-400">

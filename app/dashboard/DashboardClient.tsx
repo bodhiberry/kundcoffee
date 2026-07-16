@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/Button";
 import { Popover } from "@/components/ui/Popover";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
@@ -13,7 +13,7 @@ import { addSpace } from "@/services/space";
 import { addTable, addTableType } from "@/services/table";
 import { useRouter } from "next/navigation";
 import SalesLineChart from "@/components/dashboard/analytics/SalesLineChart";
-import { Plus, Trash2, Printer, Receipt, ShoppingBag, Loader2 } from "lucide-react";
+import { Plus, Trash2, Printer, Receipt, ShoppingBag, Loader2, Calendar } from "lucide-react";
 import PurchaseModal from "@/components/procurement/PurchaseModal";
 import SaleModal from "@/components/dashboard/SaleModal";
 import { CustomTable } from "@/components/ui/CustomTable";
@@ -22,6 +22,7 @@ import PurchaseDetailView from "@/components/procurement/PurchaseDetailView";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { useSettings } from "@/components/providers/SettingsProvider";
 import { toast } from "sonner";
+import { formatDualCalendarDate, formatInvoiceNumber } from "@/lib/nepali-date-helper";
 
 interface DashboardClientProps {
   initialSpaces: spaceType[];
@@ -222,7 +223,7 @@ export default function DashboardClient({
 
             <table style="font-size: 10px;">
               <tr>
-                <td>INV: <span class="bold">#${txn.invoiceNumber ? String(txn.invoiceNumber).padStart(3, '0') : txn.id.slice(-6).toUpperCase()}</span></td>
+                <td>INV: <span class="bold">${txn.invoiceNumber ? formatInvoiceNumber(txn.invoiceNumber, settings.branchCode || 'GB', new Date(date)) : txn.id.slice(-6).toUpperCase()}</span></td>
                 <td class="right">DATE: ${new Date(date).toLocaleDateString()}</td>
               </tr>
               <tr>
@@ -609,6 +610,20 @@ export default function DashboardClient({
           <p className="text-gray-500 font-medium italic">
             Monitor and manage your restaurant floor in real-time
           </p>
+        </div>
+        {/* Dual Calendar Display */}
+        <div className="flex items-center gap-3 bg-white rounded-xl border border-zinc-200 shadow-sm px-5 py-3">
+          <div className="w-10 h-10 rounded-lg bg-zinc-950 text-white flex items-center justify-center">
+            <Calendar size={18} />
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-zinc-800">
+              {(() => { const cal = formatDualCalendarDate(); return cal.english; })()}
+            </p>
+            <p className="text-xs font-medium text-zinc-500">
+              {(() => { const cal = formatDualCalendarDate(); return `${cal.nepali} • ${cal.nepaliFormatted}`; })()}
+            </p>
+          </div>
         </div>
         {/* <div className="flex items-center gap-3">
           <Popover

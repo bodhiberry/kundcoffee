@@ -6,6 +6,8 @@ import { Order } from "@/lib/types";
 import { getOrderHistory } from "@/services/order";
 import { Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+import { formatInvoiceNumber } from "@/lib/nepali-date-helper";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 export function HistoryView({ onViewDetails }: { onViewDetails: (o: Order) => void }) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -13,6 +15,7 @@ export function HistoryView({ onViewDetails }: { onViewDetails: (o: Order) => vo
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const { settings } = useSettings();
 
   useEffect(() => {
     loadHistory();
@@ -63,7 +66,7 @@ export function HistoryView({ onViewDetails }: { onViewDetails: (o: Order) => vo
               {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-zinc-50">
                   <td className="p-4">{format(new Date(order.createdAt), "dd MMM yyyy HH:mm")}</td>
-                  <td className="p-4 font-bold">#{order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</td>
+                  <td className="p-4 font-bold">{order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : `#${order.id.slice(-6).toUpperCase()}`}</td>
                   <td className="p-4">{order.table?.name || "Takeaway"}</td>
                   <td className="p-4 font-bold">${order.total.toFixed(2)}</td>
                   <td className="p-4 text-right">

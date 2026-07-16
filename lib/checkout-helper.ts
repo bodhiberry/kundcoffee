@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
+import { getFiscalYearStartAD } from "@/lib/nepali-date-helper";
 
 export async function finalizeSessionTransaction(data: {
   orderId?: string;
@@ -87,14 +88,15 @@ export async function finalizeSessionTransaction(data: {
       const dailySessionId = activeDailySession?.id || null;
       console.log(`[CheckoutHelper] Linked to Daily Session: ${dailySessionId} for Store: ${finalStoreId}`);
 
-      // Query the highest invoiceNumber across all payments for this store
+      // Query the highest invoiceNumber within the current Nepali fiscal year for this store
+      const fiscalYearStart = getFiscalYearStartAD();
       const maxPayment = await tx.payment.findFirst({
-        where: { storeId: finalStoreId },
+        where: { storeId: finalStoreId, createdAt: { gte: fiscalYearStart } },
         orderBy: { invoiceNumber: "desc" },
         select: { invoiceNumber: true },
       });
       const nextInvoiceNumber = (maxPayment?.invoiceNumber || 0) + 1;
-      console.log(`[CheckoutHelper] Next Invoice Number for Store ${finalStoreId}: ${nextInvoiceNumber}`);
+      console.log(`[CheckoutHelper] Next Invoice Number for Store ${finalStoreId} (FY from ${fiscalYearStart.toISOString()}): ${nextInvoiceNumber}`);
 
       // 1. Handle Payments
       // Delete existing payments for this session/order to avoid duplicates

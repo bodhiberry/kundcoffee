@@ -8,6 +8,7 @@
 
 import { Order, OrderItem, KOTType, PrinterRole, PrinterInfo, ReceiptTotals, PrinterConnectionMethod } from "./types";
 import { Capacitor } from '@capacitor/core';
+import { formatInvoiceNumber } from "./nepali-date-helper";
 
 // --- Web Bluetooth Typings for compiler support ---
 declare global {
@@ -509,9 +510,9 @@ class BluetoothPrinterService {
   // TEMPLATES
   // ============================================================================
 
-  buildKOTReceipt(order: Order, items: OrderItem[], type: KOTType): Uint8Array {
+  buildKOTReceipt(order: Order, items: OrderItem[], type: KOTType, branchCode: string = "GB"): Uint8Array {
     const tableName = order.table?.name || "N/A";
-    const orderId = order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase();
+    const orderId = order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, branchCode, new Date(order.createdAt)) : order.id.slice(-6).toUpperCase();
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB'); 
     const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -580,7 +581,7 @@ class BluetoothPrinterService {
   }
 
   buildBillReceipt(order: Order, settings: Record<string, string>): Uint8Array {
-    const orderId = order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase();
+    const orderId = order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase();
     const tableName = order.table?.name || "N/A";
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB'); 
@@ -670,7 +671,7 @@ class BluetoothPrinterService {
   }
 
   buildCheckoutReceipt(order: Order, settings: Record<string, string>, totals: ReceiptTotals, activeItems: OrderItem[]): Uint8Array {
-    const orderId = order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase();
+    const orderId = order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase();
     const tableName = order.table?.name || "N/A";
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB'); 

@@ -32,6 +32,7 @@ import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 import { PaymentMethod, ReturnPaymentStatus, SalesReturn } from "@/lib/types";
 import { useSettings } from "@/components/providers/SettingsProvider";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { formatInvoiceNumber } from "@/lib/nepali-date-helper";
 
 import { DailySessionManager } from "@/components/finance/DailySessionManager";
 
@@ -218,7 +219,7 @@ export default function FinancePage() {
             
             <table style="font-size: 10px;">
               <tr>
-                <td>INV: <span class="bold">#${txn.invoiceNumber ? String(txn.invoiceNumber).padStart(3, '0') : txn.id.slice(-6).toUpperCase()}</span></td>
+                <td>INV: <span class="bold">${txn.invoiceNumber ? formatInvoiceNumber(txn.invoiceNumber, settings.branchCode || 'GB', new Date(date)) : txn.id.slice(-6).toUpperCase()}</span></td>
                 <td class="right">DATE: ${new Date(date).toLocaleDateString()}</td>
               </tr>
               <tr>

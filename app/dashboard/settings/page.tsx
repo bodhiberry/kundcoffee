@@ -14,10 +14,12 @@ import {
   ShieldCheck,
   Plus,
   Trash2,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { usePrinter } from "@/components/providers/PrinterProvider";
+import { formatInvoiceNumber } from "@/lib/nepali-date-helper";
 
 export default function SettingsPage() {
   const { settings, updateSetting, loading } = useSettings();
@@ -28,6 +30,7 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState(settings.phone || "");
   const [panNumber, setPanNumber] = useState(settings.panNumber || "");
   const [email, setEmail] = useState(settings.email || "");
+  const [branchCode, setBranchCode] = useState(settings.branchCode || "GB");
   const [logoFile, setLogoFile] = useState<File | string | null>(settings.logo || null);
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -99,6 +102,7 @@ export default function SettingsPage() {
         updateSetting("email", email),
         updateSetting("taxRate", taxRate),
         updateSetting("serviceChargeRate", serviceChargeRate),
+        updateSetting("branchCode", branchCode),
       ]);
 
       // Save Logo
@@ -182,6 +186,7 @@ export default function SettingsPage() {
       setCurrency(settings.currency || "Rs.");
       setTaxRate(settings.taxRate || "13");
       setServiceChargeRate(settings.serviceChargeRate || "10");
+      setBranchCode(settings.branchCode || "GB");
     }
   }, [loading, settings]);
 
@@ -381,6 +386,60 @@ export default function SettingsPage() {
             onChange={setImageFile}
           />
         </section>
+
+        {/* --- INVOICE CONFIGURATION SECTION --- */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-4">
+          <div className="lg:pt-2">
+            <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-tight mb-1">
+              Invoice Configuration
+            </h2>
+            <p className="text-xs text-zinc-500 leading-relaxed font-medium">
+              Set the branch prefix code used in your invoice numbering format. This will be reflected in all receipts and reports.
+            </p>
+          </div>
+
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
+                  Branch Prefix Code
+                </label>
+                <input
+                  type="text"
+                  value={branchCode}
+                  onChange={(e) => setBranchCode(e.target.value.toUpperCase())}
+                  maxLength={5}
+                  placeholder="GB"
+                  className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all uppercase"
+                />
+                <p className="text-[10px] text-zinc-400 font-medium ml-1">
+                  This code identifies your branch/location in the invoice number (e.g., GB = Golfutar Branch).
+                </p>
+              </div>
+
+              {/* Invoice Format Preview */}
+              <div className="p-6 bg-[#FAFAFA] rounded-xl border border-zinc-100">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-400">
+                    <FileText size={14} />
+                  </div>
+                  <span className="text-xs font-semibold text-zinc-500">
+                    Invoice Format Preview
+                  </span>
+                </div>
+                <div className="bg-white rounded-lg border border-zinc-200 p-4 text-center">
+                  <span className="text-xl font-bold text-zinc-900 tracking-wide font-mono">
+                    {formatInvoiceNumber(1, branchCode || "GB")}
+                  </span>
+                  <p className="text-[10px] text-zinc-400 font-medium mt-2">
+                    INV + Branch Code + Nepali Fiscal Year + Sequential Number
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* --- LOCALIZATION SECTION --- */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:pt-2">

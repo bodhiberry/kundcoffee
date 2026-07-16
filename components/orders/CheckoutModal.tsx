@@ -23,6 +23,7 @@ import { addCustomer, getCustomerSummary } from "@/services/customer";
 import { useSettings } from "@/components/providers/SettingsProvider";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import { formatInvoiceNumber } from "@/lib/nepali-date-helper";
 import { hasPermission, PERMISSIONS } from "@/lib/rbac";
 import { usePrinter } from "@/components/providers/PrinterProvider";
 
@@ -343,7 +344,7 @@ export function CheckoutModal({
             {/* Bill Info */}
             <div className="border-y border-black border-dashed py-2 mb-4 space-y-1">
               <div className="flex justify-between">
-                <span>Invoice: #{order.invoiceNumber ? String(order.invoiceNumber).padStart(3, '0') : order.id.slice(-6).toUpperCase()}</span>
+                <span>Invoice: {order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase()}</span>
                 <span>Date: {new Date().toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between">
