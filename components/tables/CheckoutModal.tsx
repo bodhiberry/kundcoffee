@@ -1014,8 +1014,10 @@ export function CheckoutModal({
                   ? calculateSummary()
                   : {
                       subtotal: 0,
+                      tax: 0,
                       serviceCharge: 0,
                       grandTotal: 0,
+                      totalDiscount: 0,
                       complimentaryValue: 0,
                     };
                 return (
