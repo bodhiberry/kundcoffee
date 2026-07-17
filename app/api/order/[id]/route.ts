@@ -219,6 +219,24 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           if (body._resolvedType) updateData.type = body._resolvedType;
         }
 
+        let finalInvoiceNumber = existingOrder.invoiceNumber;
+        if (status === "COMPLETED" && !finalInvoiceNumber) {
+          const { getFiscalYearStartAD } = require("@/lib/nepali-date-helper");
+          const fiscalYearStart = getFiscalYearStartAD();
+          const maxPayment = await tx.payment.findFirst({
+            where: { storeId, createdAt: { gte: fiscalYearStart } },
+            orderBy: { invoiceNumber: "desc" },
+            select: { invoiceNumber: true },
+          });
+          const maxOrder = await tx.order.findFirst({
+            where: { storeId, createdAt: { gte: fiscalYearStart } },
+            orderBy: { invoiceNumber: "desc" },
+            select: { invoiceNumber: true },
+          });
+          finalInvoiceNumber = Math.max(maxPayment?.invoiceNumber || 0, maxOrder?.invoiceNumber || 0) + 1;
+          updateData.invoiceNumber = finalInvoiceNumber;
+        }
+
         const order = await tx.order.update({
           where: { id },
           data: updateData,
@@ -234,7 +252,8 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         });
 
         // --- Handle Completion and Payments ---
-        if (status === "COMPLETED" && paymentMethod) {
+        if (status === "COMPLETED") {
+          const finalPaymentMethod = paymentMethod || "CASH";
           let tableSession = null;
           if (order.tableId && order.type === "DINE_IN") {
             tableSession = await tx.tableSession.findFirst({
@@ -247,24 +266,31 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
               where: { id: order.paymentId },
               data: {
                 amount: newTotal,
-                method: paymentMethod,
+                method: finalPaymentMethod,
                 status: "PAID",
                 sessionId: tableSession?.id || null,
                 storeId: storeId,
+                invoiceNumber: finalInvoiceNumber,
               },
             });
           } else {
-            await tx.payment.create({
+            const createdPayment = await tx.payment.create({
               data: {
                 amount: newTotal,
-                method: paymentMethod,
+                method: finalPaymentMethod,
                 status: "PAID",
                 sessionId: tableSession?.id || null,
                 storeId: storeId,
+                invoiceNumber: finalInvoiceNumber,
                 orders: {
                   connect: { id: id },
                 },
               },
+            });
+            // Update order with paymentId
+            await tx.order.update({
+              where: { id },
+              data: { paymentId: createdPayment.id },
             });
           }
 

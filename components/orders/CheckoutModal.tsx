@@ -44,6 +44,7 @@ export function CheckoutModal({
   const { data: session } = useSession();
   const printer = usePrinter();
   const [step, setStep] = useState<"PREPARE" | "SUCCESS">("PREPARE");
+  const [nextInvoiceNumber, setNextInvoiceNumber] = useState<number | null>(null);
   const [itemPrices, setItemPrices] = useState<Record<string, number>>({});
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     order.customer || null,
@@ -87,16 +88,19 @@ export function CheckoutModal({
 
   useEffect(() => {
     const fetchData = async () => {
-      const [custRes, staffRes, qrRes] = await Promise.all([
+      const [custRes, staffRes, qrRes, nextInvRes] = await Promise.all([
         getCustomerSummary(),
         fetch("/api/staff"),
         fetch("/api/qr-payment"),
+        fetch("/api/checkout"),
       ]);
       if (custRes.success) setCustomers(custRes.data);
       const staffData = await staffRes.json();
       if (staffData.success) setStaff(staffData.data);
       const qrResponse = await qrRes.json();
       if (qrResponse.success) setQrData(qrResponse.data);
+      const nextInvData = await nextInvRes.json();
+      if (nextInvData.success) setNextInvoiceNumber(nextInvData.nextInvoiceNumber);
     };
     if (isOpen) fetchData();
   }, [isOpen]);
@@ -344,7 +348,18 @@ export function CheckoutModal({
             {/* Bill Info */}
             <div className="border-y border-black border-dashed py-2 mb-4 space-y-1">
               <div className="flex justify-between">
-                <span>Invoice: {order.invoiceNumber ? formatInvoiceNumber(order.invoiceNumber, settings.branchCode || 'GB', new Date(order.createdAt)) : order.id.slice(-6).toUpperCase()}</span>
+                <span>
+                  Invoice:{" "}
+                  {order.invoiceNumber
+                    ? formatInvoiceNumber(
+                        order.invoiceNumber,
+                        settings.branchCode || "GB",
+                        new Date(order.createdAt),
+                      )
+                    : nextInvoiceNumber
+                    ? formatInvoiceNumber(nextInvoiceNumber, settings.branchCode || "GB")
+                    : order.id.slice(-6).toUpperCase()}
+                </span>
                 <span>Date: {new Date().toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between">

@@ -225,3 +225,30 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function GET(req: NextRequest) {
+  try {
+    const sessionUser = await getServerSession(authOptions);
+    const storeId = sessionUser?.user?.storeId;
+    if (!storeId) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+    const { getFiscalYearStartAD } = require("@/lib/nepali-date-helper");
+    const fiscalYearStart = getFiscalYearStartAD();
+    const maxPayment = await prisma.payment.findFirst({
+      where: { storeId, createdAt: { gte: fiscalYearStart } },
+      orderBy: { invoiceNumber: "desc" },
+      select: { invoiceNumber: true },
+    });
+    const maxOrder = await prisma.order.findFirst({
+      where: { storeId, createdAt: { gte: fiscalYearStart } },
+      orderBy: { invoiceNumber: "desc" },
+      select: { invoiceNumber: true },
+    });
+    const nextInvoiceNumber = Math.max(maxPayment?.invoiceNumber || 0, maxOrder?.invoiceNumber || 0) + 1;
+    return NextResponse.json({ success: true, nextInvoiceNumber });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}
+
