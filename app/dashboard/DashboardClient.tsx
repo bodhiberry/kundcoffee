@@ -937,11 +937,11 @@ export default function DashboardClient({
         </div>
       </div>
 
-            <TopPerformers />
+            {/* <TopPerformers /> */}
 
       <SalesLineChart/>{/* Original Quick Metrics (Tables/Spaces) - Maybe keep or move? */}
       {/* Moving below as secondary information */}
-      <div className="pt-8 border-t border-gray-200">
+      {/* <div className="pt-8 border-t border-gray-200">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Floor Overview</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard title="Total Customers" value={customers.length} />
@@ -952,7 +952,7 @@ export default function DashboardClient({
             value={tables.filter((t) => t.status === "ACTIVE").length}
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Add Table Type Modal */}
       <Modal
