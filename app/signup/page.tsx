@@ -123,9 +123,10 @@ export default function SignupPage() {
       <div className="flex w-full flex-col px-8 py-6 sm:px-16 sm:py-8 md:w-[55%] lg:w-[50%]">
         {/* Top bar: logo + sign-in pill button, like the reference */}
         <div className="flex items-center justify-between">
+         <a href="https://www.xolacloud.com">
           <span className="font-display text-2xl font-bold tracking-tight text-ink">
             Xola<span style={{ color: PLUM }}>Cloud</span>
-          </span>
+          </span></a>
           <div className="hidden items-center gap-3 sm:flex">
             <span className="text-sm text-ink/60">Already have an account?</span>
             <Link
