@@ -18,6 +18,10 @@ export default function MeasuringUnitsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Inline editing state
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<number>(0);
+
   const fetchUnits = async () => {
     setLoading(true);
     try {
@@ -40,14 +44,61 @@ export default function MeasuringUnitsPage() {
 
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
-    setFilteredUnits(
-      units.filter(
-        (u) =>
-          u.name.toLowerCase().includes(lowerQuery) ||
-          u.shortName.toLowerCase().includes(lowerQuery),
-      ),
+    let f = units.filter(
+      (u) =>
+        u.name.toLowerCase().includes(lowerQuery) ||
+        u.shortName.toLowerCase().includes(lowerQuery),
     );
+    f = [...f].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    setFilteredUnits(f);
   }, [searchQuery, units]);
+
+  const handleSortOrderClick = (unit: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingRowId(unit.id);
+    setEditingValue(unit.sortOrder ?? 0);
+  };
+
+  const handleSortOrderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    if (editingValue === 0 && newVal.length > 1 && newVal.startsWith("0")) {
+      setEditingValue(parseInt(newVal.substring(1)) || 0);
+    } else {
+      setEditingValue(parseInt(newVal) || 0);
+    }
+  };
+
+  const handleSortOrderBlur = async (id: string) => {
+    const current = units.find((u) => u.id === id);
+    if (current && current.sortOrder === editingValue) {
+      setEditingRowId(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/inventory/measuring-unit/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sortOrder: editingValue }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Order updated");
+        setUnits((prev) =>
+          prev.map((u) => (u.id === id ? { ...u, sortOrder: editingValue } : u)),
+        );
+      }
+    } catch (err) {
+      toast.error("Failed to update order");
+    } finally {
+      setEditingRowId(null);
+    }
+  };
+
+  const handleSortOrderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+    if (e.key === "Escape") setEditingRowId(null);
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -108,6 +159,9 @@ export default function MeasuringUnitsPage() {
         <table className="w-full text-left text-sm text-zinc-600">
           <thead className="bg-zinc-50 border-b border-zinc-200">
             <tr>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest w-16">
+                #
+              </th>
               <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Unit Name
               </th>
@@ -126,6 +180,27 @@ export default function MeasuringUnitsPage() {
                 onClick={() => openEdit(u)}
                 className="hover:bg-zinc-50 transition-colors cursor-pointer group"
               >
+                <td
+                  className="px-6 py-4"
+                  onClick={(e) => handleSortOrderClick(u, e)}
+                >
+                  {editingRowId === u.id ? (
+                    <input
+                      type="number"
+                      value={editingValue}
+                      onChange={handleSortOrderChange}
+                      onBlur={() => handleSortOrderBlur(u.id)}
+                      onKeyDown={handleSortOrderKeyDown}
+                      className="w-16 px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span className="font-mono text-xs font-black text-zinc-400 group-hover:text-zinc-900 transition-colors">
+                      {u.sortOrder ?? 0}
+                    </span>
+                  )}
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-zinc-900">{u.name}</span>
@@ -165,7 +240,7 @@ export default function MeasuringUnitsPage() {
             ))}
             {filteredUnits.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-center py-8 text-zinc-500">
+                <td colSpan={4} className="text-center py-8 text-zinc-500">
                   No measuring units found.
                 </td>
               </tr>

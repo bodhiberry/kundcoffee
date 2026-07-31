@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     }
 
     const body = await req.json();
-    const { name, unitId, groupId, quantity, amount, costPrice } = body;
+    const { name, unitId, groupId, quantity, amount, costPrice, sortOrder } = body;
 
     const existingStock = await prisma.stock.findUnique({
       where: { id },
@@ -82,6 +82,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         ...(quantity !== undefined && { quantity }),
         ...(amount !== undefined && { amount }),
         ...(costPrice !== undefined && { costPrice }),
+        ...(sortOrder !== undefined && { sortOrder: parseInt(String(sortOrder)) }),
       },
       include: { unit: true },
     });

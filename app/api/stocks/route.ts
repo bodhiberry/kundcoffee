@@ -17,8 +17,8 @@ export async function GET() {
 
     const data = await prisma.stock.findMany({
       where: { storeId },
-      include: { unit: true },
-      orderBy: { name: "asc" },
+      include: { unit: true, group: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
     return NextResponse.json({ success: true, data });
   } catch (error) {
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, unitId, groupId, quantity, amount, costPrice } = body;
+    const { name, unitId, groupId, quantity, amount, costPrice, sortOrder } = body;
 
     if (!name || quantity === undefined || amount === undefined) {
       return NextResponse.json(
@@ -63,6 +63,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastStock = await prisma.stock.findFirst({
+        where: { storeId },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastStock ? lastStock.sortOrder + 1 : 1;
+    }
+
     const newStock = await prisma.stock.create({
       data: {
         name,
@@ -71,6 +81,7 @@ export async function POST(req: NextRequest) {
         quantity: Number(quantity),
         amount: Number(amount),
         costPrice: Number(costPrice || 0),
+        sortOrder: finalSortOrder,
         storeId,
       },
     });

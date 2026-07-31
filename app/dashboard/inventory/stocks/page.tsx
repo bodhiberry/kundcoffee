@@ -30,6 +30,10 @@ export default function StocksPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Inline editing state
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<number>(0);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -65,16 +69,63 @@ export default function StocksPage() {
 
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
-    setFilteredStocks(
-      stocks.filter(
-        (s) =>
-          s.name.toLowerCase().includes(lowerQuery) ||
-          s.group?.name?.toLowerCase().includes(lowerQuery) ||
-          s.unit?.name?.toLowerCase().includes(lowerQuery) ||
-          s.unit?.shortName?.toLowerCase().includes(lowerQuery),
-      ),
+    let f = stocks.filter(
+      (s) =>
+        s.name.toLowerCase().includes(lowerQuery) ||
+        s.group?.name?.toLowerCase().includes(lowerQuery) ||
+        s.unit?.name?.toLowerCase().includes(lowerQuery) ||
+        s.unit?.shortName?.toLowerCase().includes(lowerQuery),
     );
+    f = [...f].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    setFilteredStocks(f);
   }, [searchQuery, stocks]);
+
+  const handleSortOrderClick = (stock: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingRowId(stock.id);
+    setEditingValue(stock.sortOrder ?? 0);
+  };
+
+  const handleSortOrderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    if (editingValue === 0 && newVal.length > 1 && newVal.startsWith("0")) {
+      setEditingValue(parseInt(newVal.substring(1)) || 0);
+    } else {
+      setEditingValue(parseInt(newVal) || 0);
+    }
+  };
+
+  const handleSortOrderBlur = async (id: string) => {
+    const current = stocks.find((s) => s.id === id);
+    if (current && current.sortOrder === editingValue) {
+      setEditingRowId(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/stocks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sortOrder: editingValue }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Order updated");
+        setStocks((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, sortOrder: editingValue } : s)),
+        );
+      }
+    } catch (err) {
+      toast.error("Failed to update order");
+    } finally {
+      setEditingRowId(null);
+    }
+  };
+
+  const handleSortOrderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+    if (e.key === "Escape") setEditingRowId(null);
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -141,6 +192,9 @@ export default function StocksPage() {
         <table className="w-full text-left text-sm text-zinc-600">
           <thead className="bg-zinc-50 border-b border-zinc-200">
             <tr>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest w-16">
+                #
+              </th>
               <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Item Name
               </th>
@@ -165,6 +219,27 @@ export default function StocksPage() {
                 onClick={() => openEdit(s)}
                 className="hover:bg-zinc-50 transition-colors cursor-pointer group"
               >
+                <td
+                  className="px-6 py-4"
+                  onClick={(e) => handleSortOrderClick(s, e)}
+                >
+                  {editingRowId === s.id ? (
+                    <input
+                      type="number"
+                      value={editingValue}
+                      onChange={handleSortOrderChange}
+                      onBlur={() => handleSortOrderBlur(s.id)}
+                      onKeyDown={handleSortOrderKeyDown}
+                      className="w-16 px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span className="font-mono text-xs font-black text-zinc-400 group-hover:text-zinc-900 transition-colors">
+                      {s.sortOrder ?? 0}
+                    </span>
+                  )}
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-zinc-900">{s.name}</span>
@@ -219,7 +294,7 @@ export default function StocksPage() {
             ))}
             {filteredStocks.length === 0 && (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-zinc-500">
+                <td colSpan={6} className="text-center py-8 text-zinc-500">
                   No stock items found.
                 </td>
               </tr>
