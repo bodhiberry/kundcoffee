@@ -20,14 +20,15 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { name, shortName, description } = body;
+    const { name, shortName, description, sortOrder } = body;
 
     const updatedUnit = await prisma.measuringUnit.update({
       where: { id, storeId },
       data: {
-        name,
-        shortName,
-        description,
+        ...(name !== undefined && { name }),
+        ...(shortName !== undefined && { shortName }),
+        ...(description !== undefined && { description }),
+        ...(sortOrder !== undefined && { sortOrder: parseInt(String(sortOrder)) }),
       },
     });
 

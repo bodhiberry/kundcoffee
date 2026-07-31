@@ -16,7 +16,7 @@ export async function GET() {
     }
     const data = await prisma.measuringUnit.findMany({
       where: { storeId },
-      orderBy: { name: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
     return NextResponse.json({ success: true, data });
   } catch (error) {
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, shortName, description } = body;
+    const { name, shortName, description, sortOrder } = body;
 
     if (!name || !shortName) {
       return NextResponse.json(
@@ -50,11 +50,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastUnit = await prisma.measuringUnit.findFirst({
+        where: { storeId },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastUnit ? lastUnit.sortOrder + 1 : 1;
+    }
+
     const newUnit = await prisma.measuringUnit.create({
       data: {
         name,
         shortName,
         description,
+        sortOrder: finalSortOrder,
         storeId,
       },
     });

@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       address,
       openingBalance,
       openingBalanceType,
+      sortOrder,
     } = body;
 
     if (!fullName) {
@@ -58,6 +59,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastSupplier = await prisma.supplier.findFirst({
+        where: { storeId },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastSupplier ? lastSupplier.sortOrder + 1 : 1;
+    }
+
     const supplier = await prisma.$transaction(
       async (tx) => {
         const newSupplier = await tx.supplier.create({
@@ -70,6 +81,7 @@ export async function POST(req: NextRequest) {
             address,
             openingBalance: parseFloat(openingBalance) || 0,
             openingBalanceType: openingBalanceType || "CREDIT",
+            sortOrder: finalSortOrder,
             storeId,
           },
         });
@@ -123,7 +135,7 @@ export async function GET(req: NextRequest) {
     // 1. Fetch suppliers
     const suppliers = await prisma.supplier.findMany({
       where: { storeId },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     });
 
     // 2. Efficiently calculate metrics using aggregations

@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const groups = await prisma.stockGroup.findMany({
       where: { storeId },
       include: { _count: { select: { stocks: true } } },
-      orderBy: { name: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
 
     return NextResponse.json({ success: true, data: groups });
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
     const storeId = session.user.storeId;
 
-    const { name, description } = await req.json();
+    const { name, description, sortOrder } = await req.json();
 
     if (!name) {
       return NextResponse.json(
@@ -50,10 +50,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastGroup = await prisma.stockGroup.findFirst({
+        where: { storeId },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastGroup ? lastGroup.sortOrder + 1 : 1;
+    }
+
     const group = await prisma.stockGroup.create({
       data: {
         name,
         description,
+        sortOrder: finalSortOrder,
         storeId,
       },
     });

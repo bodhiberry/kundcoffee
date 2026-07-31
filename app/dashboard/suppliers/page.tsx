@@ -9,6 +9,7 @@ import { CustomTable } from "@/components/ui/CustomTable";
 import { Supplier } from "@/lib/types";
 import { Users, CreditCard, TrendingDown, Edit2, History } from "lucide-react";
 import SupplierModal from "@/components/procurement/SupplierModal";
+import { toast } from "sonner";
 
 export default function SuppliersPage() {
   const router = useRouter();
@@ -23,6 +24,10 @@ export default function SuppliersPage() {
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
     null,
   );
+
+  // Inline editing state
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<number>(0);
 
   const fetchSuppliers = async () => {
     try {
@@ -45,15 +50,62 @@ export default function SuppliersPage() {
 
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
-    setFilteredSuppliers(
-      suppliers.filter(
-        (s) =>
-          s.fullName.toLowerCase().includes(lowerQuery) ||
-          s.phone?.toLowerCase().includes(lowerQuery) ||
-          s.taxNumber?.toLowerCase().includes(lowerQuery),
-      ),
+    let f = suppliers.filter(
+      (s) =>
+        s.fullName.toLowerCase().includes(lowerQuery) ||
+        s.phone?.toLowerCase().includes(lowerQuery) ||
+        s.taxNumber?.toLowerCase().includes(lowerQuery),
     );
+    f = [...f].sort((a, b) => ((a as any).sortOrder ?? 0) - ((b as any).sortOrder ?? 0));
+    setFilteredSuppliers(f);
   }, [searchQuery, suppliers]);
+
+  const handleSortOrderClick = (s: Supplier, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingRowId(s.id);
+    setEditingValue((s as any).sortOrder ?? 0);
+  };
+
+  const handleSortOrderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    if (editingValue === 0 && newVal.length > 1 && newVal.startsWith("0")) {
+      setEditingValue(parseInt(newVal.substring(1)) || 0);
+    } else {
+      setEditingValue(parseInt(newVal) || 0);
+    }
+  };
+
+  const handleSortOrderBlur = async (id: string) => {
+    const current = suppliers.find((s) => s.id === id);
+    if (current && (current as any).sortOrder === editingValue) {
+      setEditingRowId(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/suppliers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sortOrder: editingValue }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Order updated");
+        setSuppliers((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, sortOrder: editingValue } : s)),
+        );
+      }
+    } catch (err) {
+      toast.error("Failed to update order");
+    } finally {
+      setEditingRowId(null);
+    }
+  };
+
+  const handleSortOrderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+    if (e.key === "Escape") setEditingRowId(null);
+  };
 
   const handleExport = () => {
     const headers = [
@@ -145,7 +197,29 @@ export default function SuppliersPage() {
         </div>
         <CustomTable
           columns={[
-            { header: "SN", accessor: (_, i) => i + 1 },
+            {
+              header: "#",
+              accessor: (s: Supplier) =>
+                editingRowId === s.id ? (
+                  <input
+                    type="number"
+                    value={editingValue}
+                    onChange={handleSortOrderChange}
+                    onBlur={() => handleSortOrderBlur(s.id)}
+                    onKeyDown={handleSortOrderKeyDown}
+                    className="w-16 px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span
+                    className="font-mono text-xs font-black text-zinc-400 group-hover:text-zinc-900 transition-colors cursor-pointer"
+                    onClick={(e) => handleSortOrderClick(s, e)}
+                  >
+                    {(s as any).sortOrder ?? 0}
+                  </span>
+                ),
+            },
             {
               header: "Name",
               accessor: (s: Supplier) => (

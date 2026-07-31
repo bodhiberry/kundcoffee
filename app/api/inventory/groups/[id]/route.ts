@@ -18,11 +18,15 @@ export async function PATCH(
     const storeId = session.user.storeId;
 
     const { id } = await params;
-    const { name, description } = await req.json();
+    const { name, description, sortOrder } = await req.json();
 
     const group = await prisma.stockGroup.updateMany({
       where: { id, storeId },
-      data: { name, description },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(sortOrder !== undefined && { sortOrder: parseInt(String(sortOrder)) }),
+      },
     });
 
     if (group.count === 0) {
