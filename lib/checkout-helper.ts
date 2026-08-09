@@ -146,7 +146,7 @@ export async function finalizeSessionTransaction(data: {
           storeId: finalStoreId,
           status: { in: ["PENDING", "PREPARING", "READYTOPICK", "SERVED"] },
         },
-        include: { items: true },
+        include: { items: { include: { selectedAddOns: true } } },
       });
 
       for (const order of orders) {
@@ -172,6 +172,60 @@ export async function finalizeSessionTransaction(data: {
               data: { complimentaryQuantity: compQty },
             });
           }
+        }
+      }
+
+      // 2.5 Auto-deduct stock based on recipes (StockConsumption)
+      // Aggregate all stock deductions: { stockId -> totalQuantity }
+      const stockDeductions: Record<string, number> = {};
+
+      for (const order of orders) {
+        for (const item of order.items as any[]) {
+          const itemQty = item.quantity || 1;
+
+          // Look up recipe for the dish
+          if (item.dishId) {
+            const dishRecipe = await tx.stockConsumption.findMany({
+              where: { dishId: item.dishId },
+            });
+            for (const r of dishRecipe) {
+              stockDeductions[r.stockId] = (stockDeductions[r.stockId] || 0) + r.quantity * itemQty;
+            }
+          }
+
+          // Look up recipe for the combo
+          if (item.comboId) {
+            const comboRecipe = await tx.stockConsumption.findMany({
+              where: { comboId: item.comboId },
+            });
+            for (const r of comboRecipe) {
+              stockDeductions[r.stockId] = (stockDeductions[r.stockId] || 0) + r.quantity * itemQty;
+            }
+          }
+
+          // Look up recipe for each selected add-on
+          if (item.selectedAddOns && item.selectedAddOns.length > 0) {
+            for (const addOn of item.selectedAddOns) {
+              const addOnQty = addOn.quantity || 1;
+              const addOnRecipe = await tx.stockConsumption.findMany({
+                where: { addOnId: addOn.addOnId },
+              });
+              for (const r of addOnRecipe) {
+                stockDeductions[r.stockId] = (stockDeductions[r.stockId] || 0) + r.quantity * addOnQty * itemQty;
+              }
+            }
+          }
+        }
+      }
+
+      // Apply all deductions in batch
+      for (const [stockId, totalQty] of Object.entries(stockDeductions)) {
+        if (totalQty > 0) {
+          await tx.stock.update({
+            where: { id: stockId },
+            data: { quantity: { decrement: totalQty } },
+          });
+          console.log(`[CheckoutHelper] Stock deducted: ${stockId} -= ${totalQty}`);
         }
       }
 

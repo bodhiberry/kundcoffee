@@ -32,3 +32,20 @@ export async function  DELETE(req:NextRequest) {
     
   }
 }
+
+export async function PATCH(req:NextRequest) {
+  try {
+        const session =  await getServerSession(authOptions);
+    const storeId =  session?.user?.storeId;
+
+    if(!storeId)return NextResponse.json({success:false,message:"Unauthorized"},{status:400})
+
+      const {stockId,dishId} = await req.json();
+
+      if (!stockId)return NextResponse.json({
+      success:false,messagea:"Select a Stock Item"
+    },{status:400});
+  } catch (error) {
+    
+  }
+}
