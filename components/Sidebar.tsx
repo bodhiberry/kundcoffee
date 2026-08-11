@@ -27,6 +27,7 @@ import {
   Scale,
   History,
   Shield,
+  ChefHat,
 } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
 
@@ -306,6 +307,12 @@ export default function Sidebar() {
               href="/dashboard/inventory/groups"
               icon={Layers}
               label="Stock Groups"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/inventory/recipes"
+              icon={ChefHat}
+              label="Recipe Hub"
               isChild
             />
             <NavItem

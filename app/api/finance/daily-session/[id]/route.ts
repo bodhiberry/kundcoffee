@@ -89,6 +89,8 @@ export async function GET(req: NextRequest, context: { params: Params }) {
       success: true, 
       data: {
         ...dailySession,
+        salesByMethod,
+        purchaseByMethod,
         currentCashSales,
         currentDigitalSales,
         currentCreditSales,

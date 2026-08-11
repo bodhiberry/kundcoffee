@@ -4,6 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { hasPermission, PERMISSIONS } from "@/lib/rbac";
+import { deductStockForOrder } from "@/lib/stock-deduction-helper";
 
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
@@ -251,7 +252,11 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           },
         });
 
-        // --- Handle Completion and Payments ---
+        // --- Handle Completion and Stock Deduction ---
+        if (status === "COMPLETED" || status === "SERVED") {
+          await deductStockForOrder(tx, id);
+        }
+
         if (status === "COMPLETED") {
           const finalPaymentMethod = paymentMethod || "CASH";
           let tableSession = null;

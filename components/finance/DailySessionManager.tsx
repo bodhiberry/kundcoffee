@@ -27,6 +27,8 @@ import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { toast } from "sonner";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { DailySessionPrintModal } from "@/components/finance/DailySessionPrintModal";
+import { Printer } from "lucide-react";
 
 export function DailySessionManager() {
   const { settings } = useSettings();
@@ -43,6 +45,10 @@ export function DailySessionManager() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"summary" | "income" | "purchases">("summary");
+  
+  // Print Modal State
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [sessionToPrint, setSessionToPrint] = useState<any>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -125,6 +131,9 @@ export function DailySessionManager() {
         setActualClosingBalance("");
         setNotes("");
         fetchData();
+
+        // Fetch full closed session data and open print modal
+        handlePrintSession(activeSession.id);
       } else {
         toast.error(data.message || "Failed to close day");
       }
@@ -132,6 +141,21 @@ export function DailySessionManager() {
       toast.error("An error occurred");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handlePrintSession = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/finance/daily-session/${sessionId}`);
+      const data = await res.json();
+      if (data.success) {
+        setSessionToPrint(data.data);
+        setShowPrintModal(true);
+      } else {
+        toast.error("Failed to load session details for printing");
+      }
+    } catch (err) {
+      toast.error("Failed to load session details");
     }
   };
 
@@ -353,14 +377,24 @@ export function DailySessionManager() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                       <Button 
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleViewDetails(session)}
-                        className="text-[10px] font-black uppercase tracking-widest px-4 h-8"
-                       >
-                         Details
-                       </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleViewDetails(session)}
+                          className="text-[10px] font-black uppercase tracking-widest px-3 h-8"
+                        >
+                          Details
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handlePrintSession(session.id)}
+                          className="text-[10px] font-black uppercase tracking-widest px-3 h-8 flex items-center gap-1.5"
+                        >
+                          <Printer size={12} /> Print
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -720,16 +754,36 @@ export function DailySessionManager() {
             )}
           </div>
 
-          <div className="p-6 bg-zinc-50 border-t border-zinc-100">
+          <div className="p-6 bg-zinc-50 border-t border-zinc-100 flex gap-3">
              <Button 
                 onClick={() => setShowDetailsModal(false)}
-                className="w-full h-14 bg-zinc-900 text-white hover:bg-zinc-800 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs shadow-xl shadow-zinc-200"
+                variant="secondary"
+                className="flex-1 h-14 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs"
               >
                 Close Review
+              </Button>
+             <Button 
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  handlePrintSession(selectedSession?.id);
+                }}
+                className="flex-1 h-14 bg-zinc-900 text-white hover:bg-zinc-800 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs shadow-xl shadow-zinc-200 flex items-center justify-center gap-2"
+              >
+                <Printer size={16} /> Print Report
               </Button>
           </div>
         </div>
       </Modal>
+
+      {/* End of Day Print Summary Modal */}
+      <DailySessionPrintModal
+        isOpen={showPrintModal}
+        onClose={() => {
+          setShowPrintModal(false);
+          setSessionToPrint(null);
+        }}
+        sessionData={sessionToPrint}
+      />
     </div>
   );
 }

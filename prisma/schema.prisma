@@ -363,6 +363,7 @@ model Order {
   kotRemarks     String?
   dailySessionId String?
   splitGroupId   String?
+  isStockDeducted Boolean       @default(false)
   invoiceNumber  Int?
   customer       Customer?     @relation(fields: [customerId], references: [id])
   dailySession   DailySession? @relation(fields: [dailySessionId], references: [id])

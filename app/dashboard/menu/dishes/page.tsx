@@ -317,7 +317,7 @@ export default function DishesPage() {
         discountPrice: price.discountPrice || 0,
         id: price.id,
       },
-      stocks: stockConsumption.filter((s) => s.stockId && s.quantity > 0),
+      stockConsumption: stockConsumption.filter((s) => s.stockId && s.quantity > 0),
       addOnIds: selectedAddOnIds,
       showInOrderingApp,
     };

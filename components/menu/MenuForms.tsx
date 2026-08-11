@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Stock, Price, StockConsumption } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { Trash2 } from "lucide-react";
 
 interface PriceFormProps {
   value?: Partial<Price>;
@@ -61,7 +62,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
 
 interface StockConsumptionFormProps {
   stocks: Stock[]; // Available stocks to choose from
-  value?: { stockId: string; quantity: number }[];
+  value?: { stockId: string; quantity: number | string }[];
   onChange: (value: { stockId: string; quantity: number }[]) => void;
 }
 
@@ -71,11 +72,11 @@ export function StockConsumptionForm({
   onChange,
 }: StockConsumptionFormProps) {
   const addRow = () => {
-    onChange([...value, { stockId: "", quantity: 0 }]);
+    onChange([...value.map(v => ({ ...v, quantity: typeof v.quantity === "string" ? parseFloat(v.quantity) || 0 : v.quantity })), { stockId: "", quantity: 0 }]);
   };
 
   const removeRow = (index: number) => {
-    const newVal = [...value];
+    const newVal = value.map(v => ({ ...v, quantity: typeof v.quantity === "string" ? parseFloat(v.quantity) || 0 : v.quantity }));
     newVal.splice(index, 1);
     onChange(newVal);
   };
@@ -83,67 +84,113 @@ export function StockConsumptionForm({
   const updateRow = (
     index: number,
     field: "stockId" | "quantity",
-    val: string | number,
+    val: any,
   ) => {
     const newVal = [...value];
     newVal[index] = { ...newVal[index], [field]: val };
-    onChange(newVal);
+    
+    // Pass parsed float values to parent onChange
+    const parsed = newVal.map(item => ({
+      stockId: item.stockId,
+      quantity: typeof item.quantity === "string" ? (item.quantity === "" ? 0 : parseFloat(item.quantity) || 0) : item.quantity
+    }));
+    onChange(parsed);
   };
 
   return (
-    <div className="space-y-3 p-4 border border-zinc-200 bg-white rounded-md">
-      <div className="flex justify-between items-center border-b border-zinc-100 pb-2 mb-3">
-        <h3 className="text-sm font-semibold text-zinc-900">
-          Stock Consumption
-        </h3>
-        <Button onClick={addRow} type="button" variant="secondary" size="sm">
-          + Add Item
+    <div className="space-y-4 p-5 border border-zinc-200 bg-zinc-50/50 rounded-xl">
+      <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
+        <div>
+          <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider">
+            Recipe Ingredients
+          </h3>
+          <p className="text-xs text-zinc-500">
+            Select stock item and quantity consumed per serving
+          </p>
+        </div>
+        <Button
+          onClick={addRow}
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="bg-white border border-zinc-200 hover:bg-zinc-100 font-bold text-xs text-zinc-900 px-4 py-2 rounded-lg shadow-sm"
+        >
+          + Add Ingredient
         </Button>
       </div>
+
       <div className="space-y-3">
-        {value.map((row, index) => (
-          <div key={index} className="flex gap-2 items-end group">
-            <div className="flex-1">
-              <label className="pos-label">Stock Item</label>
-              <select
-                className="pos-input w-full"
-                value={row.stockId}
-                onChange={(e) => updateRow(index, "stockId", e.target.value)}
-              >
-                <option value="">Select Stock</option>
-                {stocks.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.unit?.shortName || "no unit"})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="w-28">
-              <Input
-                label="Qty"
-                type="number"
-                step="0.1"
-                value={row.quantity}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  updateRow(index, "quantity", isNaN(val) ? 0 : val);
-                }}
-              />
-            </div>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => removeRow(index)}
-              className="h-9 w-9 p-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        {value.map((row, index) => {
+          const selectedStock = stocks.find((s) => s.id === row.stockId);
+          const unitName = selectedStock?.unit?.shortName || selectedStock?.unit?.name || "units";
+          return (
+            <div
+              key={index}
+              className="flex gap-4 items-center bg-white p-4 rounded-xl border border-zinc-200 shadow-sm"
             >
-              ×
-            </Button>
-          </div>
-        ))}
+              <div className="flex-1">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 block mb-1.5">
+                  Ingredient #{index + 1}
+                </label>
+                <select
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm font-semibold text-zinc-900 focus:outline-none focus:border-zinc-900"
+                  value={row.stockId}
+                  onChange={(e) => updateRow(index, "stockId", e.target.value)}
+                >
+                  <option value="">-- Choose Stock Item --</option>
+                  {stocks.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.unit?.shortName || s.unit?.name || "units"}) - Available: {s.quantity}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="w-44">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 block mb-1.5">
+                  Quantity ({unitName})
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="e.g. 0.3"
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-bold text-zinc-900 focus:outline-none focus:border-zinc-900"
+                    value={row.quantity === 0 || row.quantity === "0" ? "" : row.quantity}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // Allow typing decimal point like "0." or "0.3"
+                      if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                        updateRow(index, "quantity", val);
+                      }
+                    }}
+                  />
+                  <span className="text-xs font-bold text-zinc-500 bg-zinc-100 px-2 py-1.5 rounded-lg border border-zinc-200 shrink-0">
+                    {unitName}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-5">
+                <button
+                  type="button"
+                  onClick={() => removeRow(index)}
+                  className="h-10 w-10 flex items-center justify-center rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors shrink-0"
+                  title="Remove Ingredient"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+
         {value.length === 0 && (
-          <p className="text-xs text-zinc-400 py-2">
-            No stock consumption defined.
-          </p>
+          <div className="text-center py-8 border border-dashed border-zinc-200 rounded-xl bg-white">
+            <p className="text-xs text-zinc-400 font-medium">
+              No ingredients added yet. Click "+ Add Ingredient" above.
+            </p>
+          </div>
         )}
       </div>
     </div>
