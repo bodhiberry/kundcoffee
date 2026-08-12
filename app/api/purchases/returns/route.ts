@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
           paymentMode: paymentMode || null,
           remark,
           attachment,
-          staffId,
+          staffId: staffId || null,
           storeId,
           items: {
             create: items.map((item: any) => ({

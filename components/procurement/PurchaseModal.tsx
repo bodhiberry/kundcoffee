@@ -249,7 +249,7 @@ export default function PurchaseModal({
           />
 
           <div className="space-y-1">
-            <label className="pos-label">Staff Incharge</label>
+            <label className="pos-label">Staff Incharge (Optional)</label>
             <select
               className="pos-input w-full"
               value={formData.staffId}
@@ -257,7 +257,7 @@ export default function PurchaseModal({
                 setFormData({ ...formData, staffId: e.target.value })
               }
             >
-              <option value="">Select Receiver</option>
+              <option value="">Select Receiver (Optional)</option>
               {staff.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}

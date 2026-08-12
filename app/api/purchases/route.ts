@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
             paymentMode: normalizedPaymentMode,
             remark,
             attachment,
-            staffId,
+            staffId: staffId || null,
             storeId,
             dailySessionId: activeSession?.id || null,
             items: {

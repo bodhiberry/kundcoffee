@@ -244,7 +244,7 @@ export default function ReturnModal({
           </div>
           <div className="space-y-1.5 font-sans">
             <label className="text-[10px] font-black text-rose-400 uppercase tracking-widest ml-1">
-              Authorizing Staff
+              Authorizing Staff (Optional)
             </label>
             <div className="relative group">
               <select
@@ -254,7 +254,7 @@ export default function ReturnModal({
                   setFormData({ ...formData, staffId: e.target.value })
                 }
               >
-                <option value="">Select Staff</option>
+                <option value="">Select Staff (Optional)</option>
                 {staff.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} ({s.role || "Staff"})
