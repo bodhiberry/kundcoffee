@@ -318,7 +318,7 @@ export default function Sidebar() {
             <NavItem
               href="/dashboard/inventory/consumption"
               icon={TrendingUp}
-              label="Consumption"
+              label="Consumption & Summary"
               isChild
             />
             <NavItem

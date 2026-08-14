@@ -18,6 +18,7 @@ import {
 import StockModal from "@/components/inventory/StockModal";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { toast } from "sonner";
+import LowStockNotifier from "@/components/inventory/LowStockNotifier";
 
 export default function StocksPage() {
   const [stocks, setStocks] = useState<any[]>([]);
@@ -165,6 +166,7 @@ export default function StocksPage() {
 
   return (
     <div className="px-6 py-10">
+      <LowStockNotifier threshold={5} />
       <PageHeaderAction
         title="Inventory Stocks"
         description="Manage raw materials and stock levels"

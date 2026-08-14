@@ -23,6 +23,8 @@ import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { useSettings } from "@/components/providers/SettingsProvider";
 import { toast } from "sonner";
 import { formatDualCalendarDate, formatInvoiceNumber } from "@/lib/nepali-date-helper";
+import LowStockNotifier from "@/components/inventory/LowStockNotifier";
+import LowStockHeaderWidget from "@/components/dashboard/LowStockHeaderWidget";
 
 interface DashboardClientProps {
   initialSpaces: spaceType[];
@@ -601,6 +603,7 @@ export default function DashboardClient({
 
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-full">
+      <LowStockNotifier threshold={5} />
       {/* Top Action Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -611,18 +614,23 @@ export default function DashboardClient({
             Monitor and manage your restaurant floor in real-time
           </p>
         </div>
-        {/* Dual Calendar Display */}
-        <div className="flex items-center gap-3 bg-white rounded-xl border border-zinc-200 shadow-sm px-5 py-3">
-          <div className="w-10 h-10 rounded-lg bg-zinc-950 text-white flex items-center justify-center">
-            <Calendar size={18} />
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-semibold text-zinc-800">
-              {(() => { const cal = formatDualCalendarDate(); return cal.english; })()}
-            </p>
-            <p className="text-xs font-medium text-zinc-500">
-              {(() => { const cal = formatDualCalendarDate(); return `${cal.nepali} • ${cal.nepaliFormatted}`; })()}
-            </p>
+        {/* Right Side Header Items (Calendar & Low Stock Alert Widget) */}
+        <div className="flex items-center gap-4">
+          <LowStockHeaderWidget threshold={5} />
+
+          {/* Dual Calendar Display */}
+          <div className="flex items-center gap-3 bg-white rounded-xl border border-zinc-200 shadow-sm px-5 py-3">
+            <div className="w-10 h-10 rounded-lg bg-zinc-950 text-white flex items-center justify-center">
+              <Calendar size={18} />
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-zinc-800">
+                {(() => { const cal = formatDualCalendarDate(); return cal.english; })()}
+              </p>
+              <p className="text-xs font-medium text-zinc-500">
+                {(() => { const cal = formatDualCalendarDate(); return `${cal.nepali} • ${cal.nepaliFormatted}`; })()}
+              </p>
+            </div>
           </div>
         </div>
         {/* <div className="flex items-center gap-3">
