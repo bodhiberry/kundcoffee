@@ -24,6 +24,8 @@ export default function StockModal({
   groups,
 }: StockModalProps) {
   const [loading, setLoading] = useState(false);
+  const [dishes, setDishes] = useState<any[]>([]);
+  const [selectedDishId, setSelectedDishId] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
     unitId: "",
@@ -32,6 +34,21 @@ export default function StockModal({
     costPrice: 0,
     amount: 0,
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      fetch("/api/dishes")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data)) {
+            setDishes(data.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch dishes", err);
+        });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (stock) {
@@ -43,6 +60,8 @@ export default function StockModal({
         costPrice: stock.costPrice || 0,
         amount: stock.amount || 0,
       });
+      const match = dishes.find((d: any) => d.name === stock.name);
+      setSelectedDishId(match ? match.id : "");
     } else {
       setFormData({
         name: "",
@@ -52,8 +71,19 @@ export default function StockModal({
         costPrice: 0,
         amount: 0,
       });
+      setSelectedDishId("");
     }
-  }, [stock, isOpen, units]);
+  }, [stock, isOpen, units, dishes]);
+
+  const handleDishSelect = (dishId: string) => {
+    setSelectedDishId(dishId);
+    if (dishId) {
+      const selectedDish = dishes.find((d) => d.id === dishId);
+      if (selectedDish) {
+        setFormData((prev) => ({ ...prev, name: selectedDish.name }));
+      }
+    }
+  };
 
   // Handle auto-calculation: Qty * Cost = Amount
   const handleCalculation = (field: "quantity" | "costPrice" | "amount", value: number) => {
@@ -110,12 +140,35 @@ export default function StockModal({
       title={stock ? "Edit Stock Item" : "Add New Stock Item"}
     >
       <div className="space-y-4 px-1 py-4">
+        <div className="space-y-1">
+          <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
+            Select Dish from Menu (Optional)
+          </label>
+          <select
+            className="pos-input w-full bg-zinc-50 border-zinc-200 rounded-xl text-sm h-11 px-3 font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            value={selectedDishId}
+            onChange={(e) => handleDishSelect(e.target.value)}
+          >
+            <option value="">-- Choose from Menu or enter separately below --</option>
+            {dishes.map((dish) => (
+              <option key={dish.id} value={dish.id}>
+                {dish.name} {dish.category?.name ? `(${dish.category.name})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <Input
-          label="Item Name"
+          label="Item Name *"
           required
           placeholder="e.g. Fresh Milk"
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e) => {
+            const val = e.target.value;
+            const match = dishes.find((d) => d.name.toLowerCase() === val.toLowerCase());
+            setSelectedDishId(match ? match.id : "");
+            setFormData({ ...formData, name: val });
+          }}
         />
 
         <div className="grid grid-cols-2 gap-4">
