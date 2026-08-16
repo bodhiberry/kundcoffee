@@ -243,11 +243,18 @@ export default function StocksPage() {
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-0.5">
                     <span className="font-medium text-zinc-900">{s.name}</span>
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                      {s.group?.name || "Uncategorized"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                        {s.group?.name || "Uncategorized"}
+                      </span>
+                      {s.consumptions && s.consumptions.length > 0 && (
+                        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          {s.consumptions.length} linked dish{s.consumptions.length > 1 ? "es" : ""}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">

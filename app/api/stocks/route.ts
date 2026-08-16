@@ -17,7 +17,17 @@ export async function GET() {
 
     const data = await prisma.stock.findMany({
       where: { storeId },
-      include: { unit: true, group: true },
+      include: {
+        unit: true,
+        group: true,
+        consumptions: {
+          include: {
+            dish: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+      },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
     return NextResponse.json({ success: true, data });
@@ -43,7 +53,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, unitId, groupId, quantity, amount, costPrice, sortOrder } = body;
+    const {
+      name,
+      unitId,
+      groupId,
+      quantity,
+      amount,
+      costPrice,
+      sortOrder,
+      dishConsumptions,
+    } = body;
 
     if (!name || quantity === undefined || amount === undefined) {
       return NextResponse.json(
@@ -73,21 +92,40 @@ export async function POST(req: NextRequest) {
       finalSortOrder = lastStock ? lastStock.sortOrder + 1 : 1;
     }
 
-    const newStock = await prisma.stock.create({
-      data: {
-        name,
-        unitId,
-        groupId,
-        quantity: Number(quantity),
-        amount: Number(amount),
-        costPrice: Number(costPrice || 0),
-        sortOrder: finalSortOrder,
-        storeId,
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const newStock = await tx.stock.create({
+        data: {
+          name,
+          unitId,
+          groupId: groupId || null,
+          quantity: Number(quantity),
+          amount: Number(amount),
+          costPrice: Number(costPrice || 0),
+          sortOrder: finalSortOrder,
+          storeId,
+        },
+      });
+
+      if (Array.isArray(dishConsumptions) && dishConsumptions.length > 0) {
+        const validConsumptions = dishConsumptions.filter(
+          (dc: any) => dc.dishId && parseFloat(dc.quantity) > 0,
+        );
+
+        if (validConsumptions.length > 0) {
+          await tx.stockConsumption.createMany({
+            data: validConsumptions.map((dc: any) => ({
+              stockId: newStock.id,
+              dishId: dc.dishId,
+              quantity: parseFloat(dc.quantity),
+            })),
+          });
+        }
+      }
+
+      return newStock;
     });
 
-
-    return NextResponse.json({ success: true, data: newStock });
+    return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     if (error.code === "P2002") {
       return NextResponse.json(

@@ -17,7 +17,17 @@ export async function GET(req: NextRequest, context: { params: Params }) {
 
     const stock = await prisma.stock.findUnique({
       where: { id },
-      include: { unit: true },
+      include: {
+        unit: true,
+        group: true,
+        consumptions: {
+          include: {
+            dish: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+      },
     });
 
     if (!stock)
@@ -60,7 +70,16 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     }
 
     const body = await req.json();
-    const { name, unitId, groupId, quantity, amount, costPrice, sortOrder } = body;
+    const {
+      name,
+      unitId,
+      groupId,
+      quantity,
+      amount,
+      costPrice,
+      sortOrder,
+      dishConsumptions,
+    } = body;
 
     const existingStock = await prisma.stock.findUnique({
       where: { id },
@@ -73,20 +92,54 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       );
     }
 
-    const updatedStock = await prisma.stock.update({
-      where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(unitId !== undefined && { unitId }),
-        ...(groupId !== undefined && { groupId }),
-        ...(quantity !== undefined && { quantity }),
-        ...(amount !== undefined && { amount }),
-        ...(costPrice !== undefined && { costPrice }),
-        ...(sortOrder !== undefined && { sortOrder: parseInt(String(sortOrder)) }),
-      },
-      include: { unit: true },
-    });
+    const updatedStock = await prisma.$transaction(async (tx) => {
+      const stock = await tx.stock.update({
+        where: { id },
+        data: {
+          ...(name !== undefined && { name }),
+          ...(unitId !== undefined && { unitId }),
+          ...(groupId !== undefined && { groupId: groupId || null }),
+          ...(quantity !== undefined && { quantity }),
+          ...(amount !== undefined && { amount }),
+          ...(costPrice !== undefined && { costPrice }),
+          ...(sortOrder !== undefined && {
+            sortOrder: parseInt(String(sortOrder)),
+          }),
+        },
+        include: {
+          unit: true,
+          group: true,
+          consumptions: {
+            include: {
+              dish: { select: { id: true, name: true } },
+            },
+          },
+        },
+      });
 
+      if (dishConsumptions !== undefined && Array.isArray(dishConsumptions)) {
+        // Delete existing dish consumptions for this stock item
+        await tx.stockConsumption.deleteMany({
+          where: { stockId: id, dishId: { not: null } },
+        });
+
+        const validConsumptions = dishConsumptions.filter(
+          (dc: any) => dc.dishId && parseFloat(dc.quantity) > 0,
+        );
+
+        if (validConsumptions.length > 0) {
+          await tx.stockConsumption.createMany({
+            data: validConsumptions.map((dc: any) => ({
+              stockId: id,
+              dishId: dc.dishId,
+              quantity: parseFloat(dc.quantity),
+            })),
+          });
+        }
+      }
+
+      return stock;
+    });
 
     return NextResponse.json(
       { success: true, message: "Stock updated", data: updatedStock },
