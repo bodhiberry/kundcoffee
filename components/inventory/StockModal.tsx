@@ -246,8 +246,7 @@ export default function StockModal({
                   : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-800"
               }`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-base">🌾</span>
+              <div className="mb-1">
                 <span className="text-xs font-bold">Raw Material</span>
               </div>
               <p
@@ -266,18 +265,17 @@ export default function StockModal({
               onClick={() => setFormData({ ...formData, type: "FINISHED_GOOD" })}
               className={`p-3 rounded-xl border text-left transition-all ${
                 formData.type === "FINISHED_GOOD"
-                  ? "border-amber-600 bg-amber-500 text-white shadow-sm"
+                  ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
                   : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-800"
               }`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-base">🍰</span>
+              <div className="mb-1">
                 <span className="text-xs font-bold">Finished Good</span>
               </div>
               <p
                 className={`text-[11px] leading-tight ${
                   formData.type === "FINISHED_GOOD"
-                    ? "text-amber-100"
+                    ? "text-zinc-300"
                     : "text-zinc-500"
                 }`}
               >

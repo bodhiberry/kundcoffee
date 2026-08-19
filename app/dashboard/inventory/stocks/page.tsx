@@ -222,18 +222,18 @@ export default function StocksPage() {
               : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
           }`}
         >
-          <span>🌾 Raw Materials</span>
+          <span>Raw Materials</span>
           <span className="text-[10px] opacity-75 font-normal">({rawCount})</span>
         </button>
         <button
           onClick={() => setStockTypeFilter("FINISHED_GOOD")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             stockTypeFilter === "FINISHED_GOOD"
-              ? "bg-amber-600 text-white shadow-sm"
+              ? "bg-zinc-900 text-white shadow-sm"
               : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
           }`}
         >
-          <span>🍰 Finished Goods</span>
+          <span>Finished Goods</span>
           <span className="text-[10px] opacity-75 font-normal">({finishedCount})</span>
         </button>
       </div>
@@ -310,12 +310,12 @@ export default function StocksPage() {
                 </td>
                 <td className="px-6 py-4">
                   {s.type === "FINISHED_GOOD" ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                      <span>🍰</span> Finished Good
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                      Finished Good
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-700 border border-zinc-200">
-                      <span>🌾</span> Raw Material
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-zinc-100 text-zinc-700 border border-zinc-200">
+                      Raw Material
                     </span>
                   )}
                 </td>
