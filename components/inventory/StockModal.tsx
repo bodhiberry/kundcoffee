@@ -39,6 +39,7 @@ export default function StockModal({
     quantity: 0,
     costPrice: 0,
     amount: 0,
+    type: "RAW_MATERIAL",
   });
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function StockModal({
         quantity: stock.quantity || 0,
         costPrice: stock.costPrice || 0,
         amount: stock.amount || 0,
+        type: stock.type || "RAW_MATERIAL",
       });
 
       // Load existing dish consumptions
@@ -87,6 +89,7 @@ export default function StockModal({
         quantity: 0,
         costPrice: 0,
         amount: 0,
+        type: "RAW_MATERIAL",
       });
       setDishConsumptions([]);
     }
@@ -228,11 +231,71 @@ export default function StockModal({
       title={stock ? "Edit Stock Item" : "Add New Stock Item"}
     >
       <div className="space-y-5 px-1 py-4 pb-28">
+        {/* Stock Type Selector */}
+        <div className="space-y-2">
+          <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
+            Stock Type *
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, type: "RAW_MATERIAL" })}
+              className={`p-3 rounded-xl border text-left transition-all ${
+                formData.type === "RAW_MATERIAL"
+                  ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
+                  : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-800"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-base">🌾</span>
+                <span className="text-xs font-bold">Raw Material</span>
+              </div>
+              <p
+                className={`text-[11px] leading-tight ${
+                  formData.type === "RAW_MATERIAL"
+                    ? "text-zinc-300"
+                    : "text-zinc-500"
+                }`}
+              >
+                Ingredient used in recipes (e.g. Milk, Beans, Flour)
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, type: "FINISHED_GOOD" })}
+              className={`p-3 rounded-xl border text-left transition-all ${
+                formData.type === "FINISHED_GOOD"
+                  ? "border-amber-600 bg-amber-500 text-white shadow-sm"
+                  : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-800"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-base">🍰</span>
+                <span className="text-xs font-bold">Finished Good</span>
+              </div>
+              <p
+                className={`text-[11px] leading-tight ${
+                  formData.type === "FINISHED_GOOD"
+                    ? "text-amber-100"
+                    : "text-zinc-500"
+                }`}
+              >
+                Ready-to-sell bakery / retail item (e.g. Cheesecake Slices)
+              </p>
+            </button>
+          </div>
+        </div>
+
         {/* Item Name */}
         <Input
           label="Item Name *"
           required
-          placeholder="e.g. Fresh Milk, Espresso Beans, Sugar"
+          placeholder={
+            formData.type === "FINISHED_GOOD"
+              ? "e.g. Cheesecake Slices, Chocolate Muffin"
+              : "e.g. Fresh Milk, Espresso Beans, Sugar"
+          }
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />

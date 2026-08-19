@@ -22,10 +22,24 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, role, permissions, password } = body;
+    const { name, role, permissions, password, storeId: targetStoreId } = body;
+    const userId = session.user.id;
 
-    const existingUser = await prisma.user.findUnique({
-      where: { id, storeId },
+    // Find all store IDs owned by this admin
+    const ownedStores = await prisma.store.findMany({
+      where: { ownerId: userId },
+      select: { id: true },
+    });
+    const ownedStoreIds = ownedStores.map((s) => s.id);
+    if (storeId && !ownedStoreIds.includes(storeId)) {
+      ownedStoreIds.push(storeId);
+    }
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        id,
+        storeId: { in: ownedStoreIds },
+      },
     });
 
     if (!existingUser) {
@@ -40,6 +54,7 @@ export async function PUT(
       role: role !== undefined ? role : existingUser.role,
       permissions:
         permissions !== undefined ? permissions : existingUser.permissions,
+      ...(targetStoreId && { storeId: targetStoreId }),
     };
 
     if (password && password.trim() !== "") {
@@ -56,6 +71,7 @@ export async function PUT(
         email: true,
         role: true,
         permissions: true,
+        storeId: true,
       },
     });
 
@@ -90,6 +106,8 @@ export async function DELETE(
       );
     }
 
+    const userId = session.user.id;
+
     // Prevent deleting oneself
     if (session.user.id === id) {
       return NextResponse.json(
@@ -98,9 +116,23 @@ export async function DELETE(
       );
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { id, storeId },
+    // Find all store IDs owned by this admin
+    const ownedStores = await prisma.store.findMany({
+      where: { ownerId: userId },
+      select: { id: true },
     });
+    const ownedStoreIds = ownedStores.map((s) => s.id);
+    if (storeId && !ownedStoreIds.includes(storeId)) {
+      ownedStoreIds.push(storeId);
+    }
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        id,
+        storeId: { in: ownedStoreIds },
+      },
+    });
+
     if (!existingUser) {
       return NextResponse.json(
         { success: false, message: "User not found or unauthorized to delete" },

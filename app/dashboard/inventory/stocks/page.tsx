@@ -25,6 +25,7 @@ export default function StocksPage() {
   const [filteredStocks, setFilteredStocks] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [stockTypeFilter, setStockTypeFilter] = useState<"ALL" | "RAW_MATERIAL" | "FINISHED_GOOD">("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStock, setEditingStock] = useState<any | null>(null);
   const [groups, setGroups] = useState<any[]>([]);
@@ -70,16 +71,23 @@ export default function StocksPage() {
 
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
-    let f = stocks.filter(
-      (s) =>
+    let f = stocks.filter((s) => {
+      const matchesSearch =
         s.name.toLowerCase().includes(lowerQuery) ||
         s.group?.name?.toLowerCase().includes(lowerQuery) ||
         s.unit?.name?.toLowerCase().includes(lowerQuery) ||
-        s.unit?.shortName?.toLowerCase().includes(lowerQuery),
-    );
+        s.unit?.shortName?.toLowerCase().includes(lowerQuery);
+
+      const matchesType =
+        stockTypeFilter === "ALL" ||
+        (stockTypeFilter === "RAW_MATERIAL" && (!s.type || s.type === "RAW_MATERIAL")) ||
+        (stockTypeFilter === "FINISHED_GOOD" && s.type === "FINISHED_GOOD");
+
+      return matchesSearch && matchesType;
+    });
     f = [...f].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     setFilteredStocks(f);
-  }, [searchQuery, stocks]);
+  }, [searchQuery, stocks, stockTypeFilter]);
 
   const handleSortOrderClick = (stock: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -158,6 +166,9 @@ export default function StocksPage() {
     setIsModalOpen(true);
   };
 
+  const rawCount = stocks.filter((s) => !s.type || s.type === "RAW_MATERIAL").length;
+  const finishedCount = stocks.filter((s) => s.type === "FINISHED_GOOD").length;
+
   const totalInventoryValue = stocks.reduce(
     (acc, s) => acc + (s.amount || 0),
     0,
@@ -169,7 +180,7 @@ export default function StocksPage() {
       <LowStockNotifier threshold={5} />
       <PageHeaderAction
         title="Inventory Stocks"
-        description="Manage raw materials and stock levels"
+        description="Manage raw materials and finished bakery goods"
         onSearch={setSearchQuery}
         actionButton={
           <Button
@@ -181,13 +192,50 @@ export default function StocksPage() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-4 gap-6 mb-6">
         <MetricCard title="Total Items" value={stocks.length} />
         <MetricCard
           title="Total Value"
           value={`Rs. ${totalInventoryValue.toLocaleString()}`}
         />
-        <MetricCard title="Low Stock" value={lowStockItems} />
+        <MetricCard title="Raw Materials" value={rawCount} />
+        <MetricCard title="Finished Goods" value={finishedCount} />
+      </div>
+
+      {/* Stock Type Filter Tabs */}
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => setStockTypeFilter("ALL")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            stockTypeFilter === "ALL"
+              ? "bg-zinc-900 text-white shadow-sm"
+              : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+          }`}
+        >
+          All Items ({stocks.length})
+        </button>
+        <button
+          onClick={() => setStockTypeFilter("RAW_MATERIAL")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            stockTypeFilter === "RAW_MATERIAL"
+              ? "bg-zinc-900 text-white shadow-sm"
+              : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+          }`}
+        >
+          <span>🌾 Raw Materials</span>
+          <span className="text-[10px] opacity-75 font-normal">({rawCount})</span>
+        </button>
+        <button
+          onClick={() => setStockTypeFilter("FINISHED_GOOD")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            stockTypeFilter === "FINISHED_GOOD"
+              ? "bg-amber-600 text-white shadow-sm"
+              : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+          }`}
+        >
+          <span>🍰 Finished Goods</span>
+          <span className="text-[10px] opacity-75 font-normal">({finishedCount})</span>
+        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
@@ -199,6 +247,9 @@ export default function StocksPage() {
               </th>
               <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Item Name
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Type
               </th>
               <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Unit
@@ -258,6 +309,17 @@ export default function StocksPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4">
+                  {s.type === "FINISHED_GOOD" ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                      <span>🍰</span> Finished Good
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-700 border border-zinc-200">
+                      <span>🌾</span> Raw Material
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4">
                   <span className="px-2 py-1 bg-zinc-50 rounded border border-zinc-100 text-[10px] font-black text-zinc-500 uppercase tracking-wider">
                     {s.unit?.shortName || "—"}
                   </span>
@@ -303,7 +365,7 @@ export default function StocksPage() {
             ))}
             {filteredStocks.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-zinc-500">
+                <td colSpan={7} className="text-center py-8 text-zinc-500">
                   No stock items found.
                 </td>
               </tr>

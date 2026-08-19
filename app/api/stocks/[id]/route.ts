@@ -78,6 +78,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       amount,
       costPrice,
       sortOrder,
+      type,
       dishConsumptions,
     } = body;
 
@@ -105,6 +106,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           ...(sortOrder !== undefined && {
             sortOrder: parseInt(String(sortOrder)),
           }),
+          ...(type !== undefined && { type }),
         },
         include: {
           unit: true,

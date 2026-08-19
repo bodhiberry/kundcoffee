@@ -156,6 +156,7 @@ model Stock {
   unitId              String?
   costPrice           Float                @default(0)
   sortOrder           Int                  @default(0)
+  type                StockType            @default(RAW_MATERIAL)
   updatedAt           DateTime             @default(now()) @updatedAt
   purchaseItems       PurchaseItem[]
   purchaseReturnItems PurchaseReturnItem[]
@@ -758,7 +759,7 @@ model SystemSetting {
 model Store {
   id                 String            @id @default(cuid())
   name               String
-  ownerId            String            @unique
+  ownerId            String
   status             StoreStatus       @default(TRIAL)
   trialEndsAt        DateTime?
   subscriptionEndsAt DateTime?
@@ -986,6 +987,11 @@ enum StoreStatus {
   ACTIVE
   EXPIRED
   SUSPENDED
+}
+
+enum StockType {
+  RAW_MATERIAL
+  FINISHED_GOOD
 }
 
 model PlatformUser {

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
+import AddBranchModal from "@/components/dashboard/AddBranchModal";
 import {
   LayoutDashboard,
   Table2,
@@ -35,6 +36,47 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const { settings } = useSettings();
   const pathname = usePathname();
+
+  const [stores, setStores] = useState<any[]>([]);
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
+
+  useEffect(() => {
+    if (session?.user?.role === "ADMIN") {
+      fetch("/api/user/stores")
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.success) {
+            setStores(result.data.stores);
+            setActiveStoreId(result.data.activeStoreId);
+          }
+        })
+        .catch((err) => console.error("Error loading branches", err));
+    }
+  }, [session]);
+
+  const handleSwitchStore = async (storeId: string) => {
+    if (storeId === activeStoreId || switching) return;
+    setSwitching(true);
+    try {
+      const response = await fetch("/api/user/switch-store", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeId }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        window.location.reload();
+      } else {
+        alert(result.message || "Failed to switch branch");
+        setSwitching(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setSwitching(false);
+    }
+  };
 
   const userPermissions = (session?.user?.permissions as string[]) || [];
   const userRole = session?.user?.role;
@@ -180,6 +222,47 @@ export default function Sidebar() {
           </div>
         </div>
       </Link>
+
+      {/* Branch Switcher - Only visible for Main Admin / Branch Owners */}
+      {session?.user?.role === "ADMIN" && stores.length > 0 && (
+        <div className="px-4 py-3 border-b border-zinc-100 bg-zinc-50/50">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+              Active Branch
+            </label>
+            {stores.length > 1 && (
+              <span className="text-[9px] font-semibold text-zinc-400">
+                {stores.length} branches
+              </span>
+            )}
+          </div>
+          <div className="relative">
+            <select
+              value={activeStoreId || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "add-new") {
+                  setIsAddModalOpen(true);
+                } else if (val) {
+                  handleSwitchStore(val);
+                }
+              }}
+              disabled={switching}
+              className="w-full bg-white border border-zinc-200 hover:border-zinc-300 rounded-xl text-xs font-semibold h-9 px-3 pr-8 focus:outline-none focus:ring-1 focus:ring-zinc-900 cursor-pointer disabled:opacity-50 appearance-none text-zinc-800 transition-colors"
+            >
+              {stores.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.name}
+                </option>
+              ))}
+              <option value="add-new">+ Add New Branch...</option>
+            </select>
+            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-zinc-400">
+              <ChevronDown size={14} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navigation Area */}
       <div className="flex-1 overflow-y-auto px-3 py-6 space-y-8 custom-scrollbar">
@@ -391,9 +474,9 @@ export default function Sidebar() {
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest text-zinc-500 hover:text-red-600 hover:bg-red-50/50 transition-colors group"
         >
           <LogOut size={16} className="opacity-70 group-hover:opacity-100" />
-          Logout
         </button>
       </div>
+      <AddBranchModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {

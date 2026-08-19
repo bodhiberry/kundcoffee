@@ -7,17 +7,44 @@ import bcrypt from "bcrypt";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
     const storeId = session?.user?.storeId;
+    const userRole = session?.user?.role;
 
-    if (!session || !storeId) {
+    if (!session || !userId) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
 
+    const { searchParams } = new URL(req.url);
+    const filterBranchId = searchParams.get("branchId");
+
+    let whereClause: any = {};
+
+    if (userRole === "ADMIN") {
+      // Find all stores owned by this admin
+      const ownedStores = await prisma.store.findMany({
+        where: { ownerId: userId },
+        select: { id: true },
+      });
+      const ownedStoreIds = ownedStores.map((s) => s.id);
+      if (storeId && !ownedStoreIds.includes(storeId)) {
+        ownedStoreIds.push(storeId);
+      }
+
+      if (filterBranchId && filterBranchId !== "ALL") {
+        whereClause = { storeId: filterBranchId };
+      } else {
+        whereClause = { storeId: { in: ownedStoreIds } };
+      }
+    } else {
+      whereClause = { storeId };
+    }
+
     const users = await prisma.user.findMany({
-      where: { storeId },
+      where: whereClause,
       select: {
         id: true,
         name: true,
@@ -27,7 +54,15 @@ export async function GET(req: NextRequest) {
         isSetupComplete: true,
         emailVerified: true,
         trialEndsAt: true,
+        storeId: true,
+        store: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
+      orderBy: { id: "asc" },
     });
 
     return NextResponse.json({ success: true, data: users });
@@ -54,7 +89,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, email, password, role = "CASHIER", permissions = [] } = body;
+    const {
+      name,
+      email,
+      password,
+      role = "CASHIER",
+      permissions = [],
+      storeId: targetStoreId,
+    } = body;
+
+    const assignedStoreId = targetStoreId || storeId;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -63,7 +107,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
     if (existingUser) {
       return NextResponse.json(
         { success: false, message: "User already exists with this email" },
@@ -77,11 +121,11 @@ export async function POST(req: NextRequest) {
     const newUser = await prisma.user.create({
       data: {
         name,
-        email,
+        email: email.toLowerCase().trim(),
         password: hashedPassword,
         role,
         permissions,
-        storeId,
+        storeId: assignedStoreId,
         isSetupComplete: true, // Auto complete setup since admin created
         emailVerified: new Date(), // Skip email verification for admin-created users
       },

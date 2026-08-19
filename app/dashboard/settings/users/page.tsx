@@ -21,6 +21,8 @@ import { PERMISSIONS } from "@/lib/rbac";
 
 export default function UsersSettingsPage() {
   const [users, setUsers] = useState<any[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>("ALL");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -31,13 +33,33 @@ export default function UsersSettingsPage() {
     email: "",
     password: "",
     role: "CASHIER",
+    storeId: "",
     permissions: [] as string[],
   });
+
+  const fetchStores = async () => {
+    try {
+      const res = await fetch("/api/user/stores");
+      const data = await res.json();
+      if (data.success && data.data?.stores) {
+        setStores(data.data.stores);
+        if (!formData.storeId && data.data.activeStoreId) {
+          setFormData((prev) => ({ ...prev, storeId: data.data.activeStoreId }));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load stores", error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/users");
+      const url =
+        selectedBranchFilter === "ALL"
+          ? "/api/users"
+          : `/api/users?branchId=${selectedBranchFilter}`;
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
         setUsers(data.data);
@@ -50,8 +72,12 @@ export default function UsersSettingsPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchStores();
   }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [selectedBranchFilter]);
 
   const handleOpenAddModal = () => {
     setIsEditing(false);
@@ -61,6 +87,7 @@ export default function UsersSettingsPage() {
       email: "",
       password: "",
       role: "CASHIER",
+      storeId: stores.length > 0 ? stores[0].id : "",
       permissions: [],
     });
     setIsModalOpen(true);
@@ -74,6 +101,7 @@ export default function UsersSettingsPage() {
       email: user.email,
       password: "", // Don't show password
       role: user.role,
+      storeId: user.storeId || (stores.length > 0 ? stores[0].id : ""),
       permissions: user.permissions || [],
     });
     setIsModalOpen(true);
@@ -152,6 +180,14 @@ export default function UsersSettingsPage() {
       ),
     },
     {
+      header: "Branch",
+      accessor: (row: any) => (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-zinc-100 text-zinc-700 border border-zinc-200">
+          {row.store?.name || "Main Branch"}
+        </span>
+      ),
+    },
+    {
       header: "Role",
       accessor: (row: any) => (
         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded-md">
@@ -219,7 +255,7 @@ export default function UsersSettingsPage() {
     <div className="px-6 py-10 max-w-7xl mx-auto">
       <PageHeaderAction
         title="System Access"
-        description="Manage users who can log into the ERP and their specific permissions."
+        description="Manage branch usernames, passwords, and permissions across all branches."
         onSearch={() => {}}
         actionButton={
           <Button
@@ -231,14 +267,43 @@ export default function UsersSettingsPage() {
         }
       />
 
-      <div className="mt-8">
+      {/* Branch Filter Tabs if multiple stores exist */}
+      {stores.length > 1 && (
+        <div className="flex items-center gap-2 mt-6 overflow-x-auto pb-1">
+          <button
+            onClick={() => setSelectedBranchFilter("ALL")}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              selectedBranchFilter === "ALL"
+                ? "bg-zinc-900 text-white shadow-sm"
+                : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+            }`}
+          >
+            All Branches ({users.length})
+          </button>
+          {stores.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSelectedBranchFilter(s.id)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                selectedBranchFilter === s.id
+                  ? "bg-zinc-900 text-white shadow-sm"
+                  : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+              }`}
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-6">
         <CustomTable columns={columns} data={users} />
       </div>
 
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={isEditing ? "Edit User Access" : "Create New User"}
+        title={isEditing ? "Edit User & Password" : "Create New User / Branch Manager"}
         size="lg"
       >
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
@@ -249,6 +314,7 @@ export default function UsersSettingsPage() {
               </label>
               <input
                 type="text"
+                placeholder="e.g. John Doe, Branch Manager"
                 className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all font-semibold"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -256,11 +322,12 @@ export default function UsersSettingsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                Email Address
+                Username / Email Address
               </label>
               <input
                 type="email"
                 disabled={isEditing}
+                placeholder="e.g. branch2@restaurant.com"
                 className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all font-semibold disabled:opacity-50"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -274,6 +341,7 @@ export default function UsersSettingsPage() {
               <div className="relative">
                 <input
                   type="password"
+                  placeholder={isEditing ? "Leave blank to keep current" : "Enter password"}
                   className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all font-semibold"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -284,16 +352,32 @@ export default function UsersSettingsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                Assigned Branch
+              </label>
+              <select
+                className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all font-semibold"
+                value={formData.storeId}
+                onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
+              >
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2 col-span-1 md:col-span-2">
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
                 System Role
               </label>
               <select
-                className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all font-semibold appearance-none"
+                className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all font-semibold"
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               >
-                <option value="ADMIN">ADMIN (Full Access)</option>
-                <option value="MANAGER">MANAGER</option>
-                <option value="CASHIER">CASHIER</option>
+                <option value="ADMIN">ADMIN (Full Access across branches)</option>
+                <option value="MANAGER">MANAGER (Branch Level Manager)</option>
+                <option value="CASHIER">CASHIER (POS & Orders only)</option>
               </select>
             </div>
           </div>

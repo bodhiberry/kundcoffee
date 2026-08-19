@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       amount,
       costPrice,
       sortOrder,
+      type,
       dishConsumptions,
     } = body;
 
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest) {
           amount: Number(amount),
           costPrice: Number(costPrice || 0),
           sortOrder: finalSortOrder,
+          type: type === "FINISHED_GOOD" ? "FINISHED_GOOD" : "RAW_MATERIAL",
           storeId,
         },
       });
