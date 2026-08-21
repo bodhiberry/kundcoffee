@@ -450,7 +450,7 @@ model Payment {
 model Customer {
   id              String           @id @default(uuid())
   fullName        String
-  phone           String?          @unique
+  phone           String?
   email           String?
   openingBalance  Float            @default(0)
   creditLimit     Float?           @default(0)
@@ -463,13 +463,17 @@ model Customer {
   notes           String?
   createdAt       DateTime         @default(now())
   dob             DateTime?
-  loyaltyId       String?          @unique
+  loyaltyId       String?
   storeId         String?
   store           Store?           @relation(fields: [storeId], references: [id])
   CustomerLedger  CustomerLedger[]
   orders          Order[]
   reservation     Reservation[]
   salesReturns    SalesReturn[]
+
+  @@unique([phone, storeId])
+  @@unique([loyaltyId, storeId])
+  @@index([storeId])
 }
 
 model CustomerLedger {

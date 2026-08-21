@@ -98,9 +98,9 @@ export async function POST(
     if (customerPhone) {
       const normalizedPhone = customerPhone.trim();
 
-      // Look up existing customer by phone number
-      const existingCustomer = await prisma.customer.findUnique({
-        where: { phone: normalizedPhone },
+      // Look up existing customer by phone number within this store
+      const existingCustomer = await prisma.customer.findFirst({
+        where: { phone: normalizedPhone, storeId },
       });
 
       if (existingCustomer) {

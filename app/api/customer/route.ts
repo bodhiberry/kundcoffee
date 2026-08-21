@@ -41,8 +41,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (phone) {
-      const existingCustomer = await prisma.customer.findUnique({
-        where: { phone },
+      const existingCustomer = await prisma.customer.findFirst({
+        where: { phone, storeId },
       });
 
       if (existingCustomer) {

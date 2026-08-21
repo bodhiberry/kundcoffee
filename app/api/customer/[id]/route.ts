@@ -163,10 +163,10 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     const normalizedEmail = email?.trim() || null;
     const normalizedLoyaltyId = loyaltyId?.trim() || null;
 
-    // Check Phone Uniqueness
+    // Check Phone Uniqueness (within the same store)
     if (normalizedPhone && normalizedPhone !== customer.phone) {
-      const phoneExists = await prisma.customer.findUnique({
-        where: { phone: normalizedPhone },
+      const phoneExists = await prisma.customer.findFirst({
+        where: { phone: normalizedPhone, storeId: customer.storeId },
       });
       if (phoneExists) {
         return NextResponse.json(
@@ -176,10 +176,10 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       }
     }
 
-    // Check LoyaltyId Uniqueness
+    // Check LoyaltyId Uniqueness (within the same store)
     if (normalizedLoyaltyId && normalizedLoyaltyId !== customer.loyaltyId) {
-      const loyaltyExists = await prisma.customer.findUnique({
-        where: { loyaltyId: normalizedLoyaltyId },
+      const loyaltyExists = await prisma.customer.findFirst({
+        where: { loyaltyId: normalizedLoyaltyId, storeId: customer.storeId },
       });
       if (loyaltyExists) {
         return NextResponse.json(
