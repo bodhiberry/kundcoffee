@@ -19,6 +19,11 @@ export async function GET(req: NextRequest) {
             email: true,
           },
         },
+        subscription: {
+          include: {
+            features: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -38,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { storeId, action, trialEndsAt, subscriptionEndsAt } = body;
+    const { storeId, action, trialEndsAt, subscriptionEndsAt, subscriptionId } = body;
 
     if (!storeId) {
       return NextResponse.json({ success: false, message: "storeId is required" }, { status: 400 });
@@ -72,6 +77,9 @@ export async function POST(req: NextRequest) {
         updateData.status = "EXPIRED";
       }
     } else if (action === "update_subscription") {
+      if (subscriptionId !== undefined) {
+        updateData.subscriptionId = subscriptionId || null;
+      }
       if (trialEndsAt !== undefined) {
         updateData.trialEndsAt = trialEndsAt ? new Date(trialEndsAt) : null;
       }
@@ -112,6 +120,11 @@ export async function POST(req: NextRequest) {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        subscription: {
+          include: {
+            features: true,
           },
         },
       },

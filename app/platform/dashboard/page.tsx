@@ -11,15 +11,40 @@ import {
   LogOut,
   Calendar,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Layers,
+  Plus,
+  Edit2,
+  Trash2,
+  CheckCircle2,
+  Sliders,
+  Check
 } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/Modal";
+import { FeatureDefinition } from "@/lib/features";
 
 interface StoreUser {
   id: string;
   name: string | null;
   email: string;
+}
+
+interface SubscriptionFeature {
+  id: string;
+  key: string;
+  enabled: boolean;
+}
+
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  durationDay: number;
+  features: SubscriptionFeature[];
+  _count?: {
+    stores: number;
+  };
 }
 
 interface PlatformStore {
@@ -29,6 +54,12 @@ interface PlatformStore {
   status: "TRIAL" | "ACTIVE" | "EXPIRED" | "SUSPENDED";
   trialEndsAt: string | null;
   subscriptionEndsAt: string | null;
+  subscriptionId: string | null;
+  subscription?: {
+    id: string;
+    name: string;
+    features: SubscriptionFeature[];
+  } | null;
   isSuspended: boolean;
   createdAt: string;
   users: StoreUser[];
@@ -36,23 +67,41 @@ interface PlatformStore {
 
 export default function PlatformDashboard() {
   const { data: session } = useSession();
+  const [activeTab, setActiveTab] = useState<"stores" | "plans">("stores");
+  
+  // Stores state
   const [stores, setStores] = useState<PlatformStore[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [storesLoading, setStoresLoading] = useState(true);
   const [selectedStore, setSelectedStore] = useState<PlatformStore | null>(null);
+
+  // Plans state
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [availableFeatures, setAvailableFeatures] = useState<FeatureDefinition[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
   
   // Modals state
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
-  
-  // Form states
-  const [newPassword, setNewPassword] = useState("");
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
+
+  // Store subscription form state
+  const [newPlanId, setNewPlanId] = useState<string>("");
   const [newTrialEndsAt, setNewTrialEndsAt] = useState("");
   const [newSubscriptionEndsAt, setNewSubscriptionEndsAt] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  // Plan creation/edit form state
+  const [planFormName, setPlanFormName] = useState("");
+  const [planFormPrice, setPlanFormPrice] = useState<number>(0);
+  const [planFormDuration, setPlanFormDuration] = useState<number>(30);
+  const [planFormFeatures, setPlanFormFeatures] = useState<string[]>([]);
+
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchStores = async () => {
     try {
-      setLoading(true);
+      setStoresLoading(true);
       const res = await fetch("/api/platform/stores");
       const data = await res.json();
       if (data.success) {
@@ -63,15 +112,34 @@ export default function PlatformDashboard() {
     } catch (err) {
       toast.error("Network connection error");
     } finally {
-      setLoading(false);
+      setStoresLoading(false);
+    }
+  };
+
+  const fetchPlans = async () => {
+    try {
+      setPlansLoading(true);
+      const res = await fetch("/api/platform/plans");
+      const data = await res.json();
+      if (data.success) {
+        setPlans(data.data.plans);
+        setAvailableFeatures(data.data.availableFeatures);
+      } else {
+        toast.error(data.message || "Failed to fetch plans");
+      }
+    } catch (err) {
+      toast.error("Network connection error loading plans");
+    } finally {
+      setPlansLoading(false);
     }
   };
 
   useEffect(() => {
     fetchStores();
+    fetchPlans();
   }, []);
 
-  // Compute metrics
+  // Compute store metrics
   const totalStores = stores.length;
   const activeStores = stores.filter(s => s.status === "ACTIVE").length;
   const trialStores = stores.filter(s => s.status === "TRIAL").length;
@@ -86,6 +154,7 @@ export default function PlatformDashboard() {
 
   const handleOpenSubscriptionModal = (store: PlatformStore) => {
     setSelectedStore(store);
+    setNewPlanId(store.subscriptionId || store.subscription?.id || "");
     setNewTrialEndsAt(store.trialEndsAt ? store.trialEndsAt.substring(0, 10) : "");
     setNewSubscriptionEndsAt(store.subscriptionEndsAt ? store.subscriptionEndsAt.substring(0, 10) : "");
     setIsSubscriptionModalOpen(true);
@@ -128,13 +197,14 @@ export default function PlatformDashboard() {
         body: JSON.stringify({
           storeId: selectedStore.id,
           action: "update_subscription",
+          subscriptionId: newPlanId || null,
           trialEndsAt: newTrialEndsAt || null,
           subscriptionEndsAt: newSubscriptionEndsAt || null,
         }),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("Subscription dates updated");
+        toast.success("Store subscription updated");
         setIsSubscriptionModalOpen(false);
         fetchStores();
       } else {
@@ -173,6 +243,86 @@ export default function PlatformDashboard() {
       }
     } catch (err) {
       toast.error("Request failed");
+    }
+  };
+
+  // Plan Form handlers
+  const handleOpenCreatePlan = () => {
+    setEditingPlan(null);
+    setPlanFormName("");
+    setPlanFormPrice(0);
+    setPlanFormDuration(30);
+    setPlanFormFeatures(["pos_orders", "menu_management", "table_qr"]);
+    setIsPlanModalOpen(true);
+  };
+
+  const handleOpenEditPlan = (plan: SubscriptionPlan) => {
+    setEditingPlan(plan);
+    setPlanFormName(plan.name);
+    setPlanFormPrice(plan.price);
+    setPlanFormDuration(plan.durationDay);
+    setPlanFormFeatures(plan.features.map(f => f.key));
+    setIsPlanModalOpen(true);
+  };
+
+  const handleToggleFeature = (key: string) => {
+    setPlanFormFeatures(prev => 
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
+
+  const handleSavePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!planFormName.trim()) {
+      toast.error("Plan name is required");
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const isEdit = !!editingPlan;
+      const res = await fetch("/api/platform/plans", {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingPlan?.id,
+          name: planFormName,
+          price: planFormPrice,
+          durationDay: planFormDuration,
+          featureKeys: planFormFeatures,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "Plan saved successfully");
+        setIsPlanModalOpen(false);
+        fetchPlans();
+      } else {
+        toast.error(data.message || "Failed to save plan");
+      }
+    } catch (err) {
+      toast.error("Network error while saving plan");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeletePlan = async (plan: SubscriptionPlan) => {
+    if (!confirm(`Are you sure you want to delete plan "${plan.name}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/platform/plans?id=${plan.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Plan deleted successfully");
+        fetchPlans();
+      } else {
+        toast.error(data.message || "Failed to delete plan");
+      }
+    } catch (err) {
+      toast.error("Error deleting plan");
     }
   };
 
@@ -233,6 +383,32 @@ export default function PlatformDashboard() {
           </div>
         </div>
 
+        {/* Top Nav Tabs */}
+        <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+          <button
+            onClick={() => setActiveTab("stores")}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+              activeTab === "stores"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Store size={14} />
+            Stores ({stores.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("plans")}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+              activeTab === "plans"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Layers size={14} />
+            Subscription Plans ({plans.length})
+          </button>
+        </div>
+
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 bg-white border border-slate-200 shadow-sm px-4 py-2 rounded-xl">
             <div className="w-6 h-6 rounded bg-slate-900 flex items-center justify-center text-[10px] font-bold text-white uppercase">
@@ -262,135 +438,291 @@ export default function PlatformDashboard() {
       {/* Main Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-8 py-10 space-y-10 relative z-10">
         
-        {/* Title */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">
-              Tenant Registry
-            </h2>
-            <p className="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">
-              Manage client stores, trial periods, and account security
-            </p>
-          </div>
-          <button 
-            onClick={fetchStores}
-            id="refresh-stores-btn"
-            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-xs font-bold uppercase tracking-wider text-slate-700 transition-colors cursor-pointer"
-          >
-            <RefreshCcw size={13} className={loading ? "animate-spin" : ""} />
-            Refresh
-          </button>
-        </div>
-
-        {/* Metrics Section */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Total Stores</span>
-            <span className="text-2xl font-black text-slate-900">{loading ? "-" : totalStores}</span>
-          </div>
-          <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Active Billing</span>
-            <span className="text-2xl font-black text-emerald-600">{loading ? "-" : activeStores}</span>
-          </div>
-          <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Trial Stores</span>
-            <span className="text-2xl font-black text-slate-900">{loading ? "-" : trialStores}</span>
-          </div>
-          <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Suspended</span>
-            <span className="text-2xl font-black text-red-600">{loading ? "-" : suspendedStores}</span>
-          </div>
-          <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2 col-span-2 md:col-span-1">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Subscriptions Expired</span>
-            <span className="text-2xl font-black text-amber-600">{loading ? "-" : expiredStores}</span>
-          </div>
-        </div>
-
-        {/* Stores Table Panel */}
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-          {loading ? (
-            <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-500">
-              <Loader2 size={36} className="animate-spin text-slate-900" />
-              <span className="text-xs uppercase tracking-widest font-black">Connecting Database...</span>
+        {/* ================= STORES TAB ================= */}
+        {activeTab === "stores" && (
+          <>
+            {/* Title */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">
+                  Tenant Registry
+                </h2>
+                <p className="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">
+                  Manage client stores, assigned tier plans, trial periods, and account access
+                </p>
+              </div>
+              <button 
+                onClick={fetchStores}
+                id="refresh-stores-btn"
+                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-xs font-bold uppercase tracking-wider text-slate-700 transition-colors cursor-pointer"
+              >
+                <RefreshCcw size={13} className={storesLoading ? "animate-spin" : ""} />
+                Refresh
+              </button>
             </div>
-          ) : stores.length === 0 ? (
-            <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-500">
-              <Store size={36} className="text-slate-300" />
-              <span className="text-xs uppercase tracking-widest font-black">No Stores Registered</span>
+
+            {/* Metrics Section */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Total Stores</span>
+                <span className="text-2xl font-black text-slate-900">{storesLoading ? "-" : totalStores}</span>
+              </div>
+              <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Active Billing</span>
+                <span className="text-2xl font-black text-emerald-600">{storesLoading ? "-" : activeStores}</span>
+              </div>
+              <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Trial Stores</span>
+                <span className="text-2xl font-black text-slate-900">{storesLoading ? "-" : trialStores}</span>
+              </div>
+              <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Suspended</span>
+                <span className="text-2xl font-black text-red-600">{storesLoading ? "-" : suspendedStores}</span>
+              </div>
+              <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col gap-2 col-span-2 md:col-span-1">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Subscriptions Expired</span>
+                <span className="text-2xl font-black text-amber-600">{storesLoading ? "-" : expiredStores}</span>
+              </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-500">
-                    <th className="py-5 px-6">Store Details</th>
-                    <th className="py-5 px-6">Owner Account</th>
-                    <th className="py-5 px-6">Billing Status</th>
-                    <th className="py-5 px-6">Trial Ends</th>
-                    <th className="py-5 px-6">Subscription Ends</th>
-                    <th className="py-5 px-6 text-right">Administrative Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {stores.map((store) => {
-                    const owner = store.users.find(u => u.id === store.ownerId) || store.users[0];
-                    return (
-                      <tr key={store.id} className="hover:bg-slate-50 transition-colors group">
-                        <td className="py-5 px-6">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-slate-900 transition-colors">{store.name}</span>
-                            <span className="text-[10px] text-slate-500 italic mt-0.5">ID: {store.id}</span>
-                          </div>
-                        </td>
-                        <td className="py-5 px-6">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-slate-700">{owner?.name || "No Owner Assigned"}</span>
-                            <span className="text-[10px] text-slate-500 mt-0.5">{owner?.email || "-"}</span>
-                          </div>
-                        </td>
-                        <td className="py-5 px-6">
-                          {getStatusBadge(store.status)}
-                        </td>
-                        <td className="py-5 px-6 text-slate-600 text-xs font-medium">
-                          {formatDate(store.trialEndsAt)}
-                        </td>
-                        <td className="py-5 px-6 text-slate-600 text-xs font-medium">
-                          {formatDate(store.subscriptionEndsAt)}
-                        </td>
-                        <td className="py-5 px-6">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleOpenSubscriptionModal(store)}
-                              className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
-                            >
-                              <Calendar size={11} /> Plan
-                            </button>
-                            <button
-                              onClick={() => handleOpenPasswordModal(store)}
-                              className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
-                            >
-                              <Lock size={11} /> Creds
-                            </button>
-                            <button
-                              onClick={() => handleToggleSuspension(store)}
-                              className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-1 shadow-sm cursor-pointer ${
-                                store.isSuspended
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                  : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                              }`}
-                            >
-                              <Power size={11} /> {store.isSuspended ? "Active" : "Suspend"}
-                            </button>
-                          </div>
-                        </td>
+
+            {/* Stores Table Panel */}
+            <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+              {storesLoading ? (
+                <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-500">
+                  <Loader2 size={36} className="animate-spin text-slate-900" />
+                  <span className="text-xs uppercase tracking-widest font-black">Loading Stores...</span>
+                </div>
+              ) : stores.length === 0 ? (
+                <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-500">
+                  <Store size={36} className="text-slate-300" />
+                  <span className="text-xs uppercase tracking-widest font-black">No Stores Registered</span>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        <th className="py-5 px-6">Store Details</th>
+                        <th className="py-5 px-6">Assigned Plan</th>
+                        <th className="py-5 px-6">Owner Account</th>
+                        <th className="py-5 px-6">Billing Status</th>
+                        <th className="py-5 px-6">Trial Ends</th>
+                        <th className="py-5 px-6">Subscription Ends</th>
+                        <th className="py-5 px-6 text-right">Administrative Actions</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {stores.map((store) => {
+                        const owner = store.users.find(u => u.id === store.ownerId) || store.users[0];
+                        const planName = store.subscription?.name || "Standard (Default)";
+                        const featuresCount = store.subscription?.features?.length ?? 0;
+                        return (
+                          <tr key={store.id} className="hover:bg-slate-50 transition-colors group">
+                            <td className="py-5 px-6">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-900 transition-colors">{store.name}</span>
+                                <span className="text-[10px] text-slate-500 italic mt-0.5">ID: {store.id}</span>
+                              </div>
+                            </td>
+                            <td className="py-5 px-6">
+                              <div className="flex flex-col items-start gap-1">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-slate-900 text-white shadow-sm">
+                                  <Layers size={11} className="text-slate-400" />
+                                  {planName}
+                                </span>
+                                {featuresCount > 0 && (
+                                  <span className="text-[10px] text-slate-500 font-semibold">
+                                    {featuresCount} features unlocked
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-5 px-6">
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-slate-700">{owner?.name || "No Owner Assigned"}</span>
+                                <span className="text-[10px] text-slate-500 mt-0.5">{owner?.email || "-"}</span>
+                              </div>
+                            </td>
+                            <td className="py-5 px-6">
+                              {getStatusBadge(store.status)}
+                            </td>
+                            <td className="py-5 px-6 text-slate-600 text-xs font-medium">
+                              {formatDate(store.trialEndsAt)}
+                            </td>
+                            <td className="py-5 px-6 text-slate-600 text-xs font-medium">
+                              {formatDate(store.subscriptionEndsAt)}
+                            </td>
+                            <td className="py-5 px-6">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleOpenSubscriptionModal(store)}
+                                  className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                                >
+                                  <Calendar size={11} /> Plan & Dates
+                                </button>
+                                <button
+                                  onClick={() => handleOpenPasswordModal(store)}
+                                  className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                                >
+                                  <Lock size={11} /> Creds
+                                </button>
+                                <button
+                                  onClick={() => handleToggleSuspension(store)}
+                                  className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-1 shadow-sm cursor-pointer ${
+                                    store.isSuspended
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                      : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                  }`}
+                                >
+                                  <Power size={11} /> {store.isSuspended ? "Active" : "Suspend"}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* ================= PLANS & FEATURES TAB ================= */}
+        {activeTab === "plans" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">
+                  Subscription Plans & Feature Control
+                </h2>
+                <p className="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">
+                  Create, customize, and configure which modules and features each subscription tier can access
+                </p>
+              </div>
+              <button 
+                onClick={handleOpenCreatePlan}
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-black text-white shadow-md rounded-2xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+              >
+                <Plus size={14} />
+                Create New Plan
+              </button>
+            </div>
+
+            {plansLoading ? (
+              <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-500 bg-white rounded-3xl border border-slate-200">
+                <Loader2 size={36} className="animate-spin text-slate-900" />
+                <span className="text-xs uppercase tracking-widest font-black">Loading Plans...</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {plans.map((plan) => {
+                  const activeKeys = plan.features.map(f => f.key);
+                  const isBasic = plan.name.toLowerCase().includes("basic");
+                  const isPremium = plan.name.toLowerCase().includes("premium") || plan.name.toLowerCase().includes("pro");
+
+                  return (
+                    <div 
+                      key={plan.id}
+                      className="bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
+                    >
+                      {/* Top Header Card */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
+                            isPremium 
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : isBasic
+                                ? "bg-slate-100 text-slate-700 border-slate-200"
+                                : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}>
+                            {plan.durationDay} Days Cycle
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditPlan(plan)}
+                              className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                              title="Edit Plan"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePlan(plan)}
+                              className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                              title="Delete Plan"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                            {plan.name}
+                          </h3>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className="text-2xl font-black text-slate-900">
+                              {plan.price === 0 ? "Free / Custom" : `$${plan.price}`}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-400">
+                              / {plan.durationDay} days
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-500 block mt-1">
+                            Active on {plan._count?.stores || 0} store(s)
+                          </span>
+                        </div>
+
+                        <hr className="border-slate-100 my-2" />
+
+                        {/* Feature Checklist List */}
+                        <div className="space-y-2.5">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">
+                            Included Modules ({activeKeys.length}/{availableFeatures.length})
+                          </span>
+                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            {availableFeatures.map((feature) => {
+                              const isIncluded = activeKeys.includes(feature.key);
+                              return (
+                                <div
+                                  key={feature.key}
+                                  className={`flex items-center gap-2.5 text-xs py-1 px-2 rounded-lg transition-colors ${
+                                    isIncluded
+                                      ? "text-slate-800 font-semibold bg-slate-50"
+                                      : "text-slate-400 font-normal line-through opacity-60"
+                                  }`}
+                                >
+                                  {isIncluded ? (
+                                    <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                                  ) : (
+                                    <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
+                                  )}
+                                  <span className="truncate">{feature.name}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Footer */}
+                      <div className="pt-6 mt-4 border-t border-slate-100">
+                        <button
+                          onClick={() => handleOpenEditPlan(plan)}
+                          className="w-full py-2.5 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Sliders size={13} />
+                          Configure Features
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* MODAL 1: RESET PASSWORD */}
@@ -404,7 +736,7 @@ export default function PlatformDashboard() {
           <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded text-amber-900 flex gap-3">
             <AlertTriangle className="shrink-0 text-amber-600" size={20} />
             <div className="text-xs">
-              <span className="font-bold">Caution:</span> Resetting the password will update the primary login credentials for the store owner. Please communicate the new password securely.
+              <span className="font-bold">Caution:</span> Resetting the password will update the primary login credentials for the store owner.
             </div>
           </div>
 
@@ -449,11 +781,11 @@ export default function PlatformDashboard() {
         </div>
       </Modal>
 
-      {/* MODAL 2: EDIT SUBSCRIPTION DATES */}
+      {/* MODAL 2: EDIT SUBSCRIPTION DATES & ASSIGN PLAN */}
       <Modal
         isOpen={isSubscriptionModalOpen}
         onClose={() => setIsSubscriptionModalOpen(false)}
-        title="Manage Tenant Subscription & Trial"
+        title="Manage Store Subscription Plan & Access"
         size="md"
       >
         <div className="bg-white text-slate-900 p-6 space-y-6">
@@ -466,6 +798,25 @@ export default function PlatformDashboard() {
                 className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600"
                 value={selectedStore?.name || ""}
               />
+            </div>
+
+            {/* Plan Selector Dropdown */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Assigned Subscription Plan (Access Tier)
+              </label>
+              <select
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                value={newPlanId}
+                onChange={(e) => setNewPlanId(e.target.value)}
+              >
+                <option value="">Default Plan (Unassigned)</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.durationDay} days - {p.features.length} features included)
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -491,7 +842,7 @@ export default function PlatformDashboard() {
             </div>
 
             <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-slate-600 text-[11px] leading-relaxed">
-              * The store status is dynamically computed. If there is an active subscription date set in the future, status will resolve to <span className="font-bold text-emerald-600">Active</span>. If only the trial date is set in the future, it resolves to <span className="font-bold text-slate-900">Trialing</span>. Otherwise, it resolves to <span className="font-bold text-amber-600">Expired</span>.
+              * Assigning a plan determines exactly which dashboard features this store can access (e.g. Basic = POS & Menu only; Standard = Inventory & Staff; Premium = Analytics & Loyalty).
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
@@ -513,6 +864,119 @@ export default function PlatformDashboard() {
           </form>
         </div>
       </Modal>
+
+      {/* MODAL 3: CREATE / EDIT SUBSCRIPTION PLAN WITH FEATURE CHECKBOXES */}
+      <Modal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        title={editingPlan ? `Edit Plan: ${editingPlan.name}` : "Create Custom Subscription Plan"}
+        size="lg"
+      >
+        <div className="bg-white text-slate-900 p-6 space-y-6">
+          <form onSubmit={handleSavePlan} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1 md:col-span-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Plan Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Basic / Standard / Pro"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                  value={planFormName}
+                  onChange={(e) => setPlanFormName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Price ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                  value={planFormPrice}
+                  onChange={(e) => setPlanFormPrice(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Duration (Days)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                  value={planFormDuration}
+                  onChange={(e) => setPlanFormDuration(parseInt(e.target.value) || 30)}
+                />
+              </div>
+            </div>
+
+            {/* Feature Checkboxes Selector */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-widest text-slate-900">
+                  Feature Permissions (Check to Enable Access)
+                </label>
+                <span className="text-[10px] font-bold text-slate-500">
+                  {planFormFeatures.length} of {availableFeatures.length} enabled
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-y-auto p-1 border border-slate-100 rounded-2xl bg-slate-50/50">
+                {availableFeatures.map((feature) => {
+                  const isChecked = planFormFeatures.includes(feature.key);
+                  return (
+                    <div
+                      key={feature.key}
+                      onClick={() => handleToggleFeature(feature.key)}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
+                        isChecked
+                          ? "bg-white border-slate-900 shadow-sm"
+                          : "bg-white/60 border-slate-200 hover:border-slate-300 opacity-70"
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                        isChecked ? "bg-slate-900 text-white" : "border border-slate-300"
+                      }`}>
+                        {isChecked && <Check size={12} />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-900">{feature.name}</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 px-1.5 py-0.5 rounded bg-slate-100">
+                            {feature.category}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                className="px-5 py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                onClick={() => setIsPlanModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="px-6 py-2.5 bg-slate-900 hover:bg-black text-white shadow-sm rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                {actionLoading ? <Loader2 size={14} className="animate-spin" /> : editingPlan ? "Save Changes" : "Create Plan"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
     </div>
   );
 }
