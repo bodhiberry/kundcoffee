@@ -526,8 +526,7 @@ export default function PlatformDashboard() {
                             </td>
                             <td className="py-5 px-6">
                               <div className="flex flex-col items-start gap-1">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-slate-900 text-white shadow-sm">
-                                  <Layers size={11} className="text-slate-400" />
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider text-gray-700 ">
                                   {planName}
                                 </span>
                                 {featuresCount > 0 && (
