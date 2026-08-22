@@ -555,7 +555,7 @@ export default function PlatformDashboard() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => handleOpenSubscriptionModal(store)}
-                                  className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                                  className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1  cursor-pointer"
                                 >
                                   <Calendar size={11} /> Plan & Dates
                                 </button>
