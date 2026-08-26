@@ -1177,8 +1177,8 @@ export default function OrdersPage() {
                     const data = await res.json();
                     if (data.success) {
                       toast.success("Order moved to " + table.name);
-setTransferOrder(null);
-setTimeout(() => fetchData(), 500);
+                      setTransferOrder(null);
+                      await fetchData();
                     } else {
                       toast.error(data.message || "Transfer failed");
                     }
