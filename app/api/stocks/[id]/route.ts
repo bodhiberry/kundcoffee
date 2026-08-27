@@ -3,6 +3,7 @@ import { Params } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+
 export async function GET(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = await context.params;
@@ -27,6 +28,10 @@ export async function GET(req: NextRequest, context: { params: Params }) {
             },
           },
         },
+        audits: {
+          orderBy: { createdAt: "desc" },
+          take: 50,
+        },
       },
     });
 
@@ -34,7 +39,7 @@ export async function GET(req: NextRequest, context: { params: Params }) {
       return NextResponse.json(
         {
           success: false,
-          message: "Stock Item not found ",
+          message: "Stock Item not found",
         },
         { status: 400 },
       );
@@ -61,10 +66,12 @@ export async function GET(req: NextRequest, context: { params: Params }) {
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = await context.params;
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
 
-    if (!id) {
+    if (!id || !storeId) {
       return NextResponse.json(
-        { success: false, message: "Stock not found" },
+        { success: false, message: "Unauthorized or stock not found" },
         { status: 400 },
       );
     }
@@ -75,8 +82,8 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       unitId,
       groupId,
       quantity,
-      amount,
       costPrice,
+      sellingPrice,
       sortOrder,
       type,
       dishConsumptions,
@@ -86,23 +93,38 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       where: { id },
     });
 
-    if (!existingStock) {
+    if (!existingStock || existingStock.storeId !== storeId) {
       return NextResponse.json(
         { success: false, message: "Stock item not found" },
         { status: 404 },
       );
     }
 
+    const performer =
+      session.user?.name || session.user?.email || "Authorized Staff";
+
     const updatedStock = await prisma.$transaction(async (tx) => {
+      const newQty =
+        quantity !== undefined ? Number(quantity) : existingStock.quantity;
+      const newCostPrice =
+        costPrice !== undefined ? Number(costPrice) : existingStock.costPrice;
+      const newSellingPrice =
+        sellingPrice !== undefined
+          ? Number(sellingPrice)
+          : existingStock.sellingPrice;
+      const newAmount = Number((newQty * newCostPrice).toFixed(2));
+      const newName = name !== undefined ? name.trim() : existingStock.name;
+
       const stock = await tx.stock.update({
         where: { id },
         data: {
-          ...(name !== undefined && { name }),
+          ...(name !== undefined && { name: newName }),
           ...(unitId !== undefined && { unitId }),
           ...(groupId !== undefined && { groupId: groupId || null }),
-          ...(quantity !== undefined && { quantity }),
-          ...(amount !== undefined && { amount }),
-          ...(costPrice !== undefined && { costPrice }),
+          ...(quantity !== undefined && { quantity: newQty }),
+          amount: newAmount,
+          ...(costPrice !== undefined && { costPrice: newCostPrice }),
+          ...(sellingPrice !== undefined && { sellingPrice: newSellingPrice }),
           ...(sortOrder !== undefined && {
             sortOrder: parseInt(String(sortOrder)),
           }),
@@ -118,6 +140,82 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           },
         },
       });
+
+      // Audit: Name change
+      if (name !== undefined && newName !== existingStock.name) {
+        await tx.stockAudit.create({
+          data: {
+            stockId: id,
+            storeId,
+            action: "NAME_CHANGE",
+            oldName: existingStock.name,
+            newName: newName,
+            previousQuantity: existingStock.quantity,
+            newQuantity: newQty,
+            costPrice: newCostPrice,
+            sellingPrice: newSellingPrice,
+            remarks: `Name updated from '${existingStock.name}' to '${newName}'`,
+            performedBy: performer,
+          },
+        });
+      }
+
+      // Audit: Price change (Cost or Selling Price)
+      const costChanged =
+        costPrice !== undefined && newCostPrice !== existingStock.costPrice;
+      const sellingChanged =
+        sellingPrice !== undefined &&
+        newSellingPrice !== existingStock.sellingPrice;
+
+      if (costChanged || sellingChanged) {
+        const changesDesc = [
+          costChanged
+            ? `Cost: Rs. ${existingStock.costPrice} -> Rs. ${newCostPrice}`
+            : null,
+          sellingChanged
+            ? `Selling: Rs. ${existingStock.sellingPrice} -> Rs. ${newSellingPrice}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        await tx.stockAudit.create({
+          data: {
+            stockId: id,
+            storeId,
+            action: "PRICE_UPDATE",
+            previousCostPrice: existingStock.costPrice,
+            costPrice: newCostPrice,
+            previousSellingPrice: existingStock.sellingPrice,
+            sellingPrice: newSellingPrice,
+            previousQuantity: existingStock.quantity,
+            newQuantity: newQty,
+            newName: newName,
+            remarks: `Price updated: ${changesDesc}`,
+            performedBy: performer,
+          },
+        });
+      }
+
+      // Audit: Quantity adjustment (manual direct edit)
+      if (quantity !== undefined && newQty !== existingStock.quantity) {
+        const diff = newQty - existingStock.quantity;
+        await tx.stockAudit.create({
+          data: {
+            stockId: id,
+            storeId,
+            action: "ADJUSTMENT",
+            quantityChange: diff,
+            previousQuantity: existingStock.quantity,
+            newQuantity: newQty,
+            costPrice: newCostPrice,
+            sellingPrice: newSellingPrice,
+            newName: newName,
+            remarks: `Quantity adjusted: ${existingStock.quantity} -> ${newQty} (${diff > 0 ? "+" : ""}${diff})`,
+            performedBy: performer,
+          },
+        });
+      }
 
       if (dishConsumptions !== undefined && Array.isArray(dishConsumptions)) {
         // Delete existing dish consumptions for this stock item
@@ -144,7 +242,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     });
 
     return NextResponse.json(
-      { success: true, message: "Stock updated", data: updatedStock },
+      { success: true, message: "Stock updated successfully", data: updatedStock },
       { status: 200 },
     );
   } catch (error) {

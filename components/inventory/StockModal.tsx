@@ -5,7 +5,7 @@ import { SidePanel } from "@/components/ui/SidePanel";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/Input";
-import { Trash2 } from "lucide-react";
+import { Trash2, TrendingUp, DollarSign, Package } from "lucide-react";
 
 interface StockModalProps {
   isOpen: boolean;
@@ -38,7 +38,7 @@ export default function StockModal({
     groupId: "",
     quantity: 0,
     costPrice: 0,
-    amount: 0,
+    sellingPrice: 0,
     type: "RAW_MATERIAL",
   });
 
@@ -57,15 +57,37 @@ export default function StockModal({
     }
   }, [isOpen]);
 
+  // Helper to find best default group based on stock type
+  const getDefaultGroupId = (type: string, availableGroups: any[]) => {
+    if (!availableGroups || availableGroups.length === 0) return "";
+    const targetName =
+      type === "FINISHED_GOOD" ? "Finished Goods" : "Raw Materials";
+    const matched = availableGroups.find(
+      (g) => g.name.toLowerCase() === targetName.toLowerCase(),
+    );
+    return matched ? matched.id : availableGroups[0]?.id || "";
+  };
+
+  // Helper to find default unit (e.g. "Pcs" / "Piece" or first)
+  const getDefaultUnitId = (availableUnits: any[]) => {
+    if (!availableUnits || availableUnits.length === 0) return "";
+    const pcs = availableUnits.find(
+      (u) =>
+        u.shortName?.toLowerCase() === "pcs" ||
+        u.name?.toLowerCase().includes("piece"),
+    );
+    return pcs ? pcs.id : availableUnits[0]?.id || "";
+  };
+
   useEffect(() => {
     if (stock) {
       setFormData({
         name: stock.name || "",
-        unitId: stock.unitId || "",
-        groupId: stock.groupId || "",
+        unitId: stock.unitId || getDefaultUnitId(units),
+        groupId: stock.groupId || getDefaultGroupId(stock.type || "RAW_MATERIAL", groups),
         quantity: stock.quantity || 0,
         costPrice: stock.costPrice || 0,
-        amount: stock.amount || 0,
+        sellingPrice: stock.sellingPrice || 0,
         type: stock.type || "RAW_MATERIAL",
       });
 
@@ -82,24 +104,44 @@ export default function StockModal({
         setDishConsumptions([]);
       }
     } else {
+      const defaultUnit = getDefaultUnitId(units);
+      const defaultGroup = getDefaultGroupId("RAW_MATERIAL", groups);
       setFormData({
         name: "",
-        unitId: units.length > 0 ? units[0].id : "",
-        groupId: "",
+        unitId: defaultUnit,
+        groupId: defaultGroup,
         quantity: 0,
         costPrice: 0,
-        amount: 0,
+        sellingPrice: 0,
         type: "RAW_MATERIAL",
       });
       setDishConsumptions([]);
     }
-  }, [stock, isOpen, units]);
+  }, [stock, isOpen, units, groups]);
+
+  const handleTypeChange = (newType: "RAW_MATERIAL" | "FINISHED_GOOD") => {
+    // If not editing, auto-adjust group to match type
+    const newGroup = !stock
+      ? getDefaultGroupId(newType, groups)
+      : formData.groupId;
+    setFormData((prev) => ({
+      ...prev,
+      type: newType,
+      groupId: newGroup || prev.groupId,
+    }));
+  };
 
   const selectedUnit = units.find((u) => u.id === formData.unitId);
   const unitLabel = selectedUnit?.shortName || selectedUnit?.name || "units";
 
+  const totalValue = Number((formData.quantity * formData.costPrice).toFixed(2));
+  const profitMargin = Number((formData.sellingPrice - formData.costPrice).toFixed(2));
+  const marginPercent =
+    formData.costPrice > 0
+      ? Number(((profitMargin / formData.costPrice) * 100).toFixed(1))
+      : 0;
+
   const handleAddDishLink = () => {
-    // Pick first dish not already linked if possible
     const unlinkedDish = dishes.find(
       (d) => !dishConsumptions.some((dc) => dc.dishId === d.id),
     );
@@ -120,7 +162,6 @@ export default function StockModal({
       return updated;
     });
 
-    // Auto-fill stock name if it is currently empty and this is the first dish
     if (!formData.name && dishId) {
       const dish = dishes.find((d) => d.id === dishId);
       if (dish) {
@@ -137,32 +178,9 @@ export default function StockModal({
     });
   };
 
-  // Handle auto-calculation: Qty * Cost = Amount
-  const handleCalculation = (
-    field: "quantity" | "costPrice" | "amount",
-    value: number,
-  ) => {
-    const updated = { ...formData, [field]: value };
-
-    if (field === "quantity" || field === "costPrice") {
-      updated.amount = Number((updated.quantity * updated.costPrice).toFixed(2));
-    } else if (field === "amount") {
-      // If user enters total value manually, adjust cost price if quantity > 0
-      if (updated.quantity > 0) {
-        updated.costPrice = Number((updated.amount / updated.quantity).toFixed(2));
-      }
-    }
-
-    setFormData(updated);
-  };
-
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast.error("Please enter a stock item name");
-      return;
-    }
-    if (!formData.unitId) {
-      toast.error("Please select a measuring unit");
       return;
     }
 
@@ -195,7 +213,14 @@ export default function StockModal({
         }));
 
       const payload = {
-        ...formData,
+        name: formData.name.trim(),
+        unitId: formData.unitId || undefined,
+        groupId: formData.groupId || undefined,
+        quantity: Number(formData.quantity || 0),
+        costPrice: Number(formData.costPrice || 0),
+        sellingPrice: Number(formData.sellingPrice || 0),
+        amount: totalValue,
+        type: formData.type,
         dishConsumptions: validDishConsumptions,
       };
 
@@ -209,16 +234,16 @@ export default function StockModal({
       if (data.success) {
         toast.success(
           stock
-            ? "Stock & recipe links updated"
-            : "Stock & recipe links created",
+            ? "Stock item updated successfully"
+            : "New stock item added to inventory",
         );
         onSuccess();
         onClose();
       } else {
-        toast.error(data.message || "Something went wrong");
+        toast.error(data.message || "Failed to save stock item");
       }
     } catch (error) {
-      toast.error("Failed to save stock item");
+      toast.error("An error occurred while saving the stock item");
     } finally {
       setLoading(false);
     }
@@ -234,12 +259,12 @@ export default function StockModal({
         {/* Stock Type Selector */}
         <div className="space-y-2">
           <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
-            Stock Type *
+            Stock Classification *
           </label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, type: "RAW_MATERIAL" })}
+              onClick={() => handleTypeChange("RAW_MATERIAL")}
               className={`p-3 rounded-xl border text-left transition-all ${
                 formData.type === "RAW_MATERIAL"
                   ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
@@ -247,7 +272,7 @@ export default function StockModal({
               }`}
             >
               <div className="mb-1">
-                <span className="text-xs font-bold">Raw Material</span>
+                <span className="text-xs font-bold">Raw Material / Ingredient</span>
               </div>
               <p
                 className={`text-[11px] leading-tight ${
@@ -256,13 +281,13 @@ export default function StockModal({
                     : "text-zinc-500"
                 }`}
               >
-                Ingredient used in recipes (e.g. Milk, Beans, Flour)
+                Coffee beans, milk, syrups, flour, spices
               </p>
             </button>
 
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, type: "FINISHED_GOOD" })}
+              onClick={() => handleTypeChange("FINISHED_GOOD")}
               className={`p-3 rounded-xl border text-left transition-all ${
                 formData.type === "FINISHED_GOOD"
                   ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
@@ -270,7 +295,7 @@ export default function StockModal({
               }`}
             >
               <div className="mb-1">
-                <span className="text-xs font-bold">Finished Good</span>
+                <span className="text-xs font-bold">Finished / Retail Good</span>
               </div>
               <p
                 className={`text-[11px] leading-tight ${
@@ -279,7 +304,7 @@ export default function StockModal({
                     : "text-zinc-500"
                 }`}
               >
-                Ready-to-sell bakery / retail item (e.g. Cheesecake Slices)
+                Bakery items, muffins, bottled drinks, merchandise
               </p>
             </button>
           </div>
@@ -287,46 +312,52 @@ export default function StockModal({
 
         {/* Item Name */}
         <Input
-          label="Item Name *"
+          label="Stock Item Name *"
           required
           placeholder={
             formData.type === "FINISHED_GOOD"
-              ? "e.g. Cheesecake Slices, Chocolate Muffin"
-              : "e.g. Fresh Milk, Espresso Beans, Sugar"
+              ? "e.g. Cheesecake Slice, Chocolate Croissant"
+              : "e.g. Whole Milk, Espresso Beans, White Sugar"
           }
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
 
-        {/* Unit & Group */}
+        {/* Measuring Unit & Stock Group */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
-              Measuring Unit *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
+                Measuring Unit
+              </label>
+              <span className="text-[10px] text-zinc-400 font-medium">Auto-selected</span>
+            </div>
             <select
-              required
               className="pos-input w-full bg-zinc-50 border-zinc-200 rounded-xl text-sm h-11"
               value={formData.unitId}
               onChange={(e) =>
                 setFormData({ ...formData, unitId: e.target.value })
               }
             >
-              <option value="" disabled>
-                Select Unit
-              </option>
-              {units.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.shortName})
-                </option>
-              ))}
+              {units.length === 0 ? (
+                <option value="">Piece (Pcs) - Default</option>
+              ) : (
+                units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.shortName})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
           <div className="space-y-1">
-            <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
-              Stock Group
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
+                Stock Group
+              </label>
+              <span className="text-[10px] text-zinc-400 font-medium">Auto-categorized</span>
+            </div>
             <select
               className="pos-input w-full bg-zinc-50 border-zinc-200 rounded-xl text-sm h-11"
               value={formData.groupId}
@@ -334,7 +365,7 @@ export default function StockModal({
                 setFormData({ ...formData, groupId: e.target.value })
               }
             >
-              <option value="">No Group</option>
+              <option value="">General</option>
               {groups.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -344,87 +375,140 @@ export default function StockModal({
           </div>
         </div>
 
-        {/* Valuation & Inventory */}
+        {/* Pricing & Stock Valuation */}
         <div className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 space-y-4">
-          <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-200 pb-2">
-            Valuation & Stock Quantity
-          </h4>
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+            <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-zinc-400" />
+              Pricing & Initial Quantity
+            </h4>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase">
+              Per {unitLabel}
+            </span>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label={`Opening Quantity (${unitLabel})`}
+              label="Cost Price (Rs.) *"
               type="number"
               step="0.01"
+              min="0"
               placeholder="0.00"
-              value={formData.quantity}
+              value={formData.costPrice || ""}
               onChange={(e) =>
-                handleCalculation("quantity", parseFloat(e.target.value) || 0)
+                setFormData({
+                  ...formData,
+                  costPrice: parseFloat(e.target.value) || 0,
+                })
               }
             />
 
             <Input
-              label={`Unit Cost / Rate (Per ${unitLabel})`}
+              label="Selling Price (Rs.)"
               type="number"
               step="0.01"
+              min="0"
               placeholder="0.00"
-              value={formData.costPrice}
+              value={formData.sellingPrice || ""}
               onChange={(e) =>
-                handleCalculation("costPrice", parseFloat(e.target.value) || 0)
+                setFormData({
+                  ...formData,
+                  sellingPrice: parseFloat(e.target.value) || 0,
+                })
               }
             />
           </div>
 
-          <div className="pt-3 border-t border-dashed border-zinc-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  Total Inventory Value
-                </p>
-                <p className="text-2xl font-black text-zinc-900 tracking-tight">
-                  <span className="text-zinc-400 mr-1 opacity-50 font-medium">
-                    Rs.
+          <div className="grid grid-cols-2 gap-4 pt-1">
+            <Input
+              label={`Opening Stock Quantity (${unitLabel})`}
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={formData.quantity || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  quantity: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+
+            <div className="space-y-1">
+              <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
+                Unit Margin
+              </label>
+              <div className="h-11 px-3.5 rounded-xl border border-zinc-200 bg-white flex items-center justify-between">
+                <span className="text-xs font-semibold text-zinc-700">
+                  Rs. {profitMargin.toFixed(2)}
+                </span>
+                {formData.costPrice > 0 && (
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      profitMargin >= 0
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {marginPercent > 0 ? "+" : ""}
+                    {marginPercent}%
                   </span>
-                  {formData.amount.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                  })}
-                </p>
+                )}
               </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  Status
-                </p>
-                <div
-                  className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mt-1 ${
-                    formData.quantity > 0
-                      ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                      : "bg-red-50 text-red-600 border border-red-200"
-                  }`}
-                >
-                  {formData.quantity > 0 ? "In Stock" : "Out of Stock"}
-                </div>
+            </div>
+          </div>
+
+          {/* Valuation Summary */}
+          <div className="pt-3 border-t border-dashed border-zinc-200 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                Total Inventory Value
+              </p>
+              <p className="text-xl font-black text-zinc-900 tracking-tight">
+                <span className="text-zinc-400 mr-1 opacity-50 font-medium">
+                  Rs.
+                </span>
+                {totalValue.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                Stock Status
+              </p>
+              <div
+                className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mt-1 ${
+                  formData.quantity > 0
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                }`}
+              >
+                {formData.quantity > 0 ? `${formData.quantity} ${unitLabel}` : "0 Stock"}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Linked Dishes */}
+        {/* Linked Dishes (Recipe Auto-Deduction) */}
         <div className="space-y-3 mt-2">
           <div className="flex items-center justify-between">
             <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">
-              Used in Dishes (Optional)
+              Recipe Link (Auto-Deduct on Order)
             </label>
             <button
               type="button"
               onClick={handleAddDishLink}
               className="text-xs text-zinc-900 font-semibold hover:underline"
             >
-              + Add Dish
+              + Link Dish
             </button>
           </div>
 
           {dishConsumptions.length === 0 && (
             <p className="text-xs text-zinc-400">
-              No dishes linked. Add a dish to auto-deduct this stock per order.
+              No dishes linked. Link a menu dish if this ingredient should auto-deduct upon POS checkout.
             </p>
           )}
 
@@ -437,7 +521,7 @@ export default function StockModal({
               <div key={index} className="flex items-end gap-2">
                 <div className="flex-1 space-y-1">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-                    Dish
+                    Menu Dish
                   </label>
                   <select
                     className="pos-input w-full bg-zinc-50 border-zinc-200 rounded-xl text-sm h-11 px-3"
@@ -451,7 +535,7 @@ export default function StockModal({
                         <option key={dish.id} value={dish.id} disabled={isUsed}>
                           {dish.name}
                           {dish.category?.name ? ` (${dish.category.name})` : ""}
-                          {isUsed ? " — already added" : ""}
+                          {isUsed ? " — already linked" : ""}
                         </option>
                       );
                     })}
@@ -460,7 +544,7 @@ export default function StockModal({
 
                 <div className="w-32 space-y-1">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-                    Qty ({unitLabel})
+                    Deduct ({unitLabel})
                   </label>
                   <input
                     type="number"
@@ -478,7 +562,7 @@ export default function StockModal({
                 <button
                   type="button"
                   onClick={() => handleRemoveDishLink(index)}
-                  className="h-11 px-2 text-zinc-400 hover:text-red-500"
+                  className="h-11 px-2 text-zinc-400 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -506,7 +590,7 @@ export default function StockModal({
             ? "Saving..."
             : stock
             ? "Update Stock Item"
-            : "Create Stock Item"}
+            : "Save Stock Item"}
         </Button>
       </div>
     </SidePanel>

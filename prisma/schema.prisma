@@ -155,8 +155,10 @@ model Stock {
   groupId             String?
   unitId              String?
   costPrice           Float                @default(0)
+  sellingPrice        Float                @default(0)
   sortOrder           Int                  @default(0)
   type                StockType            @default(RAW_MATERIAL)
+  createdAt           DateTime             @default(now())
   updatedAt           DateTime             @default(now()) @updatedAt
   purchaseItems       PurchaseItem[]
   purchaseReturnItems PurchaseReturnItem[]
@@ -164,11 +166,37 @@ model Stock {
   store               Store                @relation(fields: [storeId], references: [id])
   unit                MeasuringUnit?       @relation(fields: [unitId], references: [id])
   consumptions        StockConsumption[]
+  audits              StockAudit[]
 
   @@unique([name, storeId])
   @@index([storeId])
   @@index([unitId])
   @@index([groupId])
+}
+
+model StockAudit {
+  id                   String   @id @default(uuid())
+  stockId              String
+  storeId              String
+  action               String
+  quantityChange       Float?   @default(0)
+  previousQuantity     Float?
+  newQuantity          Float?
+  costPrice            Float?
+  previousCostPrice    Float?
+  sellingPrice         Float?
+  previousSellingPrice Float?
+  oldName              String?
+  newName              String?
+  remarks              String?
+  performedBy          String?
+  createdAt            DateTime @default(now())
+  stock                Stock    @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  store                Store    @relation(fields: [storeId], references: [id])
+
+  @@index([stockId])
+  @@index([storeId])
+  @@index([createdAt])
 }
 
 model StockGroup {
@@ -792,6 +820,7 @@ model Store {
   staff              Staff[]
   staffRoles         StaffRole[]
   stocks             Stock[]
+  stockAudits        StockAudit[]
   stockGroups        StockGroup[]
   subMenus           SubMenu[]
   suppliers          Supplier[]

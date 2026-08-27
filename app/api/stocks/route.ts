@@ -58,29 +58,65 @@ export async function POST(req: NextRequest) {
       unitId,
       groupId,
       quantity,
-      amount,
       costPrice,
+      sellingPrice,
       sortOrder,
       type,
       dishConsumptions,
     } = body;
 
-    if (!name || quantity === undefined || amount === undefined) {
+    if (!name || name.trim() === "") {
       return NextResponse.json(
-        { success: false, message: "Missing required fields" },
+        { success: false, message: "Stock item name is required" },
         { status: 400 },
       );
     }
 
     const existingStock = await prisma.stock.findFirst({
-      where: { name, storeId },
+      where: { name: name.trim(), storeId },
     });
 
     if (existingStock) {
       return NextResponse.json(
-        { success: false, message: "Stock item already exists" },
+        { success: false, message: "Stock item with this name already exists" },
         { status: 409 },
       );
+    }
+
+    // Auto-resolve measuring unit if not provided
+    let finalUnitId = unitId;
+    if (!finalUnitId) {
+      let defaultUnit = await prisma.measuringUnit.findFirst({
+        where: { storeId },
+        orderBy: { sortOrder: "asc" },
+      });
+
+      if (!defaultUnit) {
+        // Auto-create standard "Pcs" measuring unit
+        defaultUnit = await prisma.measuringUnit.create({
+          data: {
+            name: "Piece",
+            shortName: "Pcs",
+            description: "Default standard unit",
+            storeId,
+            sortOrder: 1,
+          },
+        });
+      }
+      finalUnitId = defaultUnit.id;
+    }
+
+    // Auto-resolve or create default stock group if requested or empty
+    let finalGroupId = groupId || null;
+    if (!finalGroupId) {
+      const defaultGroupName =
+        type === "FINISHED_GOOD" ? "Finished Goods" : "Raw Materials";
+      const existingGroup = await prisma.stockGroup.findFirst({
+        where: { storeId, name: defaultGroupName },
+      });
+      if (existingGroup) {
+        finalGroupId = existingGroup.id;
+      }
     }
 
     let finalSortOrder = parseInt(String(sortOrder));
@@ -93,18 +129,46 @@ export async function POST(req: NextRequest) {
       finalSortOrder = lastStock ? lastStock.sortOrder + 1 : 1;
     }
 
+    const numericQty = Number(quantity || 0);
+    const numericCost = Number(costPrice || 0);
+    const numericSelling = Number(sellingPrice || 0);
+    const numericAmount = Number((numericQty * numericCost).toFixed(2));
+
+    const performer =
+      session.user?.name || session.user?.email || "Authorized Staff";
+
     const result = await prisma.$transaction(async (tx) => {
       const newStock = await tx.stock.create({
         data: {
-          name,
-          unitId,
-          groupId: groupId || null,
-          quantity: Number(quantity),
-          amount: Number(amount),
-          costPrice: Number(costPrice || 0),
+          name: name.trim(),
+          unitId: finalUnitId,
+          groupId: finalGroupId,
+          quantity: numericQty,
+          amount: numericAmount,
+          costPrice: numericCost,
+          sellingPrice: numericSelling,
           sortOrder: finalSortOrder,
           type: type === "FINISHED_GOOD" ? "FINISHED_GOOD" : "RAW_MATERIAL",
           storeId,
+        },
+      });
+
+      // Record initial audit entry
+      await tx.stockAudit.create({
+        data: {
+          stockId: newStock.id,
+          storeId,
+          action: "INITIAL_STOCK",
+          quantityChange: numericQty,
+          previousQuantity: 0,
+          newQuantity: numericQty,
+          costPrice: numericCost,
+          previousCostPrice: 0,
+          sellingPrice: numericSelling,
+          previousSellingPrice: 0,
+          newName: name.trim(),
+          remarks: "Initial stock registration",
+          performedBy: performer,
         },
       });
 
@@ -138,7 +202,7 @@ export async function POST(req: NextRequest) {
 
     console.error("Error creating stock:", error);
     return NextResponse.json(
-      { success: false, message: "Failed to create stock" },
+      { success: false, message: "Failed to create stock item" },
       { status: 500 },
     );
   }

@@ -17,7 +17,25 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const stockId = searchParams.get("stockId");
 
-    // Fetch purchases
+    // 1. Fetch Stock Audit Logs
+    const audits = await prisma.stockAudit.findMany({
+      where: {
+        storeId,
+        ...(stockId ? { stockId } : {}),
+      },
+      include: {
+        stock: {
+          select: {
+            id: true,
+            name: true,
+            unit: { select: { shortName: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // 2. Fetch Purchases
     const purchases = await prisma.purchaseItem.findMany({
       where: {
         purchase: { storeId },
@@ -39,7 +57,7 @@ export async function GET(req: NextRequest) {
       orderBy: { purchase: { txnDate: "desc" } },
     });
 
-    // Fetch consumptions
+    // 3. Fetch Consumptions
     const consumptions = await prisma.stockConsumption.findMany({
       where: {
         stock: { storeId },
@@ -53,30 +71,63 @@ export async function GET(req: NextRequest) {
         addOn: { select: { name: true } },
         combo: { select: { name: true } },
       },
-      orderBy: { id: "desc" }, // No createdAt in StockConsumption, using id assuming UUID order or just list
+      orderBy: { id: "desc" },
     });
 
     // Merge and format
     const history = [
+      ...audits.map((a) => ({
+        id: a.id,
+        type: a.action,
+        date: a.createdAt,
+        stockName: a.stock?.name || a.newName || a.oldName || "Stock Item",
+        quantity: a.quantityChange ?? 0,
+        previousQuantity: a.previousQuantity,
+        newQuantity: a.newQuantity,
+        costPrice: a.costPrice,
+        previousCostPrice: a.previousCostPrice,
+        sellingPrice: a.sellingPrice,
+        previousSellingPrice: a.previousSellingPrice,
+        oldName: a.oldName,
+        newName: a.newName,
+        unit: a.stock?.unit?.shortName || "",
+        reference: a.remarks || a.action,
+        entity: a.performedBy || "Staff",
+      })),
       ...purchases.map((p) => ({
         id: p.id,
         type: "PURCHASE",
         date: p.purchase.txnDate,
         stockName: p.stock?.name || p.itemName,
         quantity: p.quantity,
+        previousQuantity: null,
+        newQuantity: null,
+        costPrice: p.rate,
+        previousCostPrice: null,
+        sellingPrice: null,
+        previousSellingPrice: null,
+        oldName: null,
+        newName: null,
         unit: p.stock?.unit?.shortName || "",
-        reference: p.purchase.referenceNumber,
+        reference: `Invoice #${p.purchase.referenceNumber} (Rate: Rs. ${p.rate})`,
         entity: p.purchase.supplier.fullName,
       })),
       ...consumptions.map((c) => ({
         id: c.id,
-        type: "CONSUMPTION",
-        date: new Date(), // Using current date as placeholder since StockConsumption lacks it
+        type: "CONSUMPTION_LINK",
+        date: new Date(),
         stockName: c.stock.name,
         quantity: -c.quantity,
+        previousQuantity: null,
+        newQuantity: null,
+        costPrice: null,
+        previousCostPrice: null,
+        sellingPrice: null,
+        previousSellingPrice: null,
+        oldName: null,
+        newName: null,
         unit: c.stock.unit?.shortName || "",
-        reference:
-          c.dish?.name || c.addOn?.name || c.combo?.name || "Manual/Other",
+        reference: `Recipe link: ${c.dish?.name || c.addOn?.name || c.combo?.name || "Dish"}`,
         entity: "System",
       })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
