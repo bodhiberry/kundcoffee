@@ -5,7 +5,7 @@ import { SidePanel } from "@/components/ui/SidePanel";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { toast } from "sonner";
-import { PlusCircle, PackagePlus, ArrowUpRight, Calendar, User, FileText } from "lucide-react";
+import { PlusCircle, PackagePlus, ArrowUpRight, Calendar, User, FileText, ChefHat, ShoppingBag } from "lucide-react";
 
 interface RestockModalProps {
   isOpen: boolean;
@@ -39,6 +39,7 @@ export default function RestockModal({
 
   if (!stock) return null;
 
+  const isRaw = stock.type === "RAW_MATERIAL";
   const unitLabel = stock.unit?.shortName || stock.unit?.name || "units";
   const numAdded = parseFloat(String(quantityToAdd)) || 0;
   const numCost = parseFloat(String(costPrice)) || 0;
@@ -62,7 +63,7 @@ export default function RestockModal({
         body: JSON.stringify({
           quantityToAdd: numAdded,
           costPrice: numCost,
-          sellingPrice: numSelling,
+          sellingPrice: isRaw ? (stock.sellingPrice || 0) : numSelling,
           remarks: remarks.trim() || undefined,
           date: date || undefined,
         }),
@@ -97,13 +98,17 @@ export default function RestockModal({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                <PackagePlus className="w-5 h-5 text-zinc-100" />
+                {isRaw ? (
+                  <ChefHat className="w-5 h-5 text-amber-400" />
+                ) : (
+                  <PackagePlus className="w-5 h-5 text-emerald-400" />
+                )}
               </div>
               <div>
                 <h3 className="font-bold text-sm text-white">{stock.name}</h3>
                 <p className="text-[11px] text-zinc-400">
                   {stock.group?.name || "General Stock"} •{" "}
-                  {stock.type === "FINISHED_GOOD" ? "Finished Good" : "Raw Material"}
+                  {isRaw ? "Raw Material (Recipe Ingredient)" : "Finished Retail Good"}
                 </p>
               </div>
             </div>
@@ -115,7 +120,7 @@ export default function RestockModal({
           <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">
-                Current Stock
+                Current Stock On Hand
               </p>
               <p className="text-lg font-bold text-white font-mono">
                 {stock.quantity?.toLocaleString() || 0} {unitLabel}
@@ -123,7 +128,7 @@ export default function RestockModal({
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">
-                Current Cost Price
+                Last Purchase Rate
               </p>
               <p className="text-lg font-bold text-white font-mono">
                 Rs. {stock.costPrice?.toFixed(2) || "0.00"}
@@ -135,7 +140,7 @@ export default function RestockModal({
         {/* Restock Inputs */}
         <div className="space-y-4">
           <Input
-            label={`Quantity to Add (+${unitLabel}) *`}
+            label={`Restock Quantity (+${unitLabel}) *`}
             type="number"
             step="0.01"
             min="0.01"
@@ -146,9 +151,9 @@ export default function RestockModal({
             onChange={(e) => setQuantityToAdd(e.target.value)}
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid ${isRaw ? "grid-cols-1" : "grid-cols-2"} gap-4`}>
             <Input
-              label="Purchase / Cost Price (Rs.)"
+              label={`Batch Purchase / Cost Price (Rs. per ${unitLabel}) *`}
               type="number"
               step="0.01"
               min="0"
@@ -157,15 +162,17 @@ export default function RestockModal({
               onChange={(e) => setCostPrice(e.target.value)}
             />
 
-            <Input
-              label="Selling Price (Rs.)"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={sellingPrice}
-              onChange={(e) => setSellingPrice(e.target.value)}
-            />
+            {!isRaw && (
+              <Input
+                label={`Selling Price (Rs. per ${unitLabel})`}
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={sellingPrice}
+                onChange={(e) => setSellingPrice(e.target.value)}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -177,7 +184,7 @@ export default function RestockModal({
             />
 
             <Input
-              label="Supplier / Reference / Note"
+              label="Supplier / Bill Reference"
               placeholder="e.g. Vendor delivery, Market bill #45"
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
@@ -193,28 +200,28 @@ export default function RestockModal({
 
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between text-zinc-600">
-              <span>Quantity Change:</span>
+              <span>Quantity Arrived:</span>
               <span className="font-bold text-emerald-600 font-mono">
                 +{numAdded} {unitLabel}
               </span>
             </div>
 
             <div className="flex items-center justify-between text-zinc-600">
-              <span>New Total Stock:</span>
+              <span>New Total Physical Stock:</span>
               <span className="font-bold text-zinc-900 font-mono">
                 {newTotalQuantity} {unitLabel}
               </span>
             </div>
 
             <div className="flex items-center justify-between text-zinc-600">
-              <span>Restock Cost (Batch):</span>
+              <span>Batch Acquisition Cost:</span>
               <span className="font-bold text-zinc-900 font-mono">
                 Rs. {restockTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-zinc-200 text-zinc-900 font-bold">
-              <span>Projected Total Stock Value:</span>
+              <span>Projected Total Inventory Value:</span>
               <span className="font-black text-sm text-zinc-900 font-mono">
                 Rs. {newTotalInventoryValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
@@ -223,7 +230,7 @@ export default function RestockModal({
         </div>
 
         <p className="text-[11px] text-zinc-500 bg-amber-50 border border-amber-200 p-3 rounded-xl leading-relaxed">
-          <strong>Audit Protected:</strong> Adding this stock will create an immutable audit record with date, staff, cost, and quantity. Past order transaction prices will not be affected.
+          <strong>Audit Protected:</strong> Adding this stock creates a permanent audit record with date, staff, cost, and quantity. Past order transactions and historical menus remain unchanged.
         </p>
       </div>
 
