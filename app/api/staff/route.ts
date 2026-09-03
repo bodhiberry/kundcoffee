@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ApiResponse } from "@/lib/types";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkPlanLimit } from "@/lib/check-plan-limits";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +24,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, message: "Name is required" },
         { status: 400 },
+      );
+    }
+
+    // --- Plan limit validation ---
+    const limitCheck = await checkPlanLimit(storeId, "max_staff");
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: limitCheck.message || "Staff creation limit reached for your plan.",
+          limitKey: "max_staff",
+          current: limitCheck.current,
+          max: limitCheck.max,
+        },
+        { status: 403 },
       );
     }
 

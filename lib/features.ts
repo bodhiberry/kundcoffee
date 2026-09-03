@@ -5,6 +5,120 @@ export interface FeatureDefinition {
   category: "Core" | "Management" | "Growth" | "Advanced";
 }
 
+export interface LimitDefinition {
+  key: string;
+  name: string;
+  description: string;
+  category: "Core" | "Management" | "Growth" | "Advanced";
+  unit: string;
+  defaultBasic: number; // -1 represents unlimited
+  defaultStandard: number;
+  defaultPremium: number;
+}
+
+export const ALL_LIMITS: LimitDefinition[] = [
+  {
+    key: "max_tables",
+    name: "Max Tables",
+    description: "Maximum number of dine-in tables allowed",
+    category: "Core",
+    unit: "tables",
+    defaultBasic: 10,
+    defaultStandard: 30,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_spaces",
+    name: "Max Spaces / Rooms",
+    description: "Maximum seating spaces or dining areas",
+    category: "Core",
+    unit: "spaces",
+    defaultBasic: 2,
+    defaultStandard: 5,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_categories",
+    name: "Max Menu Categories",
+    description: "Maximum food and beverage categories",
+    category: "Core",
+    unit: "categories",
+    defaultBasic: 10,
+    defaultStandard: 30,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_dishes",
+    name: "Max Menu Items (Dishes)",
+    description: "Maximum active menu items / dishes",
+    category: "Core",
+    unit: "items",
+    defaultBasic: 30,
+    defaultStandard: 150,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_staff",
+    name: "Max Staff Accounts",
+    description: "Maximum active employee & cashier logins",
+    category: "Management",
+    unit: "staff",
+    defaultBasic: 2,
+    defaultStandard: 10,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_suppliers",
+    name: "Max Suppliers",
+    description: "Maximum supplier vendor accounts tracked",
+    category: "Management",
+    unit: "suppliers",
+    defaultBasic: 5,
+    defaultStandard: 25,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_stock_items",
+    name: "Max Stock Inventory Items",
+    description: "Maximum raw materials / inventory items tracked",
+    category: "Management",
+    unit: "items",
+    defaultBasic: 25,
+    defaultStandard: 150,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_customers",
+    name: "Max Customers in CRM",
+    description: "Maximum customer profiles and loyalty accounts",
+    category: "Growth",
+    unit: "customers",
+    defaultBasic: 100,
+    defaultStandard: 1000,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_daily_orders",
+    name: "Max Daily Orders",
+    description: "Maximum orders that can be placed in a single day (-1 for unlimited)",
+    category: "Core",
+    unit: "orders/day",
+    defaultBasic: 100,
+    defaultStandard: 500,
+    defaultPremium: -1,
+  },
+  {
+    key: "max_qr_codes",
+    name: "Max Payment QR Codes",
+    description: "Maximum custom payment QR codes registered",
+    category: "Core",
+    unit: "QR codes",
+    defaultBasic: 1,
+    defaultStandard: 5,
+    defaultPremium: -1,
+  },
+];
+
 export const ALL_FEATURES: FeatureDefinition[] = [
   {
     key: "pos_orders",
@@ -74,6 +188,18 @@ export const DEFAULT_PLAN_TEMPLATES = [
     price: 0,
     durationDay: 30,
     features: ["pos_orders", "menu_management", "table_qr"],
+    limits: {
+      max_tables: 10,
+      max_spaces: 2,
+      max_categories: 10,
+      max_dishes: 30,
+      max_staff: 2,
+      max_suppliers: 5,
+      max_stock_items: 25,
+      max_customers: 100,
+      max_daily_orders: 100,
+      max_qr_codes: 1,
+    } as Record<string, number>,
   },
   {
     name: "Standard",
@@ -88,6 +214,18 @@ export const DEFAULT_PLAN_TEMPLATES = [
       "procurement_suppliers",
       "marketing_promotions",
     ],
+    limits: {
+      max_tables: 30,
+      max_spaces: 5,
+      max_categories: 30,
+      max_dishes: 150,
+      max_staff: 10,
+      max_suppliers: 25,
+      max_stock_items: 150,
+      max_customers: 1000,
+      max_daily_orders: 500,
+      max_qr_codes: 5,
+    } as Record<string, number>,
   },
   {
     name: "Premium",
@@ -105,5 +243,18 @@ export const DEFAULT_PLAN_TEMPLATES = [
       "analytics_reports",
       "multi_branch",
     ],
+    limits: {
+      max_tables: -1,
+      max_spaces: -1,
+      max_categories: -1,
+      max_dishes: -1,
+      max_staff: -1,
+      max_suppliers: -1,
+      max_stock_items: -1,
+      max_customers: -1,
+      max_daily_orders: -1,
+      max_qr_codes: -1,
+    } as Record<string, number>,
   },
 ];
+

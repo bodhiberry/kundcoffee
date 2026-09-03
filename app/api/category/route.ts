@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkPlanLimit } from "@/lib/check-plan-limits";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,6 +23,21 @@ export async function POST(req: NextRequest) {
           message: "Category name is required",
         },
         { status: 400 },
+      );
+    }
+
+    // --- Plan limit validation ---
+    const limitCheck = await checkPlanLimit(storeId, "max_categories");
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: limitCheck.message || "Category limit reached for your plan.",
+          limitKey: "max_categories",
+          current: limitCheck.current,
+          max: limitCheck.max,
+        },
+        { status: 403 },
       );
     }
 

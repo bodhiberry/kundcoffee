@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkPlanLimit } from "@/lib/check-plan-limits";
 
 export async function GET(req: NextRequest) {
   try {
@@ -48,6 +49,21 @@ export async function POST(req: NextRequest) {
     const { image } = body; // Expecting string or string[]
 
     const images = Array.isArray(image) ? image : [image].filter(Boolean);
+
+    // --- Plan limit validation ---
+    const limitCheck = await checkPlanLimit(storeId, "max_qr_codes");
+    if (!limitCheck.allowed && limitCheck.max !== -1 && images.length > limitCheck.max) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Your current plan allows a maximum of ${limitCheck.max} payment QR code(s). You provided ${images.length}.`,
+          limitKey: "max_qr_codes",
+          current: images.length,
+          max: limitCheck.max,
+        },
+        { status: 403 },
+      );
+    }
 
     const qrPayment = await prisma.qrPayment.upsert({
       where: {

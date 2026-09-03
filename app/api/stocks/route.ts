@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkPlanLimit } from "@/lib/check-plan-limits";
 
 export async function GET() {
   try {
@@ -69,6 +70,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, message: "Stock item name is required" },
         { status: 400 },
+      );
+    }
+
+    // --- Plan limit validation ---
+    const limitCheck = await checkPlanLimit(storeId, "max_stock_items");
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: limitCheck.message || "Stock items limit reached for your plan.",
+          limitKey: "max_stock_items",
+          current: limitCheck.current,
+          max: limitCheck.max,
+        },
+        { status: 403 },
       );
     }
 

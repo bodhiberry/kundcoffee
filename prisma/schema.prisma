@@ -1054,6 +1054,7 @@ model SubscriptionPlan {
   durationDay Int
   stores      Store[]
   features    SubscriptionFeature[]
+  limits      SubscriptionLimit[]
 }
 
 model SubscriptionFeature {
@@ -1062,6 +1063,16 @@ model SubscriptionFeature {
   key     String
   enabled Boolean          @default(true)
   plan    SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, key])
+}
+
+model SubscriptionLimit {
+  id     String           @id @default(cuid())
+  planId String
+  key    String
+  value  Int              // -1 = unlimited, 0 = disabled, >0 = numeric limit
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@unique([planId, key])
 }

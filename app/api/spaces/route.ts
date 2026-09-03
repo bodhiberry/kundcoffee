@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkPlanLimit } from "@/lib/check-plan-limits";
 
 export async function GET() {
   try {
@@ -50,6 +51,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, message: "Name is required" },
         { status: 400 },
+      );
+    }
+
+    // --- Plan limit validation ---
+    const limitCheck = await checkPlanLimit(storeId, "max_spaces");
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: limitCheck.message || "Space creation limit reached for your plan.",
+          limitKey: "max_spaces",
+          current: limitCheck.current,
+          max: limitCheck.max,
+        },
+        { status: 403 },
       );
     }
 

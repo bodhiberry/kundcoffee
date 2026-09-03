@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkPlanLimit } from "@/lib/check-plan-limits";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,6 +12,20 @@ export async function POST(req: NextRequest) {
 
     if (!storeId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // --- Plan limit validation ---
+    const limitCheck = await checkPlanLimit(storeId, "max_daily_orders");
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: limitCheck.message || "Daily order limit reached for your plan.",
+          limitKey: "max_daily_orders",
+          current: limitCheck.current,
+          max: limitCheck.max,
+        },
+        { status: 403 },
+      );
     }
 
     const body = await req.json();

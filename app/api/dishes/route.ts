@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkPlanLimit } from "@/lib/check-plan-limits";
 
 export async function GET() {
   try {
@@ -74,6 +75,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, message: "Missing required fields" },
         { status: 400 },
+      );
+    }
+
+    // --- Plan limit validation ---
+    const limitCheck = await checkPlanLimit(storeId, "max_dishes");
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: limitCheck.message || "Dishes limit reached for your plan.",
+          limitKey: "max_dishes",
+          current: limitCheck.current,
+          max: limitCheck.max,
+        },
+        { status: 403 },
       );
     }
 

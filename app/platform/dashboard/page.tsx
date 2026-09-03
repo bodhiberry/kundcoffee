@@ -18,11 +18,13 @@ import {
   Trash2,
   CheckCircle2,
   Sliders,
-  Check
+  Check,
+  Hash,
+  Infinity as InfinityIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/Modal";
-import { FeatureDefinition } from "@/lib/features";
+import { FeatureDefinition, LimitDefinition, ALL_LIMITS } from "@/lib/features";
 
 interface StoreUser {
   id: string;
@@ -36,12 +38,19 @@ interface SubscriptionFeature {
   enabled: boolean;
 }
 
+interface SubscriptionLimit {
+  id: string;
+  key: string;
+  value: number;
+}
+
 interface SubscriptionPlan {
   id: string;
   name: string;
   price: number;
   durationDay: number;
   features: SubscriptionFeature[];
+  limits?: SubscriptionLimit[];
   _count?: {
     stores: number;
   };
@@ -59,6 +68,7 @@ interface PlatformStore {
     id: string;
     name: string;
     features: SubscriptionFeature[];
+    limits?: SubscriptionLimit[];
   } | null;
   isSuspended: boolean;
   createdAt: string;
@@ -77,6 +87,7 @@ export default function PlatformDashboard() {
   // Plans state
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [availableFeatures, setAvailableFeatures] = useState<FeatureDefinition[]>([]);
+  const [availableLimits, setAvailableLimits] = useState<LimitDefinition[]>(ALL_LIMITS);
   const [plansLoading, setPlansLoading] = useState(true);
   
   // Modals state
@@ -96,6 +107,7 @@ export default function PlatformDashboard() {
   const [planFormPrice, setPlanFormPrice] = useState<number>(0);
   const [planFormDuration, setPlanFormDuration] = useState<number>(30);
   const [planFormFeatures, setPlanFormFeatures] = useState<string[]>([]);
+  const [planFormLimits, setPlanFormLimits] = useState<Record<string, number>>({});
 
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -124,6 +136,9 @@ export default function PlatformDashboard() {
       if (data.success) {
         setPlans(data.data.plans);
         setAvailableFeatures(data.data.availableFeatures);
+        if (data.data.availableLimits) {
+          setAvailableLimits(data.data.availableLimits);
+        }
       } else {
         toast.error(data.message || "Failed to fetch plans");
       }
@@ -253,6 +268,13 @@ export default function PlatformDashboard() {
     setPlanFormPrice(0);
     setPlanFormDuration(30);
     setPlanFormFeatures(["pos_orders", "menu_management", "table_qr"]);
+    
+    // Default initial limits from basic template
+    const initialLimits: Record<string, number> = {};
+    availableLimits.forEach((l) => {
+      initialLimits[l.key] = l.defaultBasic;
+    });
+    setPlanFormLimits(initialLimits);
     setIsPlanModalOpen(true);
   };
 
@@ -262,6 +284,13 @@ export default function PlatformDashboard() {
     setPlanFormPrice(plan.price);
     setPlanFormDuration(plan.durationDay);
     setPlanFormFeatures(plan.features.map(f => f.key));
+
+    const currentLimits: Record<string, number> = {};
+    availableLimits.forEach((l) => {
+      const match = plan.limits?.find((pl) => pl.key === l.key);
+      currentLimits[l.key] = match !== undefined ? match.value : l.defaultBasic;
+    });
+    setPlanFormLimits(currentLimits);
     setIsPlanModalOpen(true);
   };
 
@@ -269,6 +298,24 @@ export default function PlatformDashboard() {
     setPlanFormFeatures(prev => 
       prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
     );
+  };
+
+  const handleLimitChange = (key: string, value: number) => {
+    setPlanFormLimits(prev => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleToggleUnlimitedLimit = (key: string) => {
+    setPlanFormLimits(prev => {
+      const current = prev[key];
+      const limitDef = availableLimits.find(l => l.key === key);
+      return {
+        ...prev,
+        [key]: current === -1 ? (limitDef?.defaultBasic || 10) : -1,
+      };
+    });
   };
 
   const handleSavePlan = async (e: React.FormEvent) => {
@@ -290,6 +337,7 @@ export default function PlatformDashboard() {
           price: planFormPrice,
           durationDay: planFormDuration,
           featureKeys: planFormFeatures,
+          limits: planFormLimits,
         }),
       });
       const data = await res.json();
@@ -526,7 +574,7 @@ export default function PlatformDashboard() {
                             </td>
                             <td className="py-5 px-6">
                               <div className="flex flex-col items-start gap-1">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider text-gray-700 ">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider text-gray-700 bg-slate-100">
                                   {planName}
                                 </span>
                                 {featuresCount > 0 && (
@@ -555,7 +603,7 @@ export default function PlatformDashboard() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => handleOpenSubscriptionModal(store)}
-                                  className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1  cursor-pointer"
+                                  className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                                 >
                                   <Calendar size={11} /> Plan & Dates
                                 </button>
@@ -594,10 +642,10 @@ export default function PlatformDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">
-                  Subscription Plans & Feature Control
+                  Subscription Plans & Granular Limits
                 </h2>
                 <p className="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">
-                  Create, customize, and configure which modules and features each subscription tier can access
+                  Create, customize, and configure pricing, module permissions, and entity limits for each tier
                 </p>
               </div>
               <button 
@@ -675,12 +723,39 @@ export default function PlatformDashboard() {
 
                         <hr className="border-slate-100 my-2" />
 
+                        {/* Granular Limits Snapshot */}
+                        <div className="space-y-2">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                            <Hash size={11} /> Configured Resource Limits
+                          </span>
+                          <div className="grid grid-cols-2 gap-1.5 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                            {availableLimits.slice(0, 6).map((l) => {
+                              const match = plan.limits?.find(pl => pl.key === l.key);
+                              const val = match !== undefined ? match.value : l.defaultBasic;
+                              return (
+                                <div key={l.key} className="flex items-center justify-between text-[11px] py-0.5">
+                                  <span className="text-slate-500 truncate mr-1">{l.name.replace("Max ", "")}:</span>
+                                  <span className="font-bold text-slate-800">
+                                    {val === -1 ? (
+                                      <span className="text-emerald-600 font-extrabold flex items-center gap-0.5">
+                                        <InfinityIcon size={12} />
+                                      </span>
+                                    ) : (
+                                      val
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         {/* Feature Checklist List */}
                         <div className="space-y-2.5">
                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">
                             Included Modules ({activeKeys.length}/{availableFeatures.length})
                           </span>
-                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                             {availableFeatures.map((feature) => {
                               const isIncluded = activeKeys.includes(feature.key);
                               return (
@@ -712,7 +787,7 @@ export default function PlatformDashboard() {
                           className="w-full py-2.5 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <Sliders size={13} />
-                          Configure Features
+                          Configure Plan & Limits
                         </button>
                       </div>
                     </div>
@@ -812,7 +887,7 @@ export default function PlatformDashboard() {
                 <option value="">Default Plan (Unassigned)</option>
                 {plans.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} ({p.durationDay} days - {p.features.length} features included)
+                    {p.name} (${p.price} / {p.durationDay} days - {p.features.length} features included)
                   </option>
                 ))}
               </select>
@@ -841,7 +916,7 @@ export default function PlatformDashboard() {
             </div>
 
             <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-slate-600 text-[11px] leading-relaxed">
-              * Assigning a plan determines exactly which dashboard features this store can access (e.g. Basic = POS & Menu only; Standard = Inventory & Staff; Premium = Analytics & Loyalty).
+              * Assigning a plan determines exactly which modules this store can access and enforces their maximum entity quotas (tables, staff, menu items, etc.) on the backend.
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
@@ -864,15 +939,17 @@ export default function PlatformDashboard() {
         </div>
       </Modal>
 
-      {/* MODAL 3: CREATE / EDIT SUBSCRIPTION PLAN WITH FEATURE CHECKBOXES */}
+      {/* MODAL 3: CREATE / EDIT SUBSCRIPTION PLAN WITH GRANULAR LIMITS & FEATURES */}
       <Modal
         isOpen={isPlanModalOpen}
         onClose={() => setIsPlanModalOpen(false)}
         title={editingPlan ? `Edit Plan: ${editingPlan.name}` : "Create Custom Subscription Plan"}
         size="lg"
       >
-        <div className="bg-white text-slate-900 p-6 space-y-6">
+        <div className="bg-white text-slate-900 p-6 space-y-6 max-h-[85vh] overflow-y-auto">
           <form onSubmit={handleSavePlan} className="space-y-6">
+            
+            {/* Top Config Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1 md:col-span-1">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Plan Name</label>
@@ -887,7 +964,7 @@ export default function PlatformDashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Price ($)</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Price ($ / Period)</label>
                 <input
                   type="number"
                   min="0"
@@ -910,18 +987,98 @@ export default function PlatformDashboard() {
               </div>
             </div>
 
-            {/* Feature Checkboxes Selector */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-widest text-slate-900">
-                  Feature Permissions (Check to Enable Access)
-                </label>
-                <span className="text-[10px] font-bold text-slate-500">
+            {/* SECTION 1: GRANULAR RESOURCE LIMITS */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-1.5">
+                    <Hash size={13} className="text-slate-700" />
+                    Resource Limits & Quotas (Server-Enforced)
+                  </label>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                    Configure exact caps for each entity. Toggle Unlimited for unconstrained access.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-y-auto p-2 border border-slate-200/80 rounded-2xl bg-slate-50/60">
+                {availableLimits.map((limit) => {
+                  const val = planFormLimits[limit.key] !== undefined ? planFormLimits[limit.key] : limit.defaultBasic;
+                  const isUnlimited = val === -1;
+
+                  return (
+                    <div
+                      key={limit.key}
+                      className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 block">{limit.name}</span>
+                          <span className="text-[9px] text-slate-500 font-medium block">{limit.description}</span>
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                          {limit.category}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <div className="relative flex-1">
+                          <input
+                            type="number"
+                            min="0"
+                            disabled={isUnlimited}
+                            value={isUnlimited ? "" : val}
+                            placeholder={isUnlimited ? "Unlimited" : "0"}
+                            onChange={(e) => handleLimitChange(limit.key, parseInt(e.target.value) || 0)}
+                            className={`w-full px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                              isUnlimited
+                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed italic"
+                                : "bg-white border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                            }`}
+                          />
+                          {!isUnlimited && (
+                            <span className="absolute right-2.5 top-2 text-[9px] font-bold text-slate-400">
+                              {limit.unit}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleUnlimitedLimit(limit.key)}
+                          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                            isUnlimited
+                              ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          <InfinityIcon size={12} />
+                          {isUnlimited ? "Unlimited" : "Set Cap"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* SECTION 2: MODULE FEATURE PERMISSIONS */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-900">
+                    Feature Module Access (Check to Enable)
+                  </label>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                    Toggle which navigation sections and functional modules are visible
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
                   {planFormFeatures.length} of {availableFeatures.length} enabled
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-y-auto p-1 border border-slate-100 rounded-2xl bg-slate-50/50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border border-slate-200/80 rounded-2xl bg-slate-50/60">
                 {availableFeatures.map((feature) => {
                   const isChecked = planFormFeatures.includes(feature.key);
                   return (

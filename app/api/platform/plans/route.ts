@@ -2,13 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { ALL_FEATURES, DEFAULT_PLAN_TEMPLATES } from "@/lib/features";
+import { ALL_FEATURES, ALL_LIMITS, DEFAULT_PLAN_TEMPLATES } from "@/lib/features";
 
 // Helper to ensure default plans exist if database is empty
 async function ensureDefaultPlans() {
   const count = await prisma.subscriptionPlan.count();
   if (count === 0) {
     for (const template of DEFAULT_PLAN_TEMPLATES) {
+      const planLimits = Object.entries(template.limits || {}).map(([key, value]) => ({
+        key,
+        value: Number(value),
+      }));
+
       await prisma.subscriptionPlan.create({
         data: {
           name: template.name,
@@ -20,13 +25,16 @@ async function ensureDefaultPlans() {
               enabled: true,
             })),
           },
+          limits: {
+            create: planLimits,
+          },
         },
       });
     }
   }
 }
 
-// GET: List all plans with their enabled features & feature metadata
+// GET: List all plans with their enabled features, limits & metadata
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -42,6 +50,7 @@ export async function GET(req: NextRequest) {
     const plans = await prisma.subscriptionPlan.findMany({
       include: {
         features: true,
+        limits: true,
         _count: {
           select: { stores: true },
         },
@@ -54,6 +63,7 @@ export async function GET(req: NextRequest) {
       data: {
         plans,
         availableFeatures: ALL_FEATURES,
+        availableLimits: ALL_LIMITS,
       },
     });
   } catch (error: any) {
@@ -77,7 +87,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, price = 0, durationDay = 30, featureKeys = [] } = body;
+    const { name, price = 0, durationDay = 30, featureKeys = [], limits = {} } = body;
 
     if (!name || typeof name !== "string" || !name.trim()) {
       return NextResponse.json(
@@ -98,6 +108,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Prepare limits data array
+    const limitEntries = Object.entries(limits).map(([key, val]) => ({
+      key,
+      value: typeof val === "number" ? val : parseInt(String(val), 10) || -1,
+    }));
+
     const plan = await prisma.subscriptionPlan.create({
       data: {
         name: name.trim(),
@@ -111,9 +127,13 @@ export async function POST(req: NextRequest) {
             })
           ),
         },
+        limits: {
+          create: limitEntries,
+        },
       },
       include: {
         features: true,
+        limits: true,
       },
     });
 
@@ -131,7 +151,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT: Update an existing plan and its features
+// PUT: Update an existing plan, its features, and limits
 export async function PUT(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -143,7 +163,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, name, price, durationDay, featureKeys } = body;
+    const { id, name, price, durationDay, featureKeys, limits } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -154,7 +174,7 @@ export async function PUT(req: NextRequest) {
 
     const existingPlan = await prisma.subscriptionPlan.findUnique({
       where: { id },
-      include: { features: true },
+      include: { features: true, limits: true },
     });
 
     if (!existingPlan) {
@@ -167,7 +187,7 @@ export async function PUT(req: NextRequest) {
     // Execute atomic update with transaction
     const updatedPlan = await prisma.$transaction(async (tx) => {
       // 1. Update basic info if provided
-      const updated = await tx.subscriptionPlan.update({
+      await tx.subscriptionPlan.update({
         where: { id },
         data: {
           name: name ? name.trim() : existingPlan.name,
@@ -193,10 +213,30 @@ export async function PUT(req: NextRequest) {
         }
       }
 
+      // 3. If limits provided, sync limits
+      if (limits && typeof limits === "object") {
+        await tx.subscriptionLimit.deleteMany({
+          where: { planId: id },
+        });
+
+        const limitEntries = Object.entries(limits).map(([key, val]) => ({
+          planId: id,
+          key,
+          value: typeof val === "number" ? val : parseInt(String(val), 10) || -1,
+        }));
+
+        if (limitEntries.length > 0) {
+          await tx.subscriptionLimit.createMany({
+            data: limitEntries,
+          });
+        }
+      }
+
       return tx.subscriptionPlan.findUnique({
         where: { id },
         include: {
           features: true,
+          limits: true,
           _count: { select: { stores: true } },
         },
       });

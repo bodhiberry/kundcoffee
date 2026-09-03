@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkPlanLimit } from "@/lib/check-plan-limits";
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,6 +34,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, message: "Name and capacity are required" },
         { status: 400 },
+      );
+    }
+
+    // --- Server-side plan limit validation ---
+    const limitCheck = await checkPlanLimit(storeId, "max_tables");
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: limitCheck.message || "Table creation limit reached for your plan.",
+          limitKey: "max_tables",
+          current: limitCheck.current,
+          max: limitCheck.max,
+        },
+        { status: 403 },
       );
     }
 
